@@ -116,6 +116,10 @@ def create_app():
     def manifest():
         return send_from_directory(app.static_folder, "manifest.json")
 
+    @app.route("/favicon.ico")
+    def favicon():
+        return send_from_directory(app.static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon")
+
     # -- Ruta Raiz ------------------------------------------------------------
     @app.route("/")
     def index():
