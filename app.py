@@ -102,6 +102,20 @@ def create_app():
         except Exception:
             return str(value)
 
+    # -- Rutas PWA (Root Scope) -----------------------------------------------
+    from flask import send_from_directory
+
+    @app.route("/sw.js")
+    def service_worker():
+        response = send_from_directory(app.static_folder, "sw.js")
+        response.headers["Service-Worker-Allowed"] = "/"
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+    @app.route("/manifest.json")
+    def manifest():
+        return send_from_directory(app.static_folder, "manifest.json")
+
     # -- Ruta Raiz ------------------------------------------------------------
     @app.route("/")
     def index():
