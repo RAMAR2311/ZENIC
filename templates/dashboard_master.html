@@ -2,34 +2,42 @@
 {% block title %}Dashboard Ejecutivo{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
+<div class="page-header d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
-        <h1 class="page-title"><i class="fa-solid fa-earth-americas me-2" style="color: var(--zenic-lavender)"></i>Centro de Mando Zenic</h1>
-        <p class="page-subtitle text-muted">Métricas consolidadas de Operaciones, Finanzas y Clientes</p>
+        <h1 class="page-title">
+            <i class="fa-solid fa-chart-line me-2" style="color: var(--zenic-purple-neural)"></i>
+            Centro de Mando Zenic
+        </h1>
+        <p class="page-subtitle">Métricas consolidadas de Operaciones, Finanzas y Salud de Clientes</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic">
+            <i class="fa-solid fa-plus"></i> Nuevo Cliente
+        </a>
     </div>
 </div>
 
 <!-- ============================================== -->
-<!-- 1. TARJETAS PRINCIPALES (KPIS)                 -->
+<!-- 1. TARJETAS PRINCIPALES (KPIS CON DESIGN TOKENS) -->
 <!-- ============================================== -->
 <div class="row g-3 mb-4">
     <!-- Patrimonio -->
-    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.1s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent);">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid var(--zenic-purple-neural);">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <div class="kpi-label">Patrimonio Neto</div>
-                    <div class="kpi-value text-accent">{{ patrimonio_neto | cop }}</div>
+                    <div class="kpi-value" style="color: var(--zenic-purple-neural);">{{ patrimonio_neto | cop }}</div>
                 </div>
-                <i class="fa-solid fa-vault kpi-icon text-accent opacity-50"></i>
+                <i class="fa-solid fa-vault kpi-icon" style="color: var(--zenic-purple-neural);"></i>
             </div>
-            <div class="kpi-sub mt-2">Caja + Bancos + Equipos</div>
+            <div class="kpi-sub">Caja + Bancos + Equipos de Empresa</div>
         </div>
     </div>
     
     <!-- Beneficio Mes -->
-    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.2s;">
-        <div class="kpi-card" style="border-left: 3px solid {% if beneficio_neto >= 0 %}var(--zenic-success){% else %}var(--zenic-danger){% endif %};">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid {% if beneficio_neto >= 0 %}var(--zenic-success){% else %}var(--zenic-danger){% endif %};">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <div class="kpi-label">Beneficio Neto (Mes)</div>
@@ -37,37 +45,37 @@
                         {{ beneficio_neto | cop }}
                     </div>
                 </div>
-                <i class="fa-solid fa-chart-line kpi-icon {% if beneficio_neto >= 0 %}text-success{% else %}text-danger{% endif %} opacity-50"></i>
+                <i class="fa-solid fa-arrow-trend-up kpi-icon {% if beneficio_neto >= 0 %}text-success{% else %}text-danger{% endif %}"></i>
             </div>
-            <div class="kpi-sub mt-2">Ingresos: {{ total_ingresos | cop }} | Gastos: {{ total_gastos | cop }}</div>
+            <div class="kpi-sub">Ingresos: {{ total_ingresos | cop }} &bull; Gastos: {{ total_gastos | cop }}</div>
         </div>
     </div>
     
     <!-- MRR -->
-    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.3s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-gold);">
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid var(--zenic-blue-electric);">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="kpi-label">MRR (Ingreso Mensual)</div>
-                    <div class="kpi-value text-gold">{{ mrr | cop }}</div>
+                    <div class="kpi-label">MRR (Ingreso Recurrente)</div>
+                    <div class="kpi-value" style="color: var(--zenic-blue-steel);">{{ mrr | cop }}</div>
                 </div>
-                <i class="fa-solid fa-crown kpi-icon text-gold opacity-50"></i>
+                <i class="fa-solid fa-repeat kpi-icon" style="color: var(--zenic-blue-steel);"></i>
             </div>
-            <div class="kpi-sub mt-2">Clientes Activos: {{ total_locales }}</div>
+            <div class="kpi-sub">Clientes Activos: <strong>{{ total_locales }}</strong></div>
         </div>
     </div>
     
-    <!-- Operaciones -->
-    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.4s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-info);">
+    <!-- Operaciones / Uptime -->
+    <div class="col-12 col-md-6 col-lg-3">
+        <div class="kpi-card" style="border-left: 4px solid var(--zenic-cyan-neon);">
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="kpi-label">Salud de Red</div>
-                    <div class="kpi-value text-info">{{ online_count }}/{{ total_locales }}</div>
+                    <div class="kpi-label">Salud de Red (Uptime)</div>
+                    <div class="kpi-value" style="color: var(--zenic-blue-steel);">{{ online_count }}<span class="fs-5 text-muted">/{{ total_locales }}</span></div>
                 </div>
-                <i class="fa-solid fa-server kpi-icon text-info opacity-50"></i>
+                <i class="fa-solid fa-server kpi-icon" style="color: var(--zenic-cyan-neon);"></i>
             </div>
-            <div class="kpi-sub mt-2">Personal Activo: {{ total_personal }}</div>
+            <div class="kpi-sub">Personal Activo: <strong>{{ total_personal }}</strong></div>
         </div>
     </div>
 </div>
@@ -77,9 +85,15 @@
 <!-- ============================================== -->
 <div class="row g-4 mb-4">
     <!-- Chart: Evolución Financiera -->
-    <div class="col-12 col-lg-8 fade-up" style="animation-delay: 0.5s;">
+    <div class="col-12 col-lg-8">
         <div class="card-zenic h-100 p-4">
-            <h5 class="fw-bold mb-4">Evolución de Ingresos y Gastos (6 Meses)</h5>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold m-0" style="color: var(--zenic-text-main);">
+                    <i class="fa-solid fa-chart-column me-2" style="color: var(--zenic-purple-neural);"></i>
+                    Evolución de Ingresos y Gastos (Semestre)
+                </h5>
+                <span class="badge" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); font-size: 0.72rem; letter-spacing: 0.05em;">HISTÓRICO</span>
+            </div>
             <div style="height: 300px; width: 100%;">
                 <canvas id="chartFinanzas"></canvas>
             </div>
@@ -87,13 +101,16 @@
     </div>
     
     <!-- Chart: Distribución de Gastos (Mes Actual) -->
-    <div class="col-12 col-lg-4 fade-up" style="animation-delay: 0.6s;">
+    <div class="col-12 col-lg-4">
         <div class="card-zenic h-100 p-4">
-            <h5 class="fw-bold mb-4">Estructura de Costos (Mes)</h5>
-            <div style="height: 250px; width: 100%;">
+            <h5 class="fw-bold mb-3" style="color: var(--zenic-text-main);">
+                <i class="fa-solid fa-pie-chart me-2" style="color: var(--zenic-blue-steel);"></i>
+                Estructura de Costos
+            </h5>
+            <div style="height: 240px; width: 100%;">
                 <canvas id="chartCostos"></canvas>
             </div>
-            <div class="mt-4 text-center small text-muted">
+            <div class="mt-3 pt-3 border-top text-center small text-muted font-mono">
                 Directos: {{ gastos_directos|cop }} | Ind: {{ gastos_indirectos|cop }} | Adm: {{ gastos_admin|cop }}
             </div>
         </div>
@@ -102,49 +119,64 @@
 
 <div class="row g-4">
     <!-- Chart: Estado de Clientes -->
-    <div class="col-12 col-lg-4 fade-up" style="animation-delay: 0.7s;">
+    <div class="col-12 col-lg-4">
         <div class="card-zenic h-100 p-4">
-            <h5 class="fw-bold mb-4">Salud de Cartera (Clientes)</h5>
-            <div style="height: 250px; width: 100%;">
+            <h5 class="fw-bold mb-3" style="color: var(--zenic-text-main);">
+                <i class="fa-solid fa-traffic-light me-2" style="color: var(--zenic-warning);"></i>
+                Salud de Cartera (Semaforización)
+            </h5>
+            <div style="height: 240px; width: 100%;">
                 <canvas id="chartCartera"></canvas>
             </div>
-            <div class="mt-4 text-center small text-muted">
-                Mide el estado de pago de las instancias activas.
+            <div class="mt-3 pt-3 border-top text-center small text-muted">
+                Control dinámico de corte y estados de facturación.
             </div>
         </div>
     </div>
     
     <!-- Tabla: Últimas Facturas -->
-    <div class="col-12 col-lg-8 fade-up" style="animation-delay: 0.8s;">
+    <div class="col-12 col-lg-8">
         <div class="card-zenic h-100 p-4">
-            <h5 class="fw-bold mb-4">Facturación Reciente (Top 5)</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0" style="color: var(--zenic-text-main);">
+                    <i class="fa-solid fa-receipt me-2" style="color: var(--zenic-purple-neural);"></i>
+                    Facturación Reciente
+                </h5>
+                <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="btn-zenic-outline py-1 px-3" style="font-size: 0.78rem;">
+                    Ver Todas
+                </a>
+            </div>
             <div class="table-responsive">
                 <table class="table table-zenic mb-0">
                     <thead>
                         <tr>
-                            <th>Local</th>
-                            <th>Fecha</th>
-                            <th>Monto</th>
-                            <th>Estado</th>
+                            <th>Local Cliente</th>
+                            <th>Fecha Emisión</th>
+                            <th>Monto Facturado</th>
+                            <th>Estado de Pago</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for f in facturas_recientes %}
                         <tr>
-                            <td>{{ f.local.nombre_marca }}</td>
-                            <td>{{ f.fecha_emision | fecha_corta }}</td>
-                            <td class="fw-bold">{{ f.monto | cop }}</td>
+                            <td class="fw-bold" style="color: var(--zenic-text-main);">{{ f.local.nombre_marca }}</td>
+                            <td class="text-muted">{{ f.fecha_emision | fecha_corta }}</td>
+                            <td class="fw-bold font-mono">{{ f.monto | cop }}</td>
                             <td>
                                 {% if f.estado == 'Pagado' %}
-                                <span class="badge bg-success">Pagado</span>
+                                <span class="badge-semaforo semaforo-verde">
+                                    <span class="dot dot-verde"></span> Pagado
+                                </span>
                                 {% else %}
-                                <span class="badge bg-danger">Pendiente</span>
+                                <span class="badge-semaforo semaforo-rojo">
+                                    <span class="dot dot-rojo"></span> Pendiente
+                                </span>
                                 {% endif %}
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-3">No hay facturas registradas.</td>
+                            <td colspan="4" class="text-center text-muted py-4">No hay facturas registradas recientemente.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -157,16 +189,19 @@
 <!-- ============================================== -->
 <!-- 3. SCRIPTS DE CHART.JS                         -->
 <!-- ============================================== -->
-<!-- Cargamos Chart.js desde CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Colores base de Zenic
-    const colorAccent = '#7c3aed';
-    const colorSuccess = '#10b981';
-    const colorDanger = '#ef4444';
-    const colorWarning = '#f59e0b';
-    const colorGold = '#d4af37';
+    // Design Tokens Oficiales Zenic
+    const colorPurple = '#7A3EB0';
+    const colorPurpleLight = '#8A45D1';
+    const colorBlue = '#4A7BB0';
+    const colorBlueSteel = '#5C8AC8';
+    const colorCyan = '#38BDF8';
+    const colorMagenta = '#D946EF';
+    const colorSuccess = '#10B981';
+    const colorDanger = '#EF4444';
+    const colorWarning = '#F59E0B';
     
     // --- 1. Gráfico de Barras (Evolución Financiera) ---
     const ctxFinanzas = document.getElementById('chartFinanzas');
@@ -179,14 +214,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     {
                         label: 'Ingresos Totales',
                         data: {{ ingresos_hist | tojson }},
-                        backgroundColor: colorSuccess,
-                        borderRadius: 4
+                        backgroundColor: colorPurple,
+                        hoverBackgroundColor: colorPurpleLight,
+                        borderRadius: 6
                     },
                     {
                         label: 'Gastos Totales',
                         data: {{ gastos_hist | tojson }},
-                        backgroundColor: colorDanger,
-                        borderRadius: 4
+                        backgroundColor: '#CBD5E1',
+                        hoverBackgroundColor: '#94A3B8',
+                        borderRadius: 6
                     }
                 ]
             },
@@ -194,11 +231,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { color: '#ccc' } }
+                    legend: { position: 'top', labels: { font: { family: 'Plus Jakarta Sans', weight: '600' }, color: '#475569' } }
                 },
                 scales: {
-                    x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-                    y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    x: { ticks: { color: '#64748B', font: { family: 'Plus Jakarta Sans' } }, grid: { display: false } },
+                    y: { ticks: { color: '#64748B', font: { family: 'JetBrains Mono' } }, grid: { color: 'rgba(226, 232, 240, 0.7)' } }
                 }
             }
         });
@@ -213,16 +250,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 labels: ['Costos Directos', 'Costos Indirectos', 'Gasto Admin'],
                 datasets: [{
                     data: [{{ gastos_directos }}, {{ gastos_indirectos }}, {{ gastos_admin }}],
-                    backgroundColor: [colorAccent, colorWarning, colorDanger],
-                    borderWidth: 0
+                    backgroundColor: [colorPurple, colorBlueSteel, '#94A3B8'],
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '75%',
+                cutout: '72%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+                    legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', size: 11 }, color: '#475569', boxWidth: 10 } }
                 }
             }
         });
@@ -238,15 +276,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 datasets: [{
                     data: [{{ al_dia }}, {{ por_vencer }}, {{ atrasado }}],
                     backgroundColor: [colorSuccess, colorWarning, colorDanger],
-                    borderWidth: 0
+                    borderWidth: 2,
+                    borderColor: '#FFFFFF'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '75%',
+                cutout: '72%',
                 plugins: {
-                    legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+                    legend: { position: 'bottom', labels: { font: { family: 'Plus Jakarta Sans', size: 11 }, color: '#475569', boxWidth: 10 } }
                 }
             }
         });
