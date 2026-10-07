@@ -5,3 +5,7 @@ __pycache__/
 instance/
 static/uploads/
 scratch/
+venv/
+.venv/
+Nueva carpeta/
+temp_db*.py

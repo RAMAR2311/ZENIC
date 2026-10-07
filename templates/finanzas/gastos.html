@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Costos y Gastos{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-wallet me-2" style="color: var(--zenic-danger)"></i>
+            Costos y Gastos
+        </h1>
+        <p class="page-subtitle">Registro y clasificación de salidas de capital</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalGasto">
+            <i class="fa-solid fa-plus"></i> Registrar Gasto
+        </button>
+    </div>
+</div>
+
+<div class="row g-3 mb-5">
+    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.1s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent)">
+            <i class="fa-solid fa-industry kpi-icon text-accent"></i>
+            <div class="kpi-label">Costos Directos</div>
+            <div class="kpi-value text-accent">{{ total_directo | cop }}</div>
+            <div class="kpi-sub">Vinculados directamente a la operación</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.2s;">
+        <div class="kpi-card" style="border-left: 3px solid #f39c12">
+            <i class="fa-solid fa-lightbulb kpi-icon text-warning"></i>
+            <div class="kpi-label">Costos Indirectos</div>
+            <div class="kpi-value text-warning">{{ total_indirecto | cop }}</div>
+            <div class="kpi-sub">Servicios, alquileres, etc.</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.3s;">
+        <div class="kpi-card kpi-danger">
+            <i class="fa-solid fa-briefcase kpi-icon"></i>
+            <div class="kpi-label">Gastos Administrativos</div>
+            <div class="kpi-value text-danger">{{ total_admin | cop }}</div>
+            <div class="kpi-sub">Nómina administrativa, legales, etc.</div>
+        </div>
+    </div>
+</div>
+
+<div class="card-zenic fade-up" style="animation-delay: 0.4s;">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h2 style="font-size:1.1rem;font-weight:700;margin:0">Historial de Salidas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Clasificación</th>
+                    <th>Área / Presupuesto</th>
+                    <th class="text-end">Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in gastos %}
+                <tr>
+                    <td>{{ g.fecha | fecha_corta }}</td>
+                    <td style="font-weight:600">
+                        {{ g.descripcion }}
+                        {% if g.categoria %}
+                        <span class="badge bg-secondary ms-1">{{ g.categoria }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if g.tipo_costo == 'Costo Directo' %}
+                        <span class="badge" style="background-color: var(--zenic-accent)">Costo Directo</span>
+                        {% elif g.tipo_costo == 'Costo Indirecto' %}
+                        <span class="badge bg-warning text-dark">Costo Indirecto</span>
+                        {% else %}
+                        <span class="badge bg-danger">Gasto Administrativo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if g.presupuesto %}
+                        <i class="fa-solid fa-scale-balanced text-muted me-1"></i> {{ g.presupuesto.nombre_area }}
+                        {% else %}
+                        <span class="text-muted fst-italic">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end text-danger fw-bold">-{{ g.monto | cop }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No hay gastos registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal Registrar Gasto -->
+<div class="modal fade" id="modalGasto" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.gastos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-plus text-danger me-2"></i>Registrar Salida de Dinero</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Concepto (Descripción)</label>
+                        <input type="text" class="form-control" name="descripcion" placeholder="Ej: Pago de Servidores AWS" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Monto</label>
+                            <input type="number" step="0.01" class="form-control" name="monto" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Fecha</label>
+                            <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Costo</label>
+                        <select class="form-select" name="tipo_costo" required>
+                            <option value="Costo Directo">Costo Directo</option>
+                            <option value="Costo Indirecto">Costo Indirecto</option>
+                            <option value="Gasto Administrativo" selected>Gasto Administrativo</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descontar de Presupuesto (Área)</label>
+                        <select class="form-select" name="presupuesto_id">
+                            <option value="">-- No vincular a ningún presupuesto --</option>
+                            {% for p in presupuestos %}
+                            <option value="{{ p.id }}">{{ p.nombre_area }} (Límite: {{ p.limite_gastos | cop }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Vincula este gasto a una de tus áreas para medir su progreso.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Categoría (Opcional)</label>
+                        <input type="text" class="form-control" name="categoria" placeholder="Ej: Tecnología, Nómina, Marketing">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Guardar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Ejecutivo{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="page-title"><i class="fa-solid fa-earth-americas me-2" style="color: var(--zenic-lavender)"></i>Centro de Mando Zenic</h1>
+        <p class="page-subtitle text-muted">Métricas consolidadas de Operaciones, Finanzas y Clientes</p>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 1. TARJETAS PRINCIPALES (KPIS)                 -->
+<!-- ============================================== -->
+<div class="row g-3 mb-4">
+    <!-- Patrimonio -->
+    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.1s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Patrimonio Neto</div>
+                    <div class="kpi-value text-accent">{{ patrimonio_neto | cop }}</div>
+                </div>
+                <i class="fa-solid fa-vault kpi-icon text-accent opacity-50"></i>
+            </div>
+            <div class="kpi-sub mt-2">Caja + Bancos + Equipos</div>
+        </div>
+    </div>
+    
+    <!-- Beneficio Mes -->
+    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.2s;">
+        <div class="kpi-card" style="border-left: 3px solid {% if beneficio_neto >= 0 %}var(--zenic-success){% else %}var(--zenic-danger){% endif %};">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Beneficio Neto (Mes)</div>
+                    <div class="kpi-value {% if beneficio_neto >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {{ beneficio_neto | cop }}
+                    </div>
+                </div>
+                <i class="fa-solid fa-chart-line kpi-icon {% if beneficio_neto >= 0 %}text-success{% else %}text-danger{% endif %} opacity-50"></i>
+            </div>
+            <div class="kpi-sub mt-2">Ingresos: {{ total_ingresos | cop }} | Gastos: {{ total_gastos | cop }}</div>
+        </div>
+    </div>
+    
+    <!-- MRR -->
+    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.3s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-gold);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">MRR (Ingreso Mensual)</div>
+                    <div class="kpi-value text-gold">{{ mrr | cop }}</div>
+                </div>
+                <i class="fa-solid fa-crown kpi-icon text-gold opacity-50"></i>
+            </div>
+            <div class="kpi-sub mt-2">Clientes Activos: {{ total_locales }}</div>
+        </div>
+    </div>
+    
+    <!-- Operaciones -->
+    <div class="col-12 col-md-6 col-lg-3 fade-up" style="animation-delay: 0.4s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-info);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="kpi-label">Salud de Red</div>
+                    <div class="kpi-value text-info">{{ online_count }}/{{ total_locales }}</div>
+                </div>
+                <i class="fa-solid fa-server kpi-icon text-info opacity-50"></i>
+            </div>
+            <div class="kpi-sub mt-2">Personal Activo: {{ total_personal }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 2. GRÁFICOS Y LISTAS                           -->
+<!-- ============================================== -->
+<div class="row g-4 mb-4">
+    <!-- Chart: Evolución Financiera -->
+    <div class="col-12 col-lg-8 fade-up" style="animation-delay: 0.5s;">
+        <div class="card-zenic h-100 p-4">
+            <h5 class="fw-bold mb-4">Evolución de Ingresos y Gastos (6 Meses)</h5>
+            <div style="height: 300px; width: 100%;">
+                <canvas id="chartFinanzas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart: Distribución de Gastos (Mes Actual) -->
+    <div class="col-12 col-lg-4 fade-up" style="animation-delay: 0.6s;">
+        <div class="card-zenic h-100 p-4">
+            <h5 class="fw-bold mb-4">Estructura de Costos (Mes)</h5>
+            <div style="height: 250px; width: 100%;">
+                <canvas id="chartCostos"></canvas>
+            </div>
+            <div class="mt-4 text-center small text-muted">
+                Directos: {{ gastos_directos|cop }} | Ind: {{ gastos_indirectos|cop }} | Adm: {{ gastos_admin|cop }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Chart: Estado de Clientes -->
+    <div class="col-12 col-lg-4 fade-up" style="animation-delay: 0.7s;">
+        <div class="card-zenic h-100 p-4">
+            <h5 class="fw-bold mb-4">Salud de Cartera (Clientes)</h5>
+            <div style="height: 250px; width: 100%;">
+                <canvas id="chartCartera"></canvas>
+            </div>
+            <div class="mt-4 text-center small text-muted">
+                Mide el estado de pago de las instancias activas.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabla: Últimas Facturas -->
+    <div class="col-12 col-lg-8 fade-up" style="animation-delay: 0.8s;">
+        <div class="card-zenic h-100 p-4">
+            <h5 class="fw-bold mb-4">Facturación Reciente (Top 5)</h5>
+            <div class="table-responsive">
+                <table class="table table-zenic mb-0">
+                    <thead>
+                        <tr>
+                            <th>Local</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in facturas_recientes %}
+                        <tr>
+                            <td>{{ f.local.nombre_marca }}</td>
+                            <td>{{ f.fecha_emision | fecha_corta }}</td>
+                            <td class="fw-bold">{{ f.monto | cop }}</td>
+                            <td>
+                                {% if f.estado == 'Pagado' %}
+                                <span class="badge bg-success">Pagado</span>
+                                {% else %}
+                                <span class="badge bg-danger">Pendiente</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-3">No hay facturas registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================== -->
+<!-- 3. SCRIPTS DE CHART.JS                         -->
+<!-- ============================================== -->
+<!-- Cargamos Chart.js desde CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Colores base de Zenic
+    const colorAccent = '#7c3aed';
+    const colorSuccess = '#10b981';
+    const colorDanger = '#ef4444';
+    const colorWarning = '#f59e0b';
+    const colorGold = '#d4af37';
+    
+    // --- 1. Gráfico de Barras (Evolución Financiera) ---
+    const ctxFinanzas = document.getElementById('chartFinanzas');
+    if (ctxFinanzas) {
+        new Chart(ctxFinanzas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: {{ meses_labels | tojson }},
+                datasets: [
+                    {
+                        label: 'Ingresos Totales',
+                        data: {{ ingresos_hist | tojson }},
+                        backgroundColor: colorSuccess,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Gastos Totales',
+                        data: {{ gastos_hist | tojson }},
+                        backgroundColor: colorDanger,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#ccc' } }
+                },
+                scales: {
+                    x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+    }
+
+    // --- 2. Gráfico de Anillo (Estructura de Costos) ---
+    const ctxCostos = document.getElementById('chartCostos');
+    if (ctxCostos) {
+        new Chart(ctxCostos.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Costos Directos', 'Costos Indirectos', 'Gasto Admin'],
+                datasets: [{
+                    data: [{{ gastos_directos }}, {{ gastos_indirectos }}, {{ gastos_admin }}],
+                    backgroundColor: [colorAccent, colorWarning, colorDanger],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+                }
+            }
+        });
+    }
+
+    // --- 3. Gráfico de Anillo (Salud de Cartera) ---
+    const ctxCartera = document.getElementById('chartCartera');
+    if (ctxCartera) {
+        new Chart(ctxCartera.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Al Día', 'Por Vencer (≤5 d)', 'Atrasado/Suspendido'],
+                datasets: [{
+                    data: [{{ al_dia }}, {{ por_vencer }}, {{ atrasado }}],
+                    backgroundColor: [colorSuccess, colorWarning, colorDanger],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#ccc', boxWidth: 12 } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

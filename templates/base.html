@@ -3,391 +3,607 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tekfix Oficial - CRM & POS</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/Tekfix.png') }}">
-    <!-- Bootstrap 5 CDN -->
+    <title>{% block title %}Zenic Master Control{% endblock %} — Zenic S.A.S.</title>
+    <meta name="description" content="Fluye, Aprende y Optimiza — Panel administrativo centralizado de Zenic S.A.S.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        /* REGLA DE BRANDING TEKFIX (Dark Premium) */
+        /* ═══════════════════════════════════════════════════════════════
+           ZENIC S.A.S. — Design System v2.0
+           "Fluye, Aprende y Optimiza"
+           Paleta: Púrpura circuito + Azul acero + Lavanda + Cian eléctrico
+        ═══════════════════════════════════════════════════════════════ */
         :root {
-            --tekfix-bg: #1A1818;          /* Antracita profundo */
-            --tekfix-primary: #DDB856;     /* Dorado medio */
-            --tekfix-hover: #F9E491;       /* Dorado brillante */
-            --tekfix-border: #A37E2C;      /* Dorado oscuro */
-            --tekfix-text-sec: #C5C5C5;    /* Gris plata */
-            --tekfix-text-main: #FFFFFF;   /* Blanco puro */
-            --tekfix-card-bg: #252323;     /* Fondo de tarjetas */
-            --tekfix-navbar-bg: #1A1818;
-            --tekfix-input-bg: #1A1818;
-            --tekfix-table-header: rgba(221, 184, 86, 0.1);
+            /* ── Fondo y Superficies (modo claro con tinte lavanda) ── */
+            --zenic-bg:          #F0F0F8;
+            --zenic-surface:     #FFFFFF;
+            --zenic-surface-2:   #F5F3FF;
+            --zenic-border:      #DDD6FE;
+
+            /* ── Colores de Marca ── */
+            --zenic-primary:     #6B46C1;   /* Púrpura cerebro/circuitos */
+            --zenic-primary-d:   #553C9A;   /* Púrpura oscuro (hover) */
+            --zenic-lavender:    #A78BFA;   /* Lavanda brillante (hover/acento) */
+            --zenic-accent:      #38BDF8;   /* Azul cielo (nodos de circuito) */
+            --zenic-nav:         #1E3A5F;   /* Azul acero metálico (Sidebar/Nav) */
+            --zenic-nav-d:       #162D4A;   /* Azul acero oscuro */
+
+            /* ── Estado / Semáforo ── */
+            --zenic-success:     #10B981;
+            --zenic-danger:      #EF4444;
+            --zenic-warning:     #F59E0B;
+            --zenic-gold:        #F0B429;
+
+            /* ── Tipografía ── */
+            --zenic-text:        #1E3A5F;   /* Texto principal sobre fondo claro */
+            --zenic-text-muted:  #6B7280;   /* Texto secundario */
+            --zenic-text-light:  #FFFFFF;   /* Texto sobre fondos oscuros */
+
+            /* ── Efectos ── */
+            --zenic-glow:        rgba(107, 70, 193, 0.18);
+            --zenic-glow-hover:  rgba(107, 70, 193, 0.30);
+            --zenic-glow-accent: rgba(56, 189, 248, 0.18);
+
+            /* ── Gradiente principal (circuito) ── */
+            --zenic-gradient:    linear-gradient(135deg, #6B46C1 0%, #A78BFA 100%);
+            --zenic-gradient-d:  linear-gradient(135deg, #553C9A 0%, #8B5CF6 100%);
+
+            /* ── Radios ── */
+            --radius:   14px;
+            --radius-sm: 8px;
         }
 
-        /* MODALIDAD DIA (Light Mode) */
-        body.light-mode {
-            --tekfix-bg: #f8f9fa;
-            --tekfix-card-bg: #ffffff;
-            --tekfix-text-main: #212529;
-            --tekfix-text-sec: #495057;
-            --tekfix-border: #dee2e6;
-            --tekfix-primary: #9d7c2a;
-            --tekfix-hover: #856404;
-            --tekfix-navbar-bg: #ffffff;
-            --tekfix-input-bg: #ffffff;
-            --tekfix-table-header: #f1f3f5;
-        }
-
+        /* ── Reset & Base ── */
+        * { box-sizing: border-box; }
         body {
-            background-color: var(--tekfix-bg);
-            color: var(--tekfix-text-main);
-            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--zenic-bg);
+            color: var(--zenic-text);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 0.9375rem;
             -webkit-font-smoothing: antialiased;
-            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
         }
 
-        /* Variables Utilitarias Auxiliares */
-        .bg-tekfix-primary { background-color: var(--tekfix-primary) !important; color: #fff !important; }
-        .bg-tekfix-card { background-color: var(--tekfix-card-bg) !important; }
-        .text-tekfix-main { color: var(--tekfix-text-main) !important; }
-        .text-tekfix-primary { color: var(--tekfix-primary) !important; }
-        .text-tekfix-sec { color: var(--tekfix-text-sec) !important; }
-
-        /* Navbar Tekfix */
-        .navbar-custom {
-            background-color: var(--tekfix-navbar-bg);
-            border-bottom: 1px solid var(--tekfix-border);
-            padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s;
+        /* Fondo con textura circuito sutil */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(107,70,193,0.04) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(56,189,248,0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
         }
-        
-        .navbar-custom .navbar-brand {
+
+        /* ── Navbar ── */
+        .navbar-zenic {
+            background-color: var(--zenic-nav);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            box-shadow: 0 2px 12px rgba(30,58,95,0.25);
+        }
+
+        .navbar-brand-zenic {
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+            text-decoration: none;
+            color: var(--zenic-text-light) !important;
             font-weight: 800;
-            color: var(--tekfix-primary) !important;
-            font-size: 1.75rem;
-            letter-spacing: -0.5px;
+            font-size: 1.25rem;
+            letter-spacing: -0.3px;
         }
-
-        .navbar-custom .nav-link {
-            color: var(--tekfix-text-sec);
+        .navbar-brand-zenic .brand-icon {
+            width: 38px; height: 38px;
+            background: var(--zenic-gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #fff;
+            box-shadow: 0 0 16px var(--zenic-glow);
+        }
+        .navbar-brand-zenic .brand-name  { color: #fff; letter-spacing: 1px; }
+        .navbar-brand-zenic .brand-sub {
+            font-size: 0.6rem;
             font-weight: 500;
-            margin-left: 1rem;
-            transition: color 0.2s;
+            color: var(--zenic-lavender);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .navbar-brand-zenic .brand-text  { display: flex; flex-direction: column; }
+
+        .btn-hamburger {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 0.625rem;
+            transition: all 0.2s;
+        }
+        .btn-hamburger:hover {
+            background: rgba(167,139,250,0.2);
+            border-color: var(--zenic-lavender);
         }
 
-        .navbar-custom .nav-link:hover {
-            color: var(--tekfix-hover);
+        .navbar-user-info { font-size: 0.78rem; color: rgba(255,255,255,0.65); }
+        .navbar-user-info strong { color: #fff; }
+
+        /* ── Sidebar ── */
+        .offcanvas {
+            background-color: var(--zenic-nav) !important;
+            border-right: 1px solid rgba(255,255,255,0.07) !important;
+            width: 270px !important;
+        }
+        .offcanvas-header {
+            background: var(--zenic-nav-d) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+            padding: 1.25rem 1.5rem;
+        }
+        .offcanvas-header .offcanvas-title { color: #fff !important; font-weight: 700; }
+        .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+        .sidebar-section-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            color: rgba(167,139,250,0.7);
+            padding: 1rem 1.5rem 0.25rem;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 1.5rem;
+            color: rgba(255,255,255,0.7) !important;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-left: 3px solid transparent;
+            transition: all 0.18s;
+        }
+        .sidebar-link:hover, .sidebar-link.active {
+            color: #fff !important;
+            background: rgba(167,139,250,0.12);
+            border-left-color: var(--zenic-lavender);
+        }
+        .sidebar-link i { width: 18px; text-align: center; font-size: 0.9rem; }
+
+        .sidebar-logout {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: #FCA5A5 !important;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.2s;
+        }
+        .sidebar-logout:hover { background: rgba(239,68,68,0.12); }
+
+        /* Slogan en sidebar footer */
+        .sidebar-slogan {
+            font-size: 0.62rem;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(167,139,250,0.5);
+            padding: 0.5rem 1.5rem 1rem;
+            text-align: center;
         }
 
-        /* Botones Pro */
-        .btn-tekfix {
-            background-color: var(--tekfix-primary);
+        /* ── Cards con GLOW de circuito ── */
+        .card-zenic {
+            background-color: var(--zenic-surface);
+            border: 1px solid var(--zenic-border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 4px rgba(107,70,193,0.06);
+            transition: border-color 0.2s, box-shadow 0.25s, transform 0.2s;
+        }
+        .card-zenic:hover {
+            border-color: rgba(107,70,193,0.35);
+            box-shadow:
+                0 0 0 1px rgba(107,70,193,0.12),
+                0 4px 20px rgba(107,70,193,0.14),
+                0 0 30px rgba(107,70,193,0.07);
+            transform: translateY(-1px);
+        }
+
+        /* KPI Cards */
+        .kpi-card {
+            background: var(--zenic-surface);
+            border: 1px solid var(--zenic-border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s;
+            box-shadow: 0 1px 4px rgba(107,70,193,0.06);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+            border-radius: 4px 0 0 4px;
+        }
+        .kpi-card.kpi-blue::before   { background: var(--zenic-primary); }
+        .kpi-card.kpi-cyan::before   { background: var(--zenic-accent); }
+        .kpi-card.kpi-green::before  { background: var(--zenic-success); }
+        .kpi-card.kpi-gold::before   { background: var(--zenic-gold); }
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 8px 24px rgba(107,70,193,0.13),
+                0 0 0 1px rgba(107,70,193,0.1);
+        }
+        .kpi-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--zenic-text-muted);
+            margin-bottom: 0.5rem;
+        }
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--zenic-text);
+            line-height: 1;
+        }
+        .kpi-sub { font-size: 0.78rem; color: var(--zenic-text-muted); margin-top: 0.375rem; }
+        .kpi-icon { position: absolute; top: 1.25rem; right: 1.25rem; font-size: 2rem; opacity: 0.07; }
+
+        /* ── Tablas ── */
+        .table-zenic { color: var(--zenic-text) !important; border-color: var(--zenic-border) !important; }
+        .table-zenic thead th {
+            background-color: var(--zenic-surface-2) !important;
+            color: var(--zenic-text-muted) !important;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--zenic-border) !important;
+            border-top: none !important;
+            padding: 1rem 1.25rem;
+        }
+        .table-zenic tbody td {
+            color: var(--zenic-text) !important;
+            border-bottom: 1px solid var(--zenic-border) !important;
+            padding: 1rem 1.25rem;
+            vertical-align: middle;
+            background: transparent !important;
+        }
+        .table-zenic tbody tr:hover td {
+            background: rgba(107,70,193,0.04) !important;
+        }
+
+        /* ── Semáforos ── */
+        .badge-semaforo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .semaforo-verde    { background: rgba(16,185,129,0.1); color: #059669; border: 1px solid rgba(16,185,129,0.25); }
+        .semaforo-amarillo { background: rgba(245,158,11,0.1); color: #D97706; border: 1px solid rgba(245,158,11,0.25); }
+        .semaforo-rojo     { background: rgba(239,68,68,0.1);  color: #DC2626; border: 1px solid rgba(239,68,68,0.25); }
+
+        .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+        .dot-verde    { background: #10B981; box-shadow: 0 0 5px rgba(16,185,129,0.5); }
+        .dot-amarillo { background: #F59E0B; box-shadow: 0 0 5px rgba(245,158,11,0.5); }
+        .dot-rojo     { background: #EF4444; box-shadow: 0 0 5px rgba(239,68,68,0.5); animation: pulse-rojo 1.4s infinite; }
+        @keyframes pulse-rojo {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+
+        /* ── Botones: gradiente de circuito ── */
+        .btn-zenic {
+            background: var(--zenic-gradient);
             color: #fff !important;
             font-weight: 600;
             border: none;
-            transition: all 0.2s ease-in-out;
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(107,70,193,0.3);
         }
-        .btn-tekfix:hover {
-            background-color: var(--tekfix-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        .btn-zenic:hover {
+            background: var(--zenic-gradient-d);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(107,70,193,0.4);
         }
-
-        .btn-tekfix-secondary {
-            background-color: transparent;
-            color: var(--tekfix-primary);
+        .btn-zenic-outline {
+            background: transparent;
+            color: var(--zenic-primary) !important;
+            border: 1.5px solid var(--zenic-primary);
+            border-radius: var(--radius-sm);
+            padding: 0.5rem 1.25rem;
+            font-size: 0.875rem;
             font-weight: 600;
-            border: 1px solid var(--tekfix-primary);
-            transition: all 0.2s ease-in-out;
+            transition: all 0.2s;
         }
-        .btn-tekfix-secondary:hover {
-            background-color: var(--tekfix-primary);
-            color: #fff !important;
+        .btn-zenic-outline:hover {
+            background: var(--zenic-surface-2);
+            border-color: var(--zenic-lavender);
+            color: var(--zenic-lavender) !important;
         }
+        .btn-danger-soft {
+            background: rgba(239,68,68,0.08);
+            color: var(--zenic-danger) !important;
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-danger-soft:hover { background: rgba(239,68,68,0.15); }
 
-        /* Cards */
-        .card-custom {
-            background-color: var(--tekfix-card-bg);
-            color: var(--tekfix-text-main);
-            border: 1px solid var(--tekfix-border);
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: background-color 0.3s, border-color 0.3s;
-        }
-
-        /* Tablas - Adaptación Universal */
-        .table-custom {
-            --bs-table-bg: transparent !important;
-            --bs-table-color: var(--tekfix-text-main) !important;
-            color: var(--tekfix-text-main) !important;
-        }
-        
-        .table-custom thead th {
-            color: var(--tekfix-primary) !important;
-            background-color: var(--tekfix-table-header) !important;
-            border-bottom: 2px solid var(--tekfix-primary) !important;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            padding: 1.25rem 1rem;
-        }
-
-        .table-custom tbody td {
-            color: var(--tekfix-text-main) !important;
-            border-bottom: 1px solid var(--tekfix-border) !important;
-            padding: 1.25rem 1rem;
-            vertical-align: middle;
-            background-color: transparent !important;
-        }
-
-        /* Hover y Zebra Striping adaptables */
-        .table-hover tbody tr:hover td {
-            background-color: rgba(221, 184, 86, 0.05) !important;
-        }
-        
-        body.light-mode .table-striped tbody tr:nth-of-type(odd) td {
-            background-color: rgba(0, 0, 0, 0.02) !important;
-        }
-
-        body:not(.light-mode) .table-striped tbody tr:nth-of-type(odd) td {
-            background-color: rgba(255, 255, 255, 0.02) !important;
-        }
-
-        /* Sidebar Offcanvas */
-        .offcanvas { 
-            background-color: var(--tekfix-bg) !important; 
-            border-right: 1px solid var(--tekfix-border) !important; 
-            color: var(--tekfix-text-main) !important;
-        }
-        .offcanvas-header { 
-            background-color: var(--tekfix-card-bg) !important; 
-            border-bottom: 1px solid var(--tekfix-border) !important; 
-        }
-        
-        .btn-close { 
-            filter: var(--tekfix-close-filter, invert(1) grayscale(100%) brightness(200%)); 
-        }
-        body.light-mode {
-            --tekfix-close-filter: none;
-        }
-        
-        /* Inputs */
+        /* ── Formularios ── */
         .form-control, .form-select {
-            background-color: var(--tekfix-input-bg) !important;
-            border: 1px solid var(--tekfix-border) !important;
-            color: var(--tekfix-text-main) !important;
+            background-color: #fff !important;
+            border: 1.5px solid var(--zenic-border) !important;
+            color: var(--zenic-text) !important;
+            border-radius: var(--radius-sm) !important;
+            font-size: 0.875rem;
         }
         .form-control:focus, .form-select:focus {
-            border-color: var(--tekfix-primary) !important;
-            box-shadow: 0 0 0 0.25rem rgba(221, 184, 86, 0.2);
+            border-color: var(--zenic-primary) !important;
+            box-shadow: 0 0 0 3px rgba(107,70,193,0.12) !important;
         }
-        .form-control::placeholder {
-            color: var(--tekfix-text-sec) !important;
-            opacity: 0.5;
+        .form-control::placeholder { color: var(--zenic-text-muted) !important; opacity: 0.7; }
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--zenic-text-muted);
+            letter-spacing: 0.3px;
+            margin-bottom: 0.375rem;
+        }
+        .input-group-text {
+            background: var(--zenic-surface-2) !important;
+            border-color: var(--zenic-border) !important;
+            color: var(--zenic-primary) !important;
         }
 
-        /* Modales */
+        /* ── Modales ── */
         .modal-content {
-            background-color: var(--tekfix-card-bg) !important;
-            color: var(--tekfix-text-main) !important;
-            border: 1px solid var(--tekfix-border) !important;
+            background: var(--zenic-surface) !important;
+            border: 1px solid var(--zenic-border) !important;
+            border-radius: var(--radius) !important;
+            color: var(--zenic-text) !important;
+            box-shadow: 0 20px 60px rgba(107,70,193,0.15);
         }
-        .modal-header, .modal-footer {
-            border-color: var(--tekfix-border) !important;
+        .modal-header {
+            background: var(--zenic-surface-2) !important;
+            border-color: var(--zenic-border) !important;
         }
+        .modal-footer { border-color: var(--zenic-border) !important; }
+        .btn-close { filter: none; opacity: 0.5; }
 
-        /* Alertas */
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
+        /* ── Alertas Flash ── */
+        .flash-container {
+            position: fixed; top: 5rem; right: 1.5rem;
+            z-index: 2000; min-width: 320px; max-width: 440px;
         }
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
+        .flash-item {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            animation: slideInRight 0.3s ease;
+            box-shadow: 0 8px 24px rgba(107,70,193,0.12);
         }
-        body:not(.light-mode) .alert-success {
-            background-color: rgba(40, 167, 69, 0.2);
-            color: #2ecc71;
-            border: 1px solid #2ecc71;
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);   opacity: 1; }
         }
-        body:not(.light-mode) .alert-danger {
-            background-color: rgba(220, 53, 69, 0.2);
-            color: #e74c3c;
-            border: 1px solid #e74c3c;
-        }
+        .flash-success { background: rgba(16,185,129,0.1);  border: 1px solid rgba(16,185,129,0.3); color: #059669; }
+        .flash-danger  { background: rgba(239,68,68,0.1);   border: 1px solid rgba(239,68,68,0.3);  color: #DC2626; }
+        .flash-info    { background: rgba(107,70,193,0.1);  border: 1px solid rgba(107,70,193,0.3); color: var(--zenic-primary); }
 
+        /* ── Página ── */
+        .page-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--zenic-border); }
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--zenic-nav);
+            margin: 0;
+        }
+        .page-subtitle { font-size: 0.85rem; color: var(--zenic-text-muted); margin: 0; }
+
+        /* Badges de estado */
+        .badge-estado { padding: 0.3rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+        .badge-activo     { background: rgba(16,185,129,0.1);  color: #059669; border: 1px solid rgba(16,185,129,0.25); }
+        .badge-pendiente  { background: rgba(245,158,11,0.1);  color: #D97706; border: 1px solid rgba(245,158,11,0.25); }
+        .badge-suspendido { background: rgba(239,68,68,0.1);   color: #DC2626; border: 1px solid rgba(239,68,68,0.25); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--zenic-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--zenic-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--zenic-lavender); }
+
+        .main-content { position: relative; z-index: 1; padding: 1.5rem 0 3rem; }
     </style>
+
+    {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Navbar Tekfix -->
-    <nav class="navbar navbar-custom mb-5 position-relative">
-        <div class="container-fluid px-3 d-flex justify-content-between align-items-center">
-            
-            {% if current_user.is_authenticated %}
-            <!-- Botón Hamburguesa (Izquierda) -->
-            <button class="navbar-toggler border-0 shadow-none p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-controls="offcanvasNavbar">
-                <i class="fa-solid fa-bars fs-3 text-tekfix-primary"></i>
-            </button>
-            {% else %}
-            <!-- Spacer if not authenticated -->
-            <div style="width: 40px;"></div>
-            {% endif %}
 
-            <!-- Brand Logo (Centro) -->
-            <div class="navbar-brand d-flex align-items-center fw-bold m-0 position-absolute start-50 translate-middle-x">
-                <button id="theme-toggle" class="btn btn-link p-0 me-3 border-0 shadow-none" style="color: var(--tekfix-primary); text-decoration: none;">
-                    <i class="fa-solid fa-sun fs-4" id="theme-icon"></i>
-                </button>
-                <a class="d-flex align-items-center fw-bold m-0 text-decoration-none" style="color: inherit;" href="{{ url_for('index') }}">
-                    <i class="fa-brands fa-xing fs-3 me-2"></i> TEKFIX
-                </a>
+<!-- ═══ NAVBAR ═══════════════════════════════════════════════════════ -->
+<nav class="navbar-zenic px-3 px-md-4">
+    <div class="d-flex align-items-center justify-content-between">
+
+        {% if current_user.is_authenticated %}
+        <button class="btn-hamburger" type="button"
+                data-bs-toggle="offcanvas" data-bs-target="#sidebarZenic">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        {% else %}
+        <div style="width:40px"></div>
+        {% endif %}
+
+        <!-- Marca Central -->
+        <a class="navbar-brand-zenic position-absolute start-50 translate-middle-x" href="/">
+            <div class="brand-icon">
+                <i class="fa-solid fa-brain"></i>
             </div>
-
-            <!-- Spacer derecho para equilibrar flex -->
-            <div style="width: 40px;"></div>
-        </div>
-    </nav>
-
-    {% if current_user.is_authenticated %}
-    <!-- Offcanvas Menú Lateral (Sidebar) -->
-    <div class="offcanvas offcanvas-start border-0 shadow" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel" style="width: 280px;">
-        <div class="offcanvas-header bg-tekfix-card border-bottom">
-            <h5 class="offcanvas-title fw-bold text-tekfix-main" id="offcanvasNavbarLabel">
-                <i class="fa-solid fa-user-circle me-2"></i>{{ current_user.rol | capitalize }}
-            </h5>
-            <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body d-flex flex-column p-0">
-            <ul class="navbar-nav w-100 mb-auto px-3 py-3 gap-2">
-                {% if current_user.rol == 'admin' %}
-                    <!-- Enlaces Únicos para el Administrador de la Tienda -->
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/admin/dashboard"><i class="fa-solid fa-chart-pie text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/inventory"><i class="fa-solid fa-box text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Inventario Tienda</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/nueva"><i class="fa-solid fa-cash-register text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Caja Terminal</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/admin/vendedores"><i class="fa-solid fa-users text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Personal</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('admin_bp.perdidas') }}"><i class="fa-solid fa-heart-crack text-danger me-2" style="width:20px; text-align:center;"></i> Pérdidas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/gastos"><i class="fa-solid fa-money-bill-transfer me-2" style="color: var(--tekfix-primary); width:20px; text-align:center;"></i> Gastos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('providers_bp.index') }}"><i class="fa-solid fa-address-book text-tekfix-hover me-2" style="width:20px; text-align:center;"></i> Proveedores</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('warranties_bp.index') }}"><i class="fa-solid fa-shield-halved me-2" style="color: #DDB856; width:20px; text-align:center;"></i> Garantías</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-bold border-bottom" href="/sales/catalogo"><i class="fa-solid fa-book-open text-tekfix-primary me-2" style="width:20px; text-align:center;"></i> Catálogo Físico</a>
-                    </li>
-                    <li class="nav-item mt-2">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-bold bg-tekfix-card border" href="/arqueo/nuevo"><i class="fa-solid fa-calculator text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Arqueo de Caja</a>
-                    </li>
-                {% elif current_user.rol == 'vendedor' %}
-                    <!-- Vistas Estrictamente Operativas (Cajeros) -->
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/catalogo"><i class="fa-solid fa-book-open text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Catálogo Rápido</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/sales/nueva"><i class="fa-solid fa-cash-register text-tekfix-primary me-2" style="width:20px; text-align:center;"></i> Módulo de Caja</a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="/gastos"><i class="fa-solid fa-money-bill-transfer text-success me-2" style="width:20px; text-align:center;"></i> Gastos</a>
-                    </li>
-                    <li class="nav-item mt-2">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-bold bg-tekfix-card border" href="/arqueo/nuevo"><i class="fa-solid fa-calculator text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Arqueo</a>
-                    </li>
-                {% elif current_user.rol == 'bodega' %}
-                    <!-- Vistas Exclusivas para el Encargado de Bodega -->
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('bodega_bp.dashboard') }}"><i class="fa-solid fa-boxes-stacked text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Bodega</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('inventory_bp.index') }}"><i class="fa-solid fa-box text-tekfix-primary me-2" style="width:20px; text-align:center;"></i> Mi Inventario (Bodega)</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('bodega_bp.clientes') }}"><i class="fa-solid fa-address-book text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Directorio Clientes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('bodega_bp.nuevo_cliente') }}"><i class="fa-solid fa-user-plus text-tekfix-sec me-2" style="width:20px; text-align:center;"></i> Registrar Cliente</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-tekfix-main rounded-3 px-3 py-2 fw-semibold border-bottom" href="{{ url_for('bodega_bp.nueva_factura') }}"><i class="fa-solid fa-file-invoice text-tekfix-primary me-2" style="width:20px; text-align:center;"></i> Subir Factura</a>
-                    </li>
-                {% endif %}
-            </ul>
-            
-            <!-- Interfaz de Desconexión / Fin de Turno al final del sidebar -->
-            <div class="px-3 pb-4 mt-auto">
-                <a class="btn w-100 rounded-pill fw-bold border shadow-sm" href="{{ url_for('auth_bp.logout') }}" style="border-color: var(--tekfix-border) !important; color: var(--tekfix-text-main);">
-                    <i class="fa-solid fa-sign-out-alt me-2"></i> Salir del Sistema
-                </a>
+            <div class="brand-text">
+                <span class="brand-name">ZENIC</span>
+                <span class="brand-sub">S.A.S.</span>
             </div>
+        </a>
+
+        {% if current_user.is_authenticated %}
+        <div class="navbar-user-info text-end d-none d-md-block">
+            <strong>{{ current_user.nombre.split()[0] }}</strong><br>
+            <span>{{ current_user.rol | upper }}</span>
         </div>
+        {% else %}
+        <div style="width:80px"></div>
+        {% endif %}
     </div>
-    {% endif %}
+</nav>
 
-    <!-- App Container -->
-    <main class="container mb-5">
-        <!-- Renderizado de Flash Messages de Flask -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+<!-- ═══ SIDEBAR ════════════════════════════════════════════════════════ -->
+{% if current_user.is_authenticated %}
+<div class="offcanvas offcanvas-start shadow-lg" tabindex="-1"
+     id="sidebarZenic" aria-labelledby="sidebarLabel">
 
-        {% block content %}{% endblock %}
-    </main>
+    <div class="offcanvas-header">
+        <div>
+            <a href="{{ url_for('dashboard_bp.master') }}" class="d-flex align-items-center text-decoration-none">
+                <img src="{{ url_for('static', filename='img/LOGO ZENIC.png') }}" alt="Zenic Logo" style="height: 45px; width: auto; object-fit: contain;">
+            </a>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="offcanvas-body p-0 d-flex flex-column">
+        <div class="py-2 flex-grow-1">
+            <div class="sidebar-section-label">Panel Principal</div>
+            <a href="{{ url_for('dashboard_bp.master') }}" class="sidebar-link">
+                <i class="fa-solid fa-chart-line" style="color:var(--zenic-lavender)"></i>
+                Dashboard Zenic
+            </a>
 
-    <!-- Script de Cambio de Tema (Modo Día / Modo Noche) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const themeToggle = document.getElementById('theme-toggle');
-            const themeIcon = document.getElementById('theme-icon');
-            const body = document.body;
+            <div class="sidebar-section-label">Instancias</div>
+            <a href="{{ url_for('locales_bp.dashboard') }}#locales" class="sidebar-link">
+                <i class="fa-solid fa-server" style="color:var(--zenic-accent)"></i>
+                Dashboard Locales
+            </a>
+            <a href="{{ url_for('locales_bp.nuevo_local') }}" class="sidebar-link">
+                <i class="fa-solid fa-plus-circle" style="color:var(--zenic-success)"></i>
+                Nuevo Local
+            </a>
+            
+            <div class="sidebar-section-label">Gestión Zenic</div>
+            <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="sidebar-link">
+                <i class="fa-solid fa-file-invoice-dollar" style="color:var(--zenic-gold)"></i>
+                Facturas
+            </a>
+            <a href="{{ url_for('finanzas_bp.ingresos') }}" class="sidebar-link">
+                <i class="fa-solid fa-vault" style="color:var(--zenic-success)"></i>
+                Tesorería
+            </a>
+            <a href="{{ url_for('finanzas_bp.gastos') }}" class="sidebar-link">
+                <i class="fa-solid fa-wallet" style="color:var(--zenic-danger)"></i>
+                Costos y Gastos
+            </a>
+            <a href="{{ url_for('finanzas_bp.presupuestos') }}" class="sidebar-link">
+                <i class="fa-solid fa-scale-balanced" style="color:var(--zenic-accent)"></i>
+                Presupuestos
+            </a>
+            
+            <div class="sidebar-section-label">Operaciones</div>
+            <a href="{{ url_for('operaciones_bp.personal') }}" class="sidebar-link">
+                <i class="fa-solid fa-users" style="color:var(--zenic-accent)"></i>
+                Personal
+            </a>
+            <a href="{{ url_for('operaciones_bp.equipos') }}" class="sidebar-link">
+                <i class="fa-solid fa-laptop" style="color:var(--zenic-accent)"></i>
+                Equipos
+            </a>
 
-            // Cargar preferencia guardada
-            if (localStorage.getItem('theme') === 'light') {
-                body.classList.add('light-mode');
-                themeIcon.classList.remove('fa-sun');
-                themeIcon.classList.add('fa-moon');
-            }
+            <div class="sidebar-section-label">Comunicaciones</div>
+            <a href="{{ url_for('locales_bp.notificaciones') }}" class="sidebar-link">
+                <i class="fa-solid fa-bell" style="color:var(--zenic-gold)"></i>
+                Notificaciones
+            </a>
 
-            themeToggle.addEventListener('click', () => {
-                body.classList.toggle('light-mode');
-                
-                if (body.classList.contains('light-mode')) {
-                    localStorage.setItem('theme', 'light');
-                    themeIcon.classList.remove('fa-sun');
-                    themeIcon.classList.add('fa-moon');
-                } else {
-                    localStorage.setItem('theme', 'dark');
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                }
-            });
+
+        </div>
+
+        <div class="sidebar-slogan">Fluye, Aprende y Optimiza</div>
+
+        <a href="{{ url_for('auth_bp.logout') }}" class="sidebar-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Cerrar Sesión
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ FLASH MESSAGES ════════════════════════════════════════════════ -->
+<div class="flash-container" id="flashContainer">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash-item flash-{{ 'success' if category == 'success' else ('danger' if category == 'danger' else 'info') }}"
+                 id="flash-{{ loop.index }}">
+                <i class="fa-solid {{ 'fa-check-circle' if category == 'success' else ('fa-triangle-exclamation' if category == 'danger' else 'fa-brain') }} mt-1 flex-shrink-0"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
+<!-- ═══ CONTENIDO PRINCIPAL ══════════════════════════════════════════ -->
+<!-- ═══ CONTENIDO PRINCIPAL ══════════════════════════════════════════ -->
+<main class="main-content container-fluid px-3 px-md-4">
+    {% block content %}{% endblock %}
+</main>
+
+{% block modals %}{% endblock %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.flash-item').forEach((el, i) => {
+            setTimeout(() => {
+                el.style.transition = 'opacity 0.4s, transform 0.4s';
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(100%)';
+                setTimeout(() => el.remove(), 400);
+            }, 4500 + i * 300);
         });
-    </script>
+    });
+</script>
+
+{% block scripts %}{% endblock %}
 </body>
 </html>

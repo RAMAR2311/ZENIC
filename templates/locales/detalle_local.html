@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}{{ local.nombre_marca }}{% endblock %}
+
+{% block content %}
+<div class="pt-2 mb-4 d-flex justify-content-between align-items-center">
+    <a href="{{ url_for('locales_bp.dashboard') }}"
+       style="font-size:0.8rem;color:var(--zenic-text-muted);text-decoration:none">
+        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
+    </a>
+    <div class="d-flex gap-2 flex-wrap">
+
+        <a href="{{ url_for('locales_bp.editar_local', local_id=local.id) }}" class="btn-zenic text-decoration-none px-3 py-2 rounded-2 d-inline-flex align-items-center gap-2" style="font-size:0.85rem">
+            <i class="fa-solid fa-pen"></i> Editar
+        </a>
+    </div>
+</div>
+
+<!-- Header del Local -->
+<div class="card-zenic p-4 mb-4" style="border-color: rgba(79,142,247,0.2)">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+        <div style="width:64px;height:64px;border-radius:16px;
+                    background:linear-gradient(135deg,var(--zenic-primary),var(--zenic-accent));
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:1.75rem;color:#fff;flex-shrink:0">
+            <i class="fa-solid fa-store"></i>
+        </div>
+        <div class="flex-grow-1">
+            <h1 style="font-size:1.5rem;font-weight:800;margin:0">{{ local.nombre_marca }}</h1>
+            {% if local.url_instancia %}
+            <a href="{{ local.url_instancia }}" target="_blank"
+               style="font-size:0.85rem;color:var(--zenic-primary);text-decoration:none">
+                <i class="fa-solid fa-external-link fa-xs me-1"></i>{{ local.url_instancia }}
+            </a>
+            {% endif %}
+        </div>
+        <div class="text-end">
+            <span class="badge-semaforo {{ local.semaforo }} badge-semaforo">
+                <span class="dot dot-{{ local.semaforo | replace('semaforo-','') }}"></span>
+                {{ local.semaforo_label }}
+            </span>
+            <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                {% if local.dias_para_pago >= 0 %}
+                Corte en {{ local.dias_para_pago }} día(s)
+                {% else %}
+                Vencido hace {{ (local.dias_para_pago * -1) }} día(s)
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Columna Izquierda: Finanzas -->
+    <div class="col-md-6">
+        <div class="card-zenic p-4 h-100">
+            <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+                       color:var(--zenic-text-muted);margin-bottom:1.25rem">
+                <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas
+            </h2>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">MENSUALIDAD</div>
+                    <div style="font-size:1.5rem;font-weight:800;color:var(--zenic-success)">
+                        {{ local.mensualidad | cop }}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">INVERSIÓN INICIAL</div>
+                    <div style="font-size:1.5rem;font-weight:800;color:var(--zenic-gold)">
+                        {{ local.inversion_inicial | cop }}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">DÍA DE CORTE</div>
+                    <div style="font-size:1.25rem;font-weight:700">Día {{ local.dia_pago }}</div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">ESTADO DE PAGO</div>
+                    <span class="badge-estado
+                        {% if local.estado_pago == 'Activo' %}badge-activo
+                        {% elif local.estado_pago == 'Pendiente' %}badge-pendiente
+                        {% else %}badge-suspendido{% endif %}">
+                        {{ local.estado_pago }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Derecha: Info General -->
+    <div class="col-md-6">
+        <div class="card-zenic p-4 h-100">
+            <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+                       color:var(--zenic-text-muted);margin-bottom:1.25rem">
+                <i class="fa-solid fa-circle-info me-2" style="color:var(--zenic-primary)"></i> General
+            </h2>
+            <dl class="row g-2" style="font-size:0.875rem">
+                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Servidor CRM</dt>
+                <dd class="col-7 mb-2">
+                    {% if local.is_online %}
+                    <span class="badge" style="background:var(--zenic-success);color:#fff;padding:0.35rem 0.6rem">
+                        <i class="fa-solid fa-circle fa-2xs me-1"></i>En línea
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background:var(--zenic-danger);color:#fff;padding:0.35rem 0.6rem">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Caído
+                    </span>
+                    {% endif %}
+                </dd>
+                
+                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Últ. Revisión</dt>
+                <dd class="col-7 mb-2">{{ local.last_checked | fecha_corta if local.last_checked else 'Nunca' }}</dd>
+
+                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Lanzamiento</dt>
+                <dd class="col-7 mb-0">{{ local.fecha_lanzamiento | fecha_corta }}</dd>
+
+                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Registrado</dt>
+                <dd class="col-7 mb-0">{{ local.fecha_creacion | fecha_corta }}</dd>
+
+                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Versión</dt>
+                <dd class="col-7 mb-0">
+                    <span style="background:var(--zenic-surface-2);padding:2px 8px;border-radius:4px;font-size:0.8rem">
+                        v{{ local.version_software }}
+                    </span>
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Bóveda de Credenciales -->
+    <div class="col-12">
+        <div class="card-zenic p-4" style="border-color:rgba(79,142,247,0.25)">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+                           color:var(--zenic-text-muted);margin:0">
+                    <i class="fa-solid fa-lock me-2" style="color:var(--zenic-primary)"></i> Bóveda de Credenciales
+                </h2>
+                <button class="btn btn-sm btn-zenic-outline" id="toggleBoveda">
+                    <i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar
+                </button>
+            </div>
+
+            <div id="bovedaOculta" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Email Admin</label>
+                    <div class="input-group">
+                        <span class="input-group-text"
+                              style="background:var(--zenic-input);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
+                            <i class="fa-solid fa-envelope fa-xs"></i>
+                        </span>
+                        <input type="text" class="form-control" readonly
+                               value="{{ '••••••••••••' }}" id="emailField"
+                               data-real="{{ email_dec }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text"
+                              style="background:var(--zenic-input);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
+                            <i class="fa-solid fa-key fa-xs"></i>
+                        </span>
+                        <input type="text" class="form-control" readonly
+                               value="{{ '••••••••••••' }}" id="passField"
+                               data-real="{{ pass_dec }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let revealed = false;
+    document.getElementById('toggleBoveda').addEventListener('click', function() {
+        revealed = !revealed;
+        const emailF = document.getElementById('emailField');
+        const passF  = document.getElementById('passField');
+        if (revealed) {
+            emailF.value = emailF.dataset.real;
+            passF.value  = passF.dataset.real;
+            this.innerHTML = '<i class="fa-solid fa-eye-slash me-1 fa-xs"></i> Ocultar';
+        } else {
+            emailF.value = '••••••••••••';
+            passF.value  = '••••••••••••';
+            this.innerHTML = '<i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar';
+        }
+    });
+</script>
+{% endblock %}

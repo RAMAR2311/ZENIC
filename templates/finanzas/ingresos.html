@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}Tesorería{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-vault me-2" style="color: var(--zenic-success)"></i>
+            Tesorería
+        </h1>
+        <p class="page-subtitle">Control de liquidez, cuentas y patrimonio neto</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn-zenic btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTransferencia" style="background-color: var(--zenic-accent); border-color: var(--zenic-accent);">
+            <i class="fa-solid fa-exchange-alt"></i> Transferencia
+        </button>
+    </div>
+</div>
+
+<!-- TOP CARDS (Patrimonio Neto y Liquidez Mensual) -->
+<div class="row mb-4">
+    <div class="col-12 col-md-6 mb-3 mb-md-0 fade-up" style="animation-delay: 0.1s;">
+        <div class="card-zenic p-4 text-center" style="border-left: 4px solid var(--zenic-gold);">
+            <h5 class="text-muted text-uppercase" style="font-size:0.85rem; letter-spacing:1px; font-weight:700;">Patrimonio Neto Total</h5>
+            <h2 class="my-2 fw-bold" style="font-size:2.5rem; color: var(--zenic-gold);">{{ patrimonio_neto | cop }}</h2>
+            <div class="text-muted" style="font-size:0.9rem;">(Banco + Caja Menor + Equipos)</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 fade-up" style="animation-delay: 0.2s;">
+        <div class="card-zenic p-4 text-center" style="border-left: 4px solid var(--zenic-success);">
+            <h5 class="text-muted text-uppercase" style="font-size:0.85rem; letter-spacing:1px; font-weight:700;">Liquidez Total (Caja + Ingresos Mes)</h5>
+            <h2 class="my-2 fw-bold" style="font-size:2.5rem; color: var(--zenic-success);">{{ total_mensual_liquidez | cop }}</h2>
+            <div class="text-muted" style="font-size:0.9rem;">Disponible en caja + Cobros a locales del mes</div>
+        </div>
+    </div>
+</div>
+
+<!-- TESORERIA CARDS -->
+<h4 class="mb-3 fw-bold" style="font-size: 1.1rem;"><i class="fa-solid fa-piggy-bank me-2 text-muted"></i>Cuentas y Activos</h4>
+<div class="row g-3 mb-5">
+    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.3s;">
+        <div class="kpi-card kpi-gold" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalBanco">
+            <i class="fa-solid fa-building-columns kpi-icon"></i>
+            <div class="kpi-label">Cuenta de Banco <i class="fa-solid fa-pen ms-1 small"></i></div>
+            <div class="kpi-value text-dark">{{ tesoreria.saldo_banco | cop }}</div>
+            <div class="kpi-sub">Saldo en entidades bancarias</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.4s;">
+        <div class="kpi-card kpi-green" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCaja">
+            <i class="fa-solid fa-wallet kpi-icon"></i>
+            <div class="kpi-label">Caja Menor <i class="fa-solid fa-pen ms-1 small"></i></div>
+            <div class="kpi-value text-success">{{ tesoreria.caja_menor | cop }}</div>
+            <div class="kpi-sub">Dinero físico disponible</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.5s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent)">
+            <i class="fa-solid fa-laptop kpi-icon text-accent"></i>
+            <div class="kpi-label">Valor de Equipos</div>
+            <div class="kpi-value" style="color:var(--zenic-accent)">{{ total_equipos | cop }}</div>
+            <div class="kpi-sub">Inventario de activos fijos</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.6s;">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-success)">
+            <i class="fa-solid fa-file-invoice-dollar kpi-icon text-success"></i>
+            <div class="kpi-label">Ingresos de Locales</div>
+            <div class="kpi-value text-success">+{{ total_locales | cop }}</div>
+            <div class="kpi-sub">Facturas pagadas este mes</div>
+        </div>
+    </div>
+</div>
+
+<!-- LISTADOS: ACTIVOS E INGRESOS EXTRA -->
+<div class="row g-4">
+    <!-- Tabla de Comprobantes de Pago (Gastos) -->
+    <div class="col-12 col-lg-6">
+        <div class="card-zenic h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h2 style="font-size:1rem;font-weight:700;margin:0">Comprobantes de Pago (Gastos Recientes)</h2>
+                <a href="{{ url_for('finanzas_bp.gastos') }}" class="btn btn-sm btn-outline-danger py-1"><i class="fa-solid fa-arrow-right"></i> Ver todos</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-zenic mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in gastos %}
+                        <tr>
+                            <td>{{ g.fecha | fecha_corta }}</td>
+                            <td style="font-weight:600">{{ g.descripcion }}</td>
+                            <td class="text-end text-danger fw-bold">-{{ g.monto | cop }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center py-4 text-muted">No hay comprobantes recientes.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Ingresos Extraordinarios -->
+    <div class="col-12 col-lg-6">
+        <div class="card-zenic h-100">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h2 style="font-size:1rem;font-weight:700;margin:0">Otros Ingresos ({{ hoy.strftime('%B %Y') }})</h2>
+                <button class="btn btn-sm btn-outline-success py-1" data-bs-toggle="modal" data-bs-target="#modalIngreso"><i class="fa-solid fa-plus"></i> Ingreso Extra</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-zenic mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th class="text-end">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in ingresos %}
+                        <tr>
+                            <td>{{ i.fecha | fecha_corta }}</td>
+                            <td style="font-weight:600">{{ i.descripcion }} <span class="badge bg-secondary ms-1">{{ i.categoria }}</span></td>
+                            <td class="text-end text-success fw-bold">{{ i.monto | cop }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center py-4 text-muted">No hay ingresos adicionales registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal Actualizar Banco -->
+<div class="modal fade" id="modalBanco" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="actualizar_banco">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-building-columns me-2"></i>Saldo Banco</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Saldo Actual</label>
+                    <input type="number" step="0.01" class="form-control text-end fw-bold" name="saldo_banco" value="{{ tesoreria.saldo_banco }}" required>
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="submit" class="btn btn-zenic btn-sm w-100">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Actualizar Caja -->
+<div class="modal fade" id="modalCaja" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="actualizar_caja">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-wallet text-success me-2"></i>Saldo Caja Menor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Saldo Actual</label>
+                    <input type="number" step="0.01" class="form-control text-end fw-bold text-success" name="caja_menor" value="{{ tesoreria.caja_menor }}" required>
+                </div>
+                <div class="modal-footer p-2">
+                    <button type="submit" class="btn btn-success btn-sm w-100">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal Transferencia -->
+<div class="modal fade" id="modalTransferencia" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="transferir">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-exchange-alt text-accent me-2"></i>Transferencia Interna</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Movimiento</label>
+                        <select class="form-select" name="origen" required>
+                            <option value="banco_a_caja">Retirar del Banco hacia Caja Menor</option>
+                            <option value="caja_a_banco">Consignar de Caja Menor hacia Banco</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto a Transferir</label>
+                        <input type="number" step="0.01" class="form-control" name="monto" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm">Ejecutar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ingreso Extra -->
+<div class="modal fade" id="modalIngreso" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="registrar_ingreso">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-plus text-success me-2"></i>Registrar Ingreso Extra</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Concepto</label>
+                        <input type="text" class="form-control" name="descripcion" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" class="form-control" name="monto" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select class="form-select" name="categoria">
+                            <option value="General">General</option>
+                            <option value="Servicios">Servicios Adicionales</option>
+                            <option value="Ventas">Ventas Directas</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm">Guardar Ingreso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

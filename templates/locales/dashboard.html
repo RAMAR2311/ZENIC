@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+    /* Gráfica de dona inline */
+    .donut-ring { transition: stroke-dashoffset 0.6s ease; }
+
+    /* Tabla semáforo filas resaltadas */
+    tr.row-rojo td { border-left: 3px solid var(--zenic-danger) !important; }
+    tr.row-amarillo td { border-left: 3px solid var(--zenic-warning) !important; }
+    tr.row-verde td { border-left: 3px solid var(--zenic-success) !important; }
+
+    /* Animación de entrada */
+    .fade-up {
+        opacity: 0;
+        transform: translateY(16px);
+        animation: fadeUp 0.4s ease forwards;
+    }
+    @keyframes fadeUp {
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up:nth-child(1) { animation-delay: 0.05s; }
+    .fade-up:nth-child(2) { animation-delay: 0.10s; }
+    .fade-up:nth-child(3) { animation-delay: 0.15s; }
+    .fade-up:nth-child(4) { animation-delay: 0.20s; }
+
+    /* Buscador de tabla */
+    #searchLocales::placeholder { color: var(--zenic-text-muted); }
+
+    /* Punto de color por tipo de notificación (reemplaza background condicional Jinja2) */
+    .notif-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+    .notif-dot-info    { background: #4F8EF7; }
+    .notif-dot-success { background: #10B981; }
+    .notif-dot-warning { background: #F59E0B; }
+    .notif-dot-error   { background: #EF4444; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══ HEADER ══════════════════════════════════════════════════════════ -->
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-chart-line me-2" style="color: var(--zenic-primary)"></i>
+            Dashboard MRR
+        </h1>
+        <p class="page-subtitle">Panel maestro de ingresos recurrentes y estado de instancias</p>
+    </div>
+    <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2">
+        <i class="fa-solid fa-plus"></i> Nuevo Local
+    </a>
+</div>
+
+<!-- ═══ KPIs ════════════════════════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+    <!-- MRR Activo -->
+    <div class="col-6 col-lg-3 fade-up">
+        <div class="kpi-card kpi-blue">
+            <i class="fa-solid fa-coins kpi-icon"></i>
+            <div class="kpi-label">MRR Activo</div>
+            <div class="kpi-value" style="color: var(--zenic-primary)">{{ mrr | cop }}</div>
+            <div class="kpi-sub">Ingreso mensual recurrente</div>
+        </div>
+    </div>
+    
+    <!-- Instalaciones Iniciales (Antes Capital Invertido) -->
+    <div class="col-6 col-lg-3 fade-up">
+        <div class="kpi-card kpi-gold">
+            <i class="fa-solid fa-sack-dollar kpi-icon"></i>
+            <div class="kpi-label">Instalaciones Iniciales</div>
+            <div class="kpi-value" style="color: var(--zenic-gold)">{{ total_invertido | cop }}</div>
+            <div class="kpi-sub">Suma inversiones iniciales</div>
+        </div>
+    </div>
+
+    <!-- ARR Proyectado -->
+    <div class="col-6 col-lg-3 fade-up">
+        <div class="kpi-card kpi-cyan">
+            <i class="fa-solid fa-calendar-check kpi-icon"></i>
+            <div class="kpi-label">ARR Proyectado</div>
+            <div class="kpi-value" style="color: var(--zenic-accent)">{{ arr | cop }}</div>
+            <div class="kpi-sub">Anualización del MRR</div>
+        </div>
+    </div>
+
+    <!-- Instancias -->
+    <div class="col-6 col-lg-3 fade-up">
+        <div class="kpi-card kpi-green">
+            <i class="fa-solid fa-server kpi-icon"></i>
+            <div class="kpi-label">Instancias</div>
+            <div class="kpi-value" style="color: {% if offline_count > 0 %}var(--zenic-danger){% else %}var(--zenic-success){% endif %}">
+                {{ total_locales }}
+            </div>
+            <div class="kpi-sub">
+                {% if offline_count > 0 %}
+                <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ offline_count }} Offline</span>
+                {% else %}
+                <span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>Todas Online</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ SEMÁFORO RESUMEN ════════════════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="card-zenic p-4 text-center">
+            <div class="dot dot-verde d-block mx-auto mb-2" style="width:14px;height:14px"></div>
+            <div style="font-size:2rem;font-weight:800;color:#10B981">{{ verde }}</div>
+            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Al día</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card-zenic p-4 text-center">
+            <div class="dot dot-amarillo d-block mx-auto mb-2" style="width:14px;height:14px"></div>
+            <div style="font-size:2rem;font-weight:800;color:#F59E0B">{{ amarillo }}</div>
+            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Por vencer</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card-zenic p-4 text-center">
+            <div class="dot dot-rojo d-block mx-auto mb-2" style="width:14px;height:14px"></div>
+            <div style="font-size:2rem;font-weight:800;color:#EF4444">{{ rojo }}</div>
+            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Atención requerida</div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TABLA DE LOCALES ════════════════════════════════════════════════ -->
+<div class="card-zenic" id="locales">
+    <div class="p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2"
+         style="border-bottom: 1px solid var(--zenic-border)">
+        <h2 style="font-size:1rem;font-weight:700;margin:0;color:var(--zenic-text)">
+            <i class="fa-solid fa-server me-2" style="color:var(--zenic-accent)"></i>
+            Instancias Activas
+        </h2>
+        <div class="d-flex gap-2 align-items-center">
+            <input type="text" id="searchLocales" class="form-control form-control-sm"
+                   placeholder="Buscar local..." style="width:200px">
+        </div>
+    </div>
+
+    {% if locales %}
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0" id="tablaLocales">
+            <thead>
+                <tr>
+                    <th>Local</th>
+                    <th>Mensualidad</th>
+                    <th>Día Corte</th>
+                    <th>Estado Pago</th>
+                    <th>Semáforo</th>
+                    <th>Versión</th>
+                    <th>Lanzamiento</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for local in locales %}
+                <tr class="row-{{ local.semaforo | replace('semaforo-', '') }}">
+                    <td>
+                        <div style="font-weight:600">
+                            {% if local.is_online %}
+                            <i class="fa-solid fa-circle fa-2xs me-1" style="color:var(--zenic-success)" title="Online"></i>
+                            {% else %}
+                            <i class="fa-solid fa-circle fa-2xs me-1" style="color:var(--zenic-danger)" title="Offline"></i>
+                            {% endif %}
+                            {{ local.nombre_marca }}
+                        </div>
+                        {% if local.url_instancia %}
+                        <a href="{{ local.url_instancia }}" target="_blank"
+                           style="font-size:0.75rem;color:var(--zenic-primary);text-decoration:none">
+                            <i class="fa-solid fa-external-link fa-xs me-1"></i>{{ local.url_instancia | truncate(35) }}
+                        </a>
+                        {% else %}
+                        <span style="font-size:0.75rem;color:var(--zenic-text-muted)">Sin URL</span>
+                        {% endif %}
+                        <div style="font-size:0.65rem;color:var(--zenic-text-muted);margin-top:2px;">
+                            Últ. Rev: {{ local.last_checked | fecha_corta if local.last_checked else 'Nunca' }}
+                        </div>
+                    </td>
+                    <td style="font-weight:700;color:var(--zenic-success)">{{ local.mensualidad | cop }}</td>
+                    <td>
+                        <span style="font-size:0.9rem">Día {{ local.dia_pago }}</span>
+                    </td>
+                    <td>
+                        <!-- Cambio rápido de estado -->
+                        <form method="POST"
+                              action="{{ url_for('locales_bp.cambiar_estado', local_id=local.id) }}"
+                              class="d-flex gap-1 align-items-center">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="estado_pago" class="form-select form-select-sm"
+                                    style="width:auto;font-size:0.75rem;padding:0.2rem 0.5rem"
+                                    onchange="this.form.submit()">
+                                <option value="Activo"     {% if local.estado_pago=='Activo'     %}selected{% endif %}>Activo</option>
+                                <option value="Pendiente"  {% if local.estado_pago=='Pendiente'  %}selected{% endif %}>Pendiente</option>
+                                <option value="Suspendido" {% if local.estado_pago=='Suspendido' %}selected{% endif %}>Suspendido</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="badge-semaforo {{ local.semaforo }}">
+                            <span class="dot dot-{{ local.semaforo | replace('semaforo-', '') }}"></span>
+                            {{ local.semaforo_label }}
+                            {% if local.dias_para_pago >= 0 %}
+                            · {{ local.dias_para_pago }}d
+                            {% else %}
+                            · {{ (local.dias_para_pago * -1) }}d vencido
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <span style="font-size:0.8rem;background:var(--zenic-surface-2);
+                                     padding:0.2rem 0.5rem;border-radius:4px;
+                                     color:var(--zenic-text-muted)">
+                            v{{ local.version_software }}
+                        </span>
+                    </td>
+                    <td style="color:var(--zenic-text-muted);font-size:0.85rem">
+                        {{ local.fecha_lanzamiento | fecha_corta }}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex gap-1 justify-content-center flex-wrap">
+                            <a href="{{ url_for('locales_bp.ver_local', local_id=local.id) }}"
+                               class="btn btn-sm btn-zenic-outline px-2 py-1" title="Ver detalle">
+                                <i class="fa-solid fa-eye fa-xs"></i>
+                            </a>
+                            <a href="{{ url_for('locales_bp.editar_local', local_id=local.id) }}"
+                               class="btn btn-sm btn-zenic px-2 py-1" title="Editar">
+                                <i class="fa-solid fa-pen fa-xs"></i>
+                            </a>
+                            <button class="btn btn-sm btn-danger-soft px-2 py-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminar{{ local.id }}"
+                                    title="Eliminar">
+                                <i class="fa-solid fa-trash fa-xs"></i>
+                            </button>
+                        </div>
+
+                        <!-- Modal Confirmar Eliminar -->
+                        <div class="modal fade" id="modalEliminar{{ local.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">
+                                            <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>
+                                            Confirmar Eliminación
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body text-start">
+                                        <p style="color:var(--zenic-text-muted)">
+                                            ¿Estás seguro de eliminar el local
+                                            <strong style="color:var(--zenic-danger)">{{ local.nombre_marca }}</strong>?
+                                        </p>
+                                        <p style="font-size:0.8rem;color:var(--zenic-text-muted)">
+                                            Esta acción no se puede deshacer.
+                                        </p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button class="btn btn-sm btn-zenic-outline" data-bs-dismiss="modal">Cancelar</button>
+                                        <form method="POST"
+                                              action="{{ url_for('locales_bp.eliminar_local', local_id=local.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger-soft">
+                                                <i class="fa-solid fa-trash me-1"></i>Eliminar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5" style="color:var(--zenic-text-muted)">
+        <i class="fa-solid fa-server fa-3x mb-3" style="opacity:0.2"></i>
+        <p style="margin:0;font-weight:500">No hay instancias registradas todavía.</p>
+        <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2 mt-3">
+            <i class="fa-solid fa-plus"></i> Registrar primer local
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ═══ NOTIFICACIONES RECIENTES ════════════════════════════════════════ -->
+{% if notifs_recientes %}
+<div class="card-zenic mt-4">
+    <div class="p-3 p-md-4" style="border-bottom: 1px solid var(--zenic-border)">
+        <div class="d-flex align-items-center justify-content-between">
+            <h2 style="font-size:1rem;font-weight:700;margin:0">
+                <i class="fa-solid fa-bell me-2" style="color:var(--zenic-gold)"></i>
+                Notificaciones Recientes
+            </h2>
+            <a href="{{ url_for('locales_bp.notificaciones') }}"
+               style="font-size:0.8rem;color:var(--zenic-primary);text-decoration:none">
+                Ver todas →
+            </a>
+        </div>
+    </div>
+    <div class="p-3 p-md-4">
+        {% for n in notifs_recientes %}
+        <div class="d-flex align-items-start gap-3 mb-3 pb-3"
+             {% if not loop.last %}style="border-bottom:1px solid var(--zenic-border)"{% endif %}>
+            <div class="notif-dot notif-dot-{{ n.tipo }}"></div>
+            <div class="flex-grow-1">
+                <div style="font-weight:600;font-size:0.875rem">{{ n.titulo }}</div>
+                <div style="font-size:0.78rem;color:var(--zenic-text-muted)">
+                    {{ n.mensaje | truncate(80) }}
+                </div>
+            </div>
+            <div style="font-size:0.72rem;color:var(--zenic-text-muted);white-space:nowrap">
+                {{ n.fecha_envio | fecha_corta }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Buscador de tabla de locales
+    document.getElementById('searchLocales').addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        document.querySelectorAll('#tablaLocales tbody tr').forEach(tr => {
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    });
+</script>
+{% endblock %}

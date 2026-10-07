@@ -19,7 +19,9 @@ def login():
             login_user(user) # Iniciar sesión del lado del servidor persistente
             flash('¡Sesión iniciada con éxito!', 'success')
             
-            # Redirección inteligente basada en ROL o hacia la raíz para delegar el control
+            # Redirección inteligente basada en ROL
+            if user.rol == 'negociador':
+                return redirect(url_for('negociaciones_bp.dashboard_negociador'))
             return redirect(url_for('index'))
         
         flash('Tus credenciales (Correo o Contraseña) son inválidas.', 'error')

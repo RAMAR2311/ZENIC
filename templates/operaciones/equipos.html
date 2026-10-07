@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Equipos{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-laptop me-2" style="color: var(--zenic-accent)"></i>
+            Inventario de Equipos
+        </h1>
+        <p class="page-subtitle">Registro de activos, costos y asignaciones al personal</p>
+    </div>
+    <button class="btn-zenic btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalEquipo" style="background-color: var(--zenic-accent); border-color: var(--zenic-accent);">
+        <i class="fa-solid fa-plus"></i> Registrar Equipo
+    </button>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12 col-md-4">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent)">
+            <i class="fa-solid fa-server kpi-icon text-accent"></i>
+            <div class="kpi-label">Valor Total en Equipos</div>
+            <div class="kpi-value text-accent">{{ total_equipos | cop }}</div>
+            <div class="kpi-sub">Suma de todos los activos registrados</div>
+        </div>
+    </div>
+</div>
+
+<div class="card-zenic">
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0">
+            <thead>
+                <tr>
+                    <th>Equipo</th>
+                    <th>IMEI / Serial</th>
+                    <th class="text-end">Costo</th>
+                    <th>Asignado A</th>
+                    <th class="text-center">Soporte</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in equipos %}
+                <tr>
+                    <td style="font-weight:600">{{ e.descripcion }}<br><small class="text-muted">{{ e.fecha_adquisicion | fecha_corta }}</small></td>
+                    <td>{{ e.imei or '-' }}</td>
+                    <td class="text-end text-success fw-bold">{{ e.valor | cop }}</td>
+                    <td>
+                        {% if e.personal %}
+                        <i class="fa-solid fa-user me-1 text-muted"></i> {{ e.personal.nombre }}
+                        {% else %}
+                        <span class="text-muted fst-italic">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if e.documento_ruta %}
+                        <a href="{{ url_for('static', filename='uploads/documentos/' ~ e.documento_ruta) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Ver Documento">
+                            <i class="fa-solid fa-file-pdf"></i> Ver
+                        </a>
+                        {% else %}
+                        <span class="text-muted small">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No hay equipos registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal fade" id="modalEquipo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- NOTA: enctype="multipart/form-data" es crucial para subir archivos -->
+            <form action="{{ url_for('operaciones_bp.equipos') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-laptop text-accent me-2"></i>Registrar Equipo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Descripción del Equipo</label>
+                        <input type="text" class="form-control" name="descripcion" placeholder="Ej: MacBook Pro M2" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Precio de Costo</label>
+                            <input type="number" step="0.01" class="form-control" name="valor" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">IMEI o Serial (Opcional)</label>
+                            <input type="text" class="form-control" name="imei">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Asignar a Personal (Opcional)</label>
+                        <select class="form-select" name="personal_id">
+                            <option value="">-- Sin asignar --</option>
+                            {% for p in empleados %}
+                            <option value="{{ p.id }}">{{ p.nombre }} ({{ p.cargo }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documento de Entrega / Factura (Opcional)</label>
+                        <input class="form-control" type="file" name="documento_entrega" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm">Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

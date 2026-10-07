@@ -33,3 +33,15 @@ def admin_or_bodega_required(f):
             abort(403)
         return f(*args, **kwargs)
     return decorated_function
+
+def negociador_required(f):
+    """
+    Decorador para proteger rutas del módulo de negociaciones.
+    Permite acceso a negociadores y administradores.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.rol not in ['negociador', 'admin']:
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Nuevo Local' if modo == 'nuevo' else 'Editar — ' + local.nombre_marca }}{% endblock %}
+
+{% block content %}
+<div class="pt-2 mb-4">
+    <a href="{{ url_for('locales_bp.dashboard') }}"
+       style="font-size:0.8rem;color:var(--zenic-text-muted);text-decoration:none">
+        <i class="fa-solid fa-arrow-left me-1"></i> Volver al Dashboard
+    </a>
+</div>
+
+<div class="row justify-content-center">
+<div class="col-12 col-xl-8">
+
+<div class="page-header">
+    <h1 class="page-title">
+        {% if modo == 'nuevo' %}
+        <i class="fa-solid fa-plus-circle me-2" style="color:var(--zenic-success)"></i> Registrar Nuevo Local
+        {% else %}
+        <i class="fa-solid fa-pen me-2" style="color:var(--zenic-primary)"></i> Editar — {{ local.nombre_marca }}
+        {% endif %}
+    </h1>
+    <p class="page-subtitle">
+        {% if modo == 'nuevo' %}Ingresa los datos de la nueva instancia cliente{% else %}Actualiza la información del local{% endif %}
+    </p>
+</div>
+
+<form method="POST"
+      action="{{ url_for('locales_bp.nuevo_local') if modo=='nuevo' else url_for('locales_bp.editar_local', local_id=local.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- SECCIÓN 1: Identificación -->
+    <div class="card-zenic p-4 mb-3">
+        <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                   color:var(--zenic-text-muted);margin-bottom:1.25rem">
+            <i class="fa-solid fa-tag me-2" style="color:var(--zenic-accent)"></i> Identificación
+        </h2>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Nombre de la Marca *</label>
+                <input type="text" name="nombre_marca" class="form-control"
+                       placeholder="Ej: Tekfix, Sarotex, Bendito Encanto"
+                       value="{{ local.nombre_marca if local else '' }}" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">URL de la Instancia</label>
+                <input type="url" name="url_instancia" class="form-control"
+                       placeholder="https://crm.tekfix.co"
+                       value="{{ local.url_instancia if local and local.url_instancia else '' }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Fecha de Lanzamiento *</label>
+                <input type="date" name="fecha_lanzamiento" class="form-control"
+                       value="{{ local.fecha_lanzamiento.strftime('%Y-%m-%d') if local and local.fecha_lanzamiento else '' }}"
+                       required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Versión del Software</label>
+                <input type="text" name="version_software" class="form-control"
+                       placeholder="1.0.0"
+                       value="{{ local.version_software if local else '1.0.0' }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 2: Finanzas -->
+    <div class="card-zenic p-4 mb-3">
+        <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                   color:var(--zenic-text-muted);margin-bottom:1.25rem">
+            <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas
+        </h2>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Inversión Inicial (COP) *</label>
+                <div class="input-group">
+                    <span class="input-group-text"
+                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
+                    <input type="number" name="inversion_inicial" class="form-control"
+                           placeholder="0" min="0" step="1000"
+                           value="{{ local.inversion_inicial if local else '' }}" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Mensualidad (COP) *</label>
+                <div class="input-group">
+                    <span class="input-group-text"
+                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
+                    <input type="number" name="mensualidad" class="form-control"
+                           placeholder="0" min="0" step="1000"
+                           value="{{ local.mensualidad if local else '' }}" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Día de Corte (1–31) *</label>
+                <input type="number" name="dia_pago" class="form-control"
+                       placeholder="1" min="1" max="31"
+                       value="{{ local.dia_pago if local else '1' }}" required>
+                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                    Día del mes en que se genera el cobro
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Estado de Pago *</label>
+                <select name="estado_pago" class="form-select" required>
+                    <option value="Activo"     {% if local and local.estado_pago == 'Activo'     %}selected{% endif %}>✅ Activo</option>
+                    <option value="Pendiente"  {% if local and local.estado_pago == 'Pendiente'  %}selected{% endif %}>⏳ Pendiente</option>
+                    <option value="Suspendido" {% if local and local.estado_pago == 'Suspendido' %}selected{% endif %}>🚫 Suspendido</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 3: Bóveda de Credenciales -->
+    <div class="card-zenic p-4 mb-4"
+         style="border-color: rgba(79,142,247,0.3);">
+        <div class="d-flex align-items-start gap-3 mb-3">
+            <div style="width:36px;height:36px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);
+                        border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="fa-solid fa-lock" style="color:var(--zenic-primary)"></i>
+            </div>
+            <div>
+                <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                           color:var(--zenic-text-muted);margin:0">
+                    Bóveda de Credenciales
+                </h2>
+                <p style="font-size:0.75rem;color:var(--zenic-text-muted);margin:4px 0 0">
+                    Las credenciales se encriptan con Fernet (AES-128 + HMAC). Nunca se guardan en texto plano.
+                    {% if modo == 'editar' %}Deja en blanco para mantener las actuales.{% endif %}
+                </p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Email Admin del CRM</label>
+                <div class="input-group">
+                    <span class="input-group-text"
+                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
+                        <i class="fa-solid fa-envelope fa-xs"></i>
+                    </span>
+                    <input type="email" name="boveda_email" class="form-control"
+                           placeholder="admin@cliente.co"
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Contraseña Admin</label>
+                <div class="input-group">
+                    <span class="input-group-text"
+                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
+                        <i class="fa-solid fa-key fa-xs"></i>
+                    </span>
+                    <input type="password" name="boveda_password" class="form-control"
+                           placeholder="••••••••"
+                           id="bovedaPass" autocomplete="new-password">
+                    <button class="btn" type="button" id="togglePass"
+                            style="background:var(--zenic-surface-2);border:1px solid var(--zenic-border);color:var(--zenic-text-muted)">
+                        <i class="fa-solid fa-eye fa-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="d-flex gap-3 justify-content-end">
+        <a href="{{ url_for('locales_bp.dashboard') }}" class="btn-zenic-outline text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center">
+            Cancelar
+        </a>
+        <button type="submit" class="btn-zenic px-5 py-2 rounded-2">
+            {% if modo == 'nuevo' %}
+            <i class="fa-solid fa-plus me-2"></i>Registrar Local
+            {% else %}
+            <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Cambios
+            {% endif %}
+        </button>
+    </div>
+</form>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle contraseña visible
+    document.getElementById('togglePass').addEventListener('click', () => {
+        const inp = document.getElementById('bovedaPass');
+        const ico = document.querySelector('#togglePass i');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            ico.className = 'fa-solid fa-eye-slash fa-xs';
+        } else {
+            inp.type = 'password';
+            ico.className = 'fa-solid fa-eye fa-xs';
+        }
+    });
+</script>
+{% endblock %}

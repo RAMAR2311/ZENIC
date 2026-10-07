@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Facturas{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--zenic-gold)"></i>
+            Módulo de Facturas
+        </h1>
+        <p class="page-subtitle">Emisión y cobro de facturas a locales</p>
+    </div>
+    <button class="btn-zenic px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
+        <i class="fa-solid fa-plus"></i> Nueva Factura
+    </button>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4 fade-up">
+        <div class="kpi-card kpi-green">
+            <i class="fa-solid fa-hand-holding-dollar kpi-icon"></i>
+            <div class="kpi-label">Facturas Pagadas</div>
+            <div class="kpi-value" style="color: var(--zenic-success)">{{ ingresos_actuales | cop }}</div>
+            <div class="kpi-sub">Pagos recibidos este mes</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 fade-up">
+        <div class="kpi-card kpi-gold">
+            <i class="fa-solid fa-clock kpi-icon"></i>
+            <div class="kpi-label">Facturas Futuras</div>
+            <div class="kpi-value" style="color: var(--zenic-gold)">{{ ingresos_futuros | cop }}</div>
+            <div class="kpi-sub">Facturas pendientes emitidas</div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 fade-up">
+        <div class="kpi-card" style="border-left: 3px solid var(--zenic-danger)">
+            <i class="fa-solid fa-circle-exclamation kpi-icon" style="color:var(--zenic-danger)"></i>
+            <div class="kpi-label">Facturas Vencidas</div>
+            <div class="kpi-value" style="color: var(--zenic-danger)">{{ ingresos_vencidos | cop }}</div>
+            <div class="kpi-sub">Locales sin pago o atrasados</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Facturas -->
+<div class="card-zenic">
+    <div class="p-4 border-bottom">
+        <h2 style="font-size:1rem;font-weight:700;margin:0">Listado de Facturas</h2>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0">
+            <thead>
+                <tr>
+                    <th>Factura</th>
+                    <th>Local (Cliente)</th>
+                    <th>Emisión</th>
+                    <th>Vencimiento</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in facturas %}
+                <tr>
+                    <td style="font-weight:600; color:var(--zenic-text-muted)">{{ f.numero_factura }}</td>
+                    <td style="font-weight:600">{{ f.local.nombre_marca }}</td>
+                    <td style="font-size:0.85rem">{{ f.fecha_emision | fecha_corta }}</td>
+                    <td style="font-size:0.85rem">{{ f.fecha_vencimiento | fecha_corta }}</td>
+                    <td style="font-weight:700; color:var(--zenic-primary)">{{ f.monto | cop }}</td>
+                    <td>
+                        {% if f.estado == 'Pagado' %}
+                        <span class="badge" style="background:var(--zenic-success)">Pagado ({{ f.fecha_pago | fecha_corta }})</span>
+                        {% elif f.estado == 'Vencido' %}
+                        <span class="badge" style="background:var(--zenic-danger)">Vencido</span>
+                        {% else %}
+                        <span class="badge" style="background:var(--zenic-gold)">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex gap-1 justify-content-center">
+                            {% if f.estado != 'Pagado' %}
+                            <form action="{{ url_for('ingresos_bp.pagar_factura', factura_id=f.id) }}" method="POST" class="d-inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-zenic-outline" title="Marcar Pagada" onclick="return confirm('¿Confirmas el pago de esta factura?')">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ url_for('ingresos_bp.soporte_factura', factura_id=f.id) }}" target="_blank" class="btn btn-sm btn-zenic" title="Ver Soporte">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center py-4 text-muted">No hay facturas registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal Nueva Factura -->
+<div class="modal fade" id="modalNuevaFactura" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('ingresos_bp.nueva_factura') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-plus me-2 text-primary"></i>Emitir Factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente (Local)</label>
+                        <select class="form-select" name="local_id" required>
+                            <option value="">Selecciona un local...</option>
+                            {% for l in locales %}
+                            <option value="{{ l.id }}">{{ l.nombre_marca }} (Mensualidad: {{ l.mensualidad|cop }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones (Opcional)</label>
+                        <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm">Generar Factura</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

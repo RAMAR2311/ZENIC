@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Personal{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-users me-2" style="color: var(--zenic-accent)"></i>
+            Gestión de Personal
+        </h1>
+        <p class="page-subtitle">Administra los empleados y su información de contacto</p>
+    </div>
+    <button class="btn-zenic btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalPersonal" style="background-color: var(--zenic-accent); border-color: var(--zenic-accent);">
+        <i class="fa-solid fa-user-plus"></i> Registrar Empleado
+    </button>
+</div>
+
+<div class="card-zenic">
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Contacto</th>
+                    <th>Fecha Ingreso</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in empleados %}
+                <tr>
+                    <td style="font-weight:600">{{ p.nombre }}</td>
+                    <td>{{ p.cargo }}</td>
+                    <td>
+                        <div class="small">{{ p.email or 'Sin email' }}</div>
+                        <div class="text-muted small">{{ p.telefono or 'Sin teléfono' }}</div>
+                    </td>
+                    <td>{{ p.fecha_ingreso | fecha_corta }}</td>
+                    <td>
+                        {% if p.estado == 'Activo' %}
+                        <span class="badge bg-success">Activo</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center py-4 text-muted">No hay personal registrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal fade" id="modalPersonal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('operaciones_bp.personal') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-user-plus text-accent me-2"></i>Registrar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cargo</label>
+                        <input type="text" class="form-control" name="cargo" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="text" class="form-control" name="telefono">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

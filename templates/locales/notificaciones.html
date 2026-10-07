@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+{% block title %}Notificaciones{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-bell me-2" style="color:var(--zenic-gold)"></i>
+            Centro de Notificaciones
+        </h1>
+        <p class="page-subtitle">Redacta y envía alertas a las instancias cliente vía webhook</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Formulario de Envío -->
+    <div class="col-12 col-lg-5">
+        <div class="card-zenic p-4" style="border-color:rgba(240,180,41,0.2);position:sticky;top:80px">
+            <h2 style="font-size:0.8rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                       color:var(--zenic-text-muted);margin-bottom:1.25rem">
+                <i class="fa-solid fa-paper-plane me-2" style="color:var(--zenic-gold)"></i> Nueva Notificación
+            </h2>
+
+            <form method="POST" action="{{ url_for('locales_bp.enviar_notificacion') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Mensaje</label>
+                    <div class="d-flex gap-2 flex-wrap" id="tipoSelector">
+                        {% for tipo, label, icon, color in [
+                            ('info',    'Información', 'fa-circle-info',       '#4F8EF7'),
+                            ('success', 'Éxito',       'fa-check-circle',      '#10B981'),
+                            ('warning', 'Advertencia', 'fa-triangle-exclamation','#F59E0B'),
+                            ('error',   'Error',       'fa-circle-xmark',      '#EF4444')
+                        ] %}
+                        <label class="tipo-btn" style="cursor:pointer">
+                            <input type="radio" name="tipo" value="{{ tipo }}"
+                                   {% if tipo == 'info' %}checked{% endif %}
+                                   style="display:none" class="tipo-radio">
+                            <span class="tipo-chip d-inline-flex align-items-center gap-1 px-3 py-2 rounded-2"
+                                  data-color="{{ color }}"
+                                  style="border:1px solid var(--zenic-border);font-size:0.78rem;
+                                         font-weight:600;background:rgba(0,0,0,0.1);transition:all 0.15s">
+                                <i class="fa-solid {{ icon }}"></i> {{ label }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Título *</label>
+                    <input type="text" name="titulo" class="form-control"
+                           placeholder="Ej: Actualización de sistema disponible" required
+                           maxlength="200">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Mensaje *</label>
+                    <textarea name="mensaje" class="form-control" rows="4"
+                              placeholder="Escribe el contenido de la alerta que verán los locales..."
+                              required maxlength="2000"></textarea>
+                    <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                        Este mensaje se enviará como payload JSON a la URL de cada instancia seleccionada.
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Destinos</label>
+
+                    <!-- Opción: Todos -->
+                    <div class="mb-2">
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-size:0.875rem">
+                            <input type="checkbox" name="destinos" value="todos" id="checkTodos"
+                                   style="accent-color:var(--zenic-primary)">
+                            <span style="font-weight:600;color:var(--zenic-text)">
+                                <i class="fa-solid fa-broadcast-tower me-1" style="color:var(--zenic-accent)"></i>
+                                Enviar a TODOS los locales
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="listaLocales"
+                         style="max-height:200px;overflow-y:auto;padding:0.5rem;
+                                background:var(--zenic-surface-2);border-radius:8px;
+                                border:1px solid var(--zenic-border)">
+                        {% for local in locales %}
+                        <label class="d-flex align-items-center gap-2 py-1" style="cursor:pointer;font-size:0.82rem">
+                            <input type="checkbox" name="destinos" value="{{ local.id }}"
+                                   class="check-local" style="accent-color:var(--zenic-primary)">
+                            <span class="dot dot-{{ local.semaforo | replace('semaforo-','') }}"></span>
+                            <span>{{ local.nombre_marca }}</span>
+                            {% if not local.url_instancia %}
+                            <span style="font-size:0.68rem;color:var(--zenic-text-muted)">(sin URL)</span>
+                            {% endif %}
+                        </label>
+                        {% else %}
+                        <p style="font-size:0.8rem;color:var(--zenic-text-muted);margin:0.5rem">
+                            No hay locales registrados.
+                        </p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-zenic w-100 py-2 rounded-2 text-center"
+                        style="font-size:0.9rem">
+                    <i class="fa-solid fa-paper-plane me-2"></i> Enviar Notificación
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Historial de Notificaciones -->
+    <div class="col-12 col-lg-7">
+        <div class="card-zenic">
+            <div class="p-3 p-md-4" style="border-bottom:1px solid var(--zenic-border)">
+                <h2 style="font-size:1rem;font-weight:700;margin:0">
+                    Historial de Envíos
+                    <span style="font-size:0.75rem;color:var(--zenic-text-muted);font-weight:400;margin-left:6px">
+                        ({{ historial | length }} registros)
+                    </span>
+                </h2>
+            </div>
+
+            {% if historial %}
+            <div style="max-height:650px;overflow-y:auto">
+                {% for n in historial %}
+                {% set tipo_color = '#4F8EF7' if n.tipo=='info' else ('#10B981' if n.tipo=='success' else ('#F59E0B' if n.tipo=='warning' else '#EF4444')) %}
+                {% set tipo_icon = 'fa-circle-info' if n.tipo=='info' else ('fa-check-circle' if n.tipo=='success' else ('fa-triangle-exclamation' if n.tipo=='warning' else 'fa-circle-xmark')) %}
+                <div class="p-3 p-md-4" {% if not loop.last %}style="border-bottom:1px solid var(--zenic-border)"{% endif %}>
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;
+                                    background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.05);
+                                     display:flex;align-items:center;justify-content:center">
+                            <i class="fa-solid {{ tipo_icon }} notif-icon" data-color="{{ tipo_color }}" style="font-size:0.85rem"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                <strong style="font-size:0.875rem">{{ n.titulo }}</strong>
+                                <span style="font-size:0.72rem;color:var(--zenic-text-muted);white-space:nowrap">
+                                    {{ n.fecha_envio | fecha_corta }}
+                                </span>
+                            </div>
+                            <p style="font-size:0.8rem;color:var(--zenic-text-muted);margin:4px 0 8px;
+                                      white-space:pre-line">{{ n.mensaje | truncate(200) }}</p>
+
+                            {% if n.resultados %}
+                            {% set res = n.resultados | fromjson if n.resultados else {} %}
+                            <div class="d-flex gap-2 flex-wrap">
+                                {% for local_id, r in res.items() %}
+                                <span class="resultado-badge resultado-{{ 'ok' if r.ok else ('none' if r.ok is none else 'fail') }}">
+                                    {{ r.nombre }}
+                                    {% if r.ok %}<i class="fa-solid fa-check fa-xs"></i>
+                                    {% elif r.ok is none %}<i class="fa-solid fa-minus fa-xs"></i>
+                                    {% else %}<i class="fa-solid fa-xmark fa-xs"></i>{% endif %}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5" style="color:var(--zenic-text-muted)">
+                <i class="fa-solid fa-bell-slash fa-3x mb-3" style="opacity:0.2"></i>
+                <p style="margin:0;font-size:0.875rem">No se han enviado notificaciones aún.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    /* Colores dinámicos aplicados por JS desde data-color */
+    .resultado-badge {
+        font-size: 0.68rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+    .resultado-ok   { background: rgba(16,185,129,0.1); color: #10B981; border: 1px solid rgba(16,185,129,0.2); }
+    .resultado-fail { background: rgba(239,68,68,0.1);  color: #EF4444; border: 1px solid rgba(239,68,68,0.2); }
+    .resultado-none { background: rgba(139,146,180,0.1); color: #8B92B4; border: 1px solid rgba(139,146,180,0.2); }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Aplicar color dinámico a los chips de tipo desde data-color
+        document.querySelectorAll('.tipo-chip[data-color]').forEach(chip => {
+            chip.style.color = chip.dataset.color;
+        });
+
+        // Aplicar color a iconos del historial
+        document.querySelectorAll('.notif-icon[data-color]').forEach(icon => {
+            icon.style.color = icon.dataset.color;
+        });
+
+        // Tipo selector visual
+        document.querySelectorAll('.tipo-radio').forEach(radio => {
+            radio.addEventListener('change', () => {
+                document.querySelectorAll('.tipo-btn span').forEach(s => {
+                    s.style.background = 'rgba(0,0,0,0.1)';
+                    s.style.boxShadow  = 'none';
+                });
+                if (radio.checked) {
+                    const span = radio.closest('.tipo-btn').querySelector('span');
+                    span.style.background = 'rgba(79,142,247,0.12)';
+                    span.style.boxShadow  = '0 0 0 2px var(--zenic-primary)';
+                }
+            });
+        });
+
+        // Toggle todos
+        document.getElementById('checkTodos').addEventListener('change', function () {
+            document.querySelectorAll('.check-local').forEach(c => {
+                c.disabled = this.checked;
+                c.checked  = false;
+            });
+        });
+    });
+</script>
+{% endblock %}

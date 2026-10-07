@@ -1,53 +1,134 @@
 {% extends "base.html" %}
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block head %}
+<style>
+    body {
+        background: linear-gradient(135deg, #EDE9FE 0%, #E0F2FE 50%, #F0F0F8 100%);
+        min-height: 100vh;
+    }
+    .login-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(167,139,250,0.3);
+        border-radius: 20px;
+        box-shadow:
+            0 0 0 1px rgba(107,70,193,0.08),
+            0 20px 60px rgba(107,70,193,0.15),
+            0 0 80px rgba(107,70,193,0.06);
+    }
+    .brand-glow {
+        width: 80px; height: 80px;
+        background: linear-gradient(135deg, #6B46C1, #A78BFA);
+        border-radius: 22px;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1.25rem;
+        box-shadow:
+            0 0 0 8px rgba(107,70,193,0.1),
+            0 8px 32px rgba(107,70,193,0.3);
+        font-size: 2rem;
+        color: #fff;
+    }
+    .circuit-dot {
+        width: 6px; height: 6px;
+        background: var(--zenic-accent);
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 8px rgba(56,189,248,0.8);
+        animation: pulse-dot 2s ease-in-out infinite;
+        margin: 0 3px;
+    }
+    @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.4; transform: scale(0.6); }
+    }
+    .circuit-dot:nth-child(2) { animation-delay: 0.3s; }
+    .circuit-dot:nth-child(3) { animation-delay: 0.6s; }
+</style>
+{% endblock %}
 
 {% block content %}
-<style>
-    /* Fondo aplicando colores Tekfix establecidos */
-    body {
-        background-color: var(--tekfix-bg) !important;
-        background-image: none !important;
-    }
+<div class="d-flex justify-content-center align-items-center" style="min-height:calc(100vh - 80px)">
+    <div style="width:100%;max-width:420px;padding:1rem">
 
-    /* Opcional: Ocultar la barra solo en login */
-    .navbar-custom {
-        display: none !important;
-    }
-</style>
-
-<div class="row align-items-center justify-content-evenly" style="min-height: 85vh;">
-    <!-- Columna Izquierda: Cuadro de Acceso Segregado -->
-    <div class="col-md-6 col-lg-5 mb-4">
-        <div class="card card-custom p-5 border-0 shadow-lg rounded-4 bg-tekfix-card" style="border-top: 5px solid var(--tekfix-primary) !important;">
-            <div class="text-center mb-5">
-                <h3 class="fw-bold text-tekfix-main">Acceso al Panel</h3>
-                <p class="text-tekfix-sec">Introduce tus credenciales operativas</p>
+        <!-- Brand -->
+        <div class="text-center mb-4">
+            <div class="brand-glow">
+                <i class="fa-solid fa-brain"></i>
             </div>
-            
-            <form method="POST" action="/auth/login">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <h1 style="font-size:2.5rem;font-weight:900;color:#1E3A5F;letter-spacing:2px;margin:0">
+                ZENIC
+            </h1>
+            <div class="mt-1 mb-2 d-flex justify-content-center align-items-center gap-1">
+                <span class="circuit-dot"></span>
+                <span class="circuit-dot"></span>
+                <span class="circuit-dot"></span>
+            </div>
+            <p style="font-size:0.7rem;color:#6B7280;letter-spacing:2.5px;text-transform:uppercase;margin:0">
+                Fluye, Aprende y Optimiza
+            </p>
+        </div>
+
+        <!-- Card de Login -->
+        <div class="login-card p-4 p-md-5">
+            <h2 style="font-size:1.1rem;font-weight:700;color:#1E3A5F;margin-bottom:0.25rem">
+                Bienvenido de vuelta
+            </h2>
+            <p style="font-size:0.8rem;color:#6B7280;margin-bottom:1.75rem">
+                Acceso exclusivo para operadores Zenic S.A.S.
+            </p>
+
+            <form method="POST" action="{{ url_for('auth_bp.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label class="form-label" for="login-email">Correo Electrónico</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa-solid fa-envelope fa-xs"></i>
+                        </span>
+                        <input type="email" class="form-control" id="login-email" name="email"
+                               placeholder="admin@zenic.co"
+                               required autofocus autocomplete="username">
+                    </div>
+                </div>
+
                 <div class="mb-4">
-                    <label class="form-label fw-bold text-tekfix-main">Correo Electrónico</label>
-                    <input type="email" class="form-control form-control-lg bg-tekfix-card border-0" name="email" required placeholder="tu@Tekfix Oficial">
+                    <label class="form-label" for="login-password">Contraseña</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fa-solid fa-lock fa-xs"></i>
+                        </span>
+                        <input type="password" class="form-control" id="login-password" name="password"
+                               placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" id="togglePass" class="btn btn-outline-secondary" style="border-color:var(--zenic-border);background:#fff;color:#6B7280">
+                            <i class="fa-solid fa-eye fa-xs"></i>
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="mb-5">
-                    <label class="form-label fw-bold text-tekfix-main">Contraseña</label>
-                    <input type="password" class="form-control form-control-lg bg-tekfix-card border-0" name="password" required placeholder="••••••••">
-                </div>
-                
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-tekfix-secondary btn-lg rounded-pill shadow-sm">
-                        Ingresar <i class="fa-solid fa-arrow-right ms-2"></i>
-                    </button>
-                </div>
+
+                <button type="submit" class="btn-zenic w-100 py-2 d-flex align-items-center justify-content-center gap-2"
+                        style="font-size:0.95rem;border-radius:10px">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                    Entrar al Panel
+                </button>
             </form>
         </div>
-    </div>
 
-    <!-- Columna Derecha: Logo Central y Limpio -->
-    <div class="col-md-6 col-lg-6 d-none d-md-flex justify-content-center align-items-center text-center">
-        <!-- Logo a tamaño incrementado para mayor presencia de marca -->
-        <img src="{{ url_for('static', filename='img/Tekfix.png') }}" alt="Identidad Visual Tekfix" class="img-fluid" style="width: 85%; max-width: 650px; filter: drop-shadow(0 20px 30px rgba(255,255,255,0.05));">
+        <p class="text-center mt-4" style="font-size:0.7rem;color:#9CA3AF">
+            Zenic S.A.S. — Master Control Panel &bull; Sistema Centralizado de Administración
+        </p>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('togglePass').addEventListener('click', () => {
+        const inp = document.getElementById('login-password');
+        const ico = document.querySelector('#togglePass i');
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+        ico.className = inp.type === 'text' ? 'fa-solid fa-eye-slash fa-xs' : 'fa-solid fa-eye fa-xs';
+    });
+</script>
 {% endblock %}
