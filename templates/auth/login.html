@@ -3,132 +3,402 @@
 
 {% block head %}
 <style>
+    /* Ocultar barra superior en el login para máxima inmersión */
+    .navbar-zenic {
+        display: none !important;
+    }
+
     body {
-        background: linear-gradient(135deg, #EDE9FE 0%, #E0F2FE 50%, #F0F0F8 100%);
         min-height: 100vh;
+        background: radial-gradient(circle at 15% 20%, #1e1b4b 0%, #0f172a 45%, #090d16 100%);
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow-x: hidden;
+        margin: 0;
+        padding: 1.5rem 1rem;
     }
-    .login-card {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(167,139,250,0.3);
-        border-radius: 20px;
+
+    /* Patrón de malla tecnológica sutil y resplandor de fondo */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image: 
+            radial-gradient(rgba(147, 51, 234, 0.18) 1px, transparent 1px),
+            radial-gradient(rgba(56, 189, 248, 0.12) 1px, transparent 1px);
+        background-size: 36px 36px;
+        background-position: 0 0, 18px 18px;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .ambient-glow-1 {
+        position: fixed;
+        width: 480px;
+        height: 480px;
+        background: radial-gradient(circle, rgba(124, 58, 237, 0.28) 0%, rgba(124, 58, 237, 0) 70%);
+        top: -100px;
+        left: -100px;
+        filter: blur(60px);
+        pointer-events: none;
+        z-index: 0;
+        animation: floatOrb 12s ease-in-out infinite alternate;
+    }
+
+    .ambient-glow-2 {
+        position: fixed;
+        width: 520px;
+        height: 520px;
+        background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(56, 189, 248, 0) 70%);
+        bottom: -120px;
+        right: -120px;
+        filter: blur(70px);
+        pointer-events: none;
+        z-index: 0;
+        animation: floatOrb 14s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes floatOrb {
+        0% { transform: translate(0, 0) scale(1); }
+        100% { transform: translate(40px, 30px) scale(1.08); }
+    }
+
+    .login-container {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 440px;
+    }
+
+    /* Tarjeta con Glassmorphism premium */
+    .login-glass-card {
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 2.5rem 2.25rem;
         box-shadow:
-            0 0 0 1px rgba(107,70,193,0.08),
-            0 20px 60px rgba(107,70,193,0.15),
-            0 0 80px rgba(107,70,193,0.06);
+            0 25px 60px -15px rgba(0, 0, 0, 0.7),
+            0 0 0 1px rgba(167, 139, 250, 0.15),
+            inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    .brand-glow {
-        width: 80px; height: 80px;
-        background: linear-gradient(135deg, #6B46C1, #A78BFA);
-        border-radius: 22px;
-        display: flex; align-items: center; justify-content: center;
-        margin: 0 auto 1.25rem;
+
+    .login-glass-card:hover {
         box-shadow:
-            0 0 0 8px rgba(107,70,193,0.1),
-            0 8px 32px rgba(107,70,193,0.3);
-        font-size: 2rem;
-        color: #fff;
+            0 30px 70px -15px rgba(0, 0, 0, 0.8),
+            0 0 0 1px rgba(167, 139, 250, 0.28),
+            0 0 40px rgba(124, 58, 237, 0.18);
     }
-    .circuit-dot {
-        width: 6px; height: 6px;
-        background: var(--zenic-accent);
-        border-radius: 50%;
+
+    /* Logo Zenic con aura */
+    .logo-wrapper {
+        position: relative;
         display: inline-block;
-        box-shadow: 0 0 8px rgba(56,189,248,0.8);
-        animation: pulse-dot 2s ease-in-out infinite;
-        margin: 0 3px;
+        margin-bottom: 1rem;
     }
-    @keyframes pulse-dot {
+
+    .logo-aura {
+        position: absolute;
+        inset: -12px;
+        background: radial-gradient(circle, rgba(167, 139, 250, 0.45) 0%, rgba(56, 189, 248, 0.15) 50%, transparent 70%);
+        filter: blur(14px);
+        border-radius: 50%;
+        z-index: 0;
+        animation: pulseAura 4s ease-in-out infinite;
+    }
+
+    @keyframes pulseAura {
+        0%, 100% { opacity: 0.6; transform: scale(0.96); }
+        50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    .brand-logo-img {
+        position: relative;
+        z-index: 1;
+        max-width: 170px;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.55));
+        transition: transform 0.3s ease;
+    }
+
+    .brand-logo-img:hover {
+        transform: scale(1.03);
+    }
+
+    .badge-system {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        background: rgba(124, 58, 237, 0.18);
+        border: 1px solid rgba(167, 139, 250, 0.35);
+        color: #c4b5fd;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+    }
+
+    .badge-dot {
+        width: 7px;
+        height: 7px;
+        background: #38bdf8;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #38bdf8;
+        animation: blinkDot 2s infinite ease-in-out;
+    }
+
+    @keyframes blinkDot {
         0%, 100% { opacity: 1; transform: scale(1); }
-        50%       { opacity: 0.4; transform: scale(0.6); }
+        50% { opacity: 0.4; transform: scale(0.7); }
     }
-    .circuit-dot:nth-child(2) { animation-delay: 0.3s; }
-    .circuit-dot:nth-child(3) { animation-delay: 0.6s; }
+
+    .login-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .login-subtitle {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        margin-bottom: 2rem;
+    }
+
+    /* Estilos de inputs oscuros y luminosos */
+    .form-group-custom {
+        margin-bottom: 1.25rem;
+    }
+
+    .custom-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin-bottom: 0.45rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .custom-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon-left {
+        position: absolute;
+        left: 14px;
+        color: #64748b;
+        font-size: 0.95rem;
+        z-index: 2;
+        pointer-events: none;
+        transition: color 0.2s ease;
+    }
+
+    .custom-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.65rem;
+        background: rgba(30, 41, 59, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        color: #ffffff;
+        font-size: 0.92rem;
+        outline: none;
+        transition: all 0.25s ease;
+    }
+
+    .custom-input::placeholder {
+        color: #64748b;
+    }
+
+    .custom-input:focus {
+        background: rgba(30, 41, 59, 0.95);
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.2), 0 0 20px rgba(124, 58, 237, 0.25);
+    }
+
+    .custom-input:focus + .input-icon-left,
+    .custom-input-group:focus-within .input-icon-left {
+        color: #a78bfa;
+    }
+
+    .toggle-pass-btn {
+        position: absolute;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: #64748b;
+        padding: 4px;
+        cursor: pointer;
+        z-index: 2;
+        transition: color 0.2s ease;
+    }
+
+    .toggle-pass-btn:hover {
+        color: #e2e8f0;
+    }
+
+    /* Botón Submit brillante con microinteracciones */
+    .btn-submit-zenic {
+        width: 100%;
+        padding: 0.85rem 1.5rem;
+        margin-top: 0.75rem;
+        background: linear-gradient(135deg, #7c3aed 0%, #6366f1 50%, #38bdf8 100%);
+        background-size: 200% auto;
+        color: #ffffff;
+        font-size: 0.95rem;
+        font-weight: 700;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+    }
+
+    .btn-submit-zenic:hover {
+        background-position: right center;
+        transform: translateY(-2px);
+        box-shadow: 0 15px 35px -5px rgba(124, 58, 237, 0.7), 0 0 20px rgba(56, 189, 248, 0.35);
+        color: #ffffff;
+    }
+
+    .btn-submit-zenic:active {
+        transform: translateY(0);
+    }
+
+    .footer-credits {
+        margin-top: 2rem;
+        text-align: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        letter-spacing: 0.5px;
+    }
+
+    .footer-credits strong {
+        color: #94a3b8;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-center align-items-center" style="min-height:calc(100vh - 80px)">
-    <div style="width:100%;max-width:420px;padding:1rem">
+<div class="ambient-glow-1"></div>
+<div class="ambient-glow-2"></div>
 
-        <!-- Brand -->
-        <div class="text-center mb-4">
-            <div class="brand-glow">
-                <i class="fa-solid fa-brain"></i>
-            </div>
-            <h1 style="font-size:2.5rem;font-weight:900;color:#1E3A5F;letter-spacing:2px;margin:0">
-                ZENIC
-            </h1>
-            <div class="mt-1 mb-2 d-flex justify-content-center align-items-center gap-1">
-                <span class="circuit-dot"></span>
-                <span class="circuit-dot"></span>
-                <span class="circuit-dot"></span>
-            </div>
-            <p style="font-size:0.7rem;color:#6B7280;letter-spacing:2.5px;text-transform:uppercase;margin:0">
-                Fluye, Aprende y Optimiza
-            </p>
+<div class="login-container">
+    <!-- Encabezado con Logotipo Zenic -->
+    <div class="text-center mb-4">
+        <div class="logo-wrapper">
+            <div class="logo-aura"></div>
+            <img src="{{ url_for('static', filename='img/LOGO ZENIC.png') }}" 
+                 alt="ZENIC Logo" 
+                 class="brand-logo-img">
         </div>
-
-        <!-- Card de Login -->
-        <div class="login-card p-4 p-md-5">
-            <h2 style="font-size:1.1rem;font-weight:700;color:#1E3A5F;margin-bottom:0.25rem">
-                Bienvenido de vuelta
-            </h2>
-            <p style="font-size:0.8rem;color:#6B7280;margin-bottom:1.75rem">
-                Acceso exclusivo para operadores Zenic S.A.S.
-            </p>
-
-            <form method="POST" action="{{ url_for('auth_bp.login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <div class="mb-3">
-                    <label class="form-label" for="login-email">Correo Electrónico</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fa-solid fa-envelope fa-xs"></i>
-                        </span>
-                        <input type="email" class="form-control" id="login-email" name="email"
-                               placeholder="admin@zenic.co"
-                               required autofocus autocomplete="username">
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label class="form-label" for="login-password">Contraseña</label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fa-solid fa-lock fa-xs"></i>
-                        </span>
-                        <input type="password" class="form-control" id="login-password" name="password"
-                               placeholder="••••••••" required autocomplete="current-password">
-                        <button type="button" id="togglePass" class="btn btn-outline-secondary" style="border-color:var(--zenic-border);background:#fff;color:#6B7280">
-                            <i class="fa-solid fa-eye fa-xs"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-zenic w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                        style="font-size:0.95rem;border-radius:10px">
-                    <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                    Entrar al Panel
-                </button>
-            </form>
+        <div>
+            <span class="badge-system">
+                <span class="badge-dot"></span>
+                Master Control Panel
+            </span>
         </div>
-
-        <p class="text-center mt-4" style="font-size:0.7rem;color:#9CA3AF">
-            Zenic S.A.S. — Master Control Panel &bull; Sistema Centralizado de Administración
+        <p style="font-size: 0.72rem; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 0;">
+            Fluye, Aprende y Optimiza
         </p>
+    </div>
+
+    <!-- Tarjeta Principal de Login -->
+    <div class="login-glass-card">
+        <div class="text-center mb-4">
+            <h1 class="login-title">Bienvenido</h1>
+            <p class="login-subtitle">Introduce tus credenciales para acceder</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth_bp.login') }}" id="loginForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group-custom">
+                <label class="custom-label" for="login-email">
+                    <i class="fa-solid fa-envelope fa-xs" style="color: #a78bfa;"></i> Correo Electrónico
+                </label>
+                <div class="custom-input-group">
+                    <i class="fa-solid fa-at input-icon-left"></i>
+                    <input type="email" 
+                           class="custom-input" 
+                           id="login-email" 
+                           name="email"
+                           placeholder="admin@zenic.co"
+                           required 
+                           autofocus 
+                           autocomplete="username">
+                </div>
+            </div>
+
+            <div class="form-group-custom">
+                <label class="custom-label" for="login-password">
+                    <i class="fa-solid fa-shield-halved fa-xs" style="color: #a78bfa;"></i> Contraseña
+                </label>
+                <div class="custom-input-group">
+                    <i class="fa-solid fa-lock input-icon-left"></i>
+                    <input type="password" 
+                           class="custom-input" 
+                           id="login-password" 
+                           name="password"
+                           placeholder="••••••••••••" 
+                           required 
+                           autocomplete="current-password"
+                           style="padding-right: 2.8rem;">
+                    <button type="button" 
+                            id="togglePass" 
+                            class="toggle-pass-btn" 
+                            title="Mostrar u ocultar contraseña"
+                            aria-label="Toggle password visibility">
+                        <i class="fa-solid fa-eye-slash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-zenic">
+                <span>Ingresar al Sistema</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Pie de página -->
+    <div class="footer-credits">
+        <strong>ZENIC S.A.S.</strong> &bull; Sistema Centralizado de Operaciones &bull; 2026
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    document.getElementById('togglePass').addEventListener('click', () => {
-        const inp = document.getElementById('login-password');
-        const ico = document.querySelector('#togglePass i');
-        inp.type = inp.type === 'password' ? 'text' : 'password';
-        ico.className = inp.type === 'text' ? 'fa-solid fa-eye-slash fa-xs' : 'fa-solid fa-eye fa-xs';
-    });
+    const togglePassBtn = document.getElementById('togglePass');
+    const passInput = document.getElementById('login-password');
+    
+    if (togglePassBtn && passInput) {
+        togglePassBtn.addEventListener('click', () => {
+            const isPassword = passInput.type === 'password';
+            passInput.type = isPassword ? 'text' : 'password';
+            const icon = togglePassBtn.querySelector('i');
+            if (icon) {
+                icon.className = isPassword ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+            }
+        });
+    }
 </script>
 {% endblock %}
