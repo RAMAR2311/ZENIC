@@ -129,7 +129,9 @@ def create_app():
 
     @app.route("/manifest.json")
     def manifest():
-        return send_from_directory(app.static_folder, "manifest.json")
+        response = send_from_directory(app.static_folder, "manifest.json", mimetype="application/manifest+json")
+        response.headers["Cache-Control"] = "no-cache"
+        return response
 
     @app.route("/favicon.ico")
     def favicon():

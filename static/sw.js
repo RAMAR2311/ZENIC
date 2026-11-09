@@ -3,17 +3,14 @@
    Estrategia: Network First con fallback a Cache y soporte Offline dedicado
    ========================================================================== */
 
-const CACHE_NAME = 'zenic-crm-v2';
+const CACHE_NAME = 'zenic-crm-v3';
 const OFFLINE_URL = '/offline';
 
 // Recursos críticos para cachear inicialmente
 const STATIC_ASSETS = [
   '/',
   '/offline',
-  '/manifest.json',
-  '/static/manifest.json',
   '/favicon.ico',
-  '/static/img/LOGO%20ZENIC.png',
   '/static/img/icons/icon-192x192.png',
   '/static/img/icons/icon-512x512.png',
   '/static/img/icons/icon-maskable-512x512.png',
