@@ -1,17 +1,22 @@
 /* ==========================================================================
-   Service Worker — Zenic Master Control PWA
-   Estrategia: Network First con fallback a Cache y soporte Offline
+   Service Worker — Zenic Master Control PWA v2.0
+   Estrategia: Network First con fallback a Cache y soporte Offline dedicado
    ========================================================================== */
 
-const CACHE_NAME = 'zenic-crm-v1';
+const CACHE_NAME = 'zenic-crm-v2';
+const OFFLINE_URL = '/offline';
 
 // Recursos críticos para cachear inicialmente
 const STATIC_ASSETS = [
   '/',
+  '/offline',
+  '/manifest.json',
   '/static/manifest.json',
+  '/favicon.ico',
   '/static/img/LOGO%20ZENIC.png',
   '/static/img/icons/icon-192x192.png',
   '/static/img/icons/icon-512x512.png',
+  '/static/img/icons/icon-maskable-512x512.png',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
@@ -23,7 +28,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn('[SW] Algunos recursos iniciales no pudieron ser cacheados:', err);
+        console.warn('[SW] Algunos recursos iniciales no pudieron ser precacheados:', err);
       });
     }).then(() => self.skipWaiting())
   );
@@ -36,6 +41,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
+            console.log('[SW] Purgando cache obsoleto:', cache);
             return caches.delete(cache);
           }
         })
@@ -44,48 +50,90 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Intercepción de peticiones (Network First con Cache Fallback)
+// Intercepción de peticiones (Network First con Cache Fallback inteligente)
 self.addEventListener('fetch', (event) => {
-  // Solo procesar peticiones GET (evitar POST de login, formularios, etc.)
+  // Solo procesar peticiones GET
   if (event.request.method !== 'GET') {
     return;
   }
 
-  // Ignorar peticiones internas de sockets o extensiones
   const url = new URL(event.request.url);
+
+  // Ignorar protocolos no HTTP/HTTPS
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     return;
   }
 
+  // Ignorar rutas que no deben cachearse de forma estricta (ej. logout)
+  if (url.pathname.includes('/auth/logout')) {
+    return;
+  }
+
+  // 1. Manejo para navegación HTML (Documentos)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+
+          const offlinePage = await caches.match(OFFLINE_URL);
+          if (offlinePage) return offlinePage;
+
+          return new Response('Sin conexión a Internet. Por favor verifica tu red.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+        })
+    );
+    return;
+  }
+
+  // 2. Manejo para recursos estáticos (imágenes, CSS, JS, fuentes)
+  const isStatic =
+    url.pathname.startsWith('/static/') ||
+    url.hostname.includes('jsdelivr.net') ||
+    url.hostname.includes('cdnjs.cloudflare.com') ||
+    url.hostname.includes('fonts.googleapis.com') ||
+    url.hostname.includes('fonts.gstatic.com');
+
+  if (isStatic) {
+    // Cache First con actualización en segundo plano (Stale-While-Revalidate)
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            }
+            return networkResponse;
+          })
+          .catch(() => null);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  // 3. Peticiones de datos / API estándar (Network First)
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Si la respuesta es válida, clonamos y guardamos en caché
         if (networkResponse && networkResponse.status === 200) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          const copy = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         }
         return networkResponse;
       })
-      .catch(async () => {
-        // En caso de estar sin internet (Offline), responder con caché
-        const cachedResponse = await caches.match(event.request);
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-
-        // Si es una petición de navegación HTML y no está en caché, fallback a la raíz
-        if (event.request.mode === 'navigate') {
-          const fallback = await caches.match('/');
-          if (fallback) return fallback;
-        }
-
-        return new Response('Sin conexión a Internet. Por favor verifica tu red.', {
-          status: 503,
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        });
-      })
+      .catch(() => caches.match(event.request))
   );
 });

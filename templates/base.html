@@ -8,9 +8,12 @@
 
     <!-- PWA & Mobile Meta Tags -->
     <meta name="theme-color" content="#7A3EB0">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zenic CRM">
+    <meta name="application-name" content="Zenic CRM">
+    <meta name="format-detection" content="telephone=no">
     <link rel="manifest" href="/manifest.json">
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -108,6 +111,12 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Microtrama de fondo sobria y refinada */
@@ -160,6 +169,7 @@
             font-weight: 700;
             background: linear-gradient(135deg, #FFFFFF 0%, #D8B4FE 45%, #93C5FD 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 25px rgba(122, 62, 176, 0.6);
             letter-spacing: 0.5px;
@@ -173,6 +183,7 @@
             font-weight: 700;
             background: linear-gradient(135deg, #FFFFFF 0%, #D8B4FE 45%, #93C5FD 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 25px rgba(122, 62, 176, 0.6);
             letter-spacing: 0.5px;
@@ -616,7 +627,113 @@
         .main-content {
             position: relative;
             z-index: 1;
-            padding: 2rem 0 3.5rem;
+            padding: 1.5rem 0 5rem;
+        }
+
+        /* ── Barra de Navegación Inferior Móvil (Mobile Bottom Bar) ── */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(11, 11, 14, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1040;
+            padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.6);
+            text-decoration: none;
+            font-size: 0.7rem;
+            font-weight: 600;
+            gap: 3px;
+            padding: 0.35rem 0.65rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+            min-width: 58px;
+            touch-action: manipulation;
+        }
+
+        .mobile-nav-item i {
+            font-size: 1.15rem;
+            transition: transform 0.2s;
+        }
+
+        .mobile-nav-item:active {
+            transform: scale(0.92);
+        }
+
+        .mobile-nav-item.active, .mobile-nav-item:hover {
+            color: #FFFFFF;
+        }
+
+        .mobile-nav-item.active i {
+            color: var(--zenic-cyan-neon);
+        }
+
+        /* ── Optimizaciones Responsive para Pantallas Móviles ── */
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: flex;
+            }
+
+            .main-content {
+                padding-top: 1rem;
+                padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+            }
+
+            .page-title {
+                font-size: 1.3rem;
+            }
+
+            .card-zenic {
+                padding: 1rem;
+                border-radius: var(--radius-md);
+            }
+
+            /* Scroll horizontal táctil suave para tablas en móvil */
+            .table-responsive {
+                -webkit-overflow-scrolling: touch;
+                border-radius: var(--radius-sm);
+            }
+
+            /* Tamaño óptimo de botones y campos de entrada para dedos (mín 44px) */
+            .btn, .form-control, .form-select {
+                min-height: 44px;
+                font-size: 0.95rem;
+            }
+
+            .btn-sm, .form-control-sm, .form-select-sm {
+                min-height: 38px;
+            }
+
+            /* Modales ocupan el ancho móvil completo y tienen bordes redondeados adaptados */
+            .modal-dialog {
+                margin: 0.75rem;
+            }
+
+            .modal-content {
+                border-radius: var(--radius-md) !important;
+            }
+
+            /* Alertas flash en móvil fijadas arriba con ancho completo */
+            .flash-container {
+                left: 1rem;
+                right: 1rem;
+                top: 4.5rem;
+                min-width: auto;
+                max-width: 100%;
+            }
         }
     </style>
 
@@ -676,16 +793,55 @@
 
     <div class="offcanvas-body p-0 d-flex flex-column">
         <div class="py-2 flex-grow-1">
+            {# ── PANEL ADMINISTRADOR O GENERAL ── #}
+            {% if current_user.rol == 'admin' %}
             <div class="sidebar-section-label">Centro de Mando</div>
             <a href="{{ url_for('dashboard_bp.master') }}" class="sidebar-link">
                 <i class="fa-solid fa-chart-line" style="color:var(--zenic-purple-light)"></i>
                 Dashboard Ejecutivo
             </a>
+            {% endif %}
 
+            {# ── MÓDULO MARKETING (Marketing o Admin) ── #}
+            {% if current_user.rol in ['marketing', 'admin'] %}
+            <div class="sidebar-section-label">Marketing & Contenidos</div>
+            <a href="{{ url_for('marketing_bp.dashboard') }}" class="sidebar-link">
+                <i class="fa-solid fa-bullhorn" style="color:var(--zenic-purple-light)"></i>
+                Portal Marketing
+            </a>
+            <a href="{{ url_for('marketing_bp.contenidos') }}" class="sidebar-link">
+                <i class="fa-solid fa-calendar-days" style="color:var(--zenic-cyan-neon)"></i>
+                Calendario Redes
+            </a>
+            <a href="{{ url_for('marketing_bp.grabaciones') }}" class="sidebar-link">
+                <i class="fa-solid fa-clapperboard" style="color:var(--zenic-danger)"></i>
+                Agenda Grabaciones
+            </a>
+            <a href="{{ url_for('marketing_bp.social_hub') }}" class="sidebar-link">
+                <i class="fa-solid fa-share-nodes" style="color:var(--zenic-blue-steel)"></i>
+                Social Hub & Brand
+            </a>
+            {% endif %}
+
+            {# ── MÓDULO TI & SOPORTE (TI o Admin) ── #}
+            {% if current_user.rol in ['ti', 'admin'] %}
+            <div class="sidebar-section-label">Soporte Técnico & TI</div>
+            <a href="{{ url_for('ti_bp.tickets') }}" class="sidebar-link">
+                <i class="fa-solid fa-ticket-simple" style="color:var(--zenic-warning)"></i>
+                Tickets de Soporte
+            </a>
+            <a href="{{ url_for('ti_bp.conexiones') }}" class="sidebar-link">
+                <i class="fa-solid fa-network-wired" style="color:var(--zenic-cyan-neon)"></i>
+                Conexiones & Servidores
+            </a>
+            {% endif %}
+
+            {# ── MÓDULO OPERACIONES & FINANZAS (operaciones_finanzas o Admin) ── #}
+            {% if current_user.rol in ['operaciones_finanzas', 'admin'] %}
             <div class="sidebar-section-label">Instancias CRM</div>
             <a href="{{ url_for('locales_bp.dashboard') }}#locales" class="sidebar-link">
                 <i class="fa-solid fa-server" style="color:var(--zenic-cyan-neon)"></i>
-                Dashboard Clientes
+                Clientes / Locales
             </a>
             <a href="{{ url_for('locales_bp.nuevo_local') }}" class="sidebar-link">
                 <i class="fa-solid fa-plus-circle" style="color:var(--zenic-success)"></i>
@@ -709,6 +865,12 @@
                 <i class="fa-solid fa-scale-balanced" style="color:var(--zenic-blue-steel)"></i>
                 Presupuestos
             </a>
+
+            <div class="sidebar-section-label">Soporte TI</div>
+            <a href="{{ url_for('ti_bp.tickets') }}" class="sidebar-link">
+                <i class="fa-solid fa-ticket" style="color:var(--zenic-warning)"></i>
+                Solicitar Cambio a TI
+            </a>
             
             <div class="sidebar-section-label">Operaciones & Activos</div>
             <a href="{{ url_for('operaciones_bp.personal') }}" class="sidebar-link">
@@ -725,6 +887,7 @@
                 <i class="fa-solid fa-bell" style="color:var(--zenic-warning)"></i>
                 Notificaciones
             </a>
+            {% endif %}
         </div>
 
         <a href="{{ url_for('auth_bp.logout') }}" class="sidebar-logout">
@@ -757,6 +920,58 @@
 
 {% block modals %}{% endblock %}
 
+{% if current_user.is_authenticated %}
+<!-- ═══ BARRA INFERIOR NATIVA PARA MÓVILES (Bottom Navigation Bar) ═══ -->
+<nav class="mobile-bottom-nav" aria-label="Navegación Móvil">
+    <a href="{{ url_for('dashboard_bp.master') if current_user.rol == 'admin' else (url_for('marketing_bp.dashboard') if current_user.rol == 'marketing' else (url_for('ti_bp.tickets') if current_user.rol == 'ti' else url_for('locales_bp.dashboard'))) }}" class="mobile-nav-item">
+        <i class="fa-solid fa-house"></i>
+        <span>Inicio</span>
+    </a>
+
+    {% if current_user.rol in ['operaciones_finanzas', 'admin'] %}
+    <a href="{{ url_for('locales_bp.dashboard') }}#locales" class="mobile-nav-item">
+        <i class="fa-solid fa-server"></i>
+        <span>Clientes</span>
+    </a>
+    <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        <span>Cobros</span>
+    </a>
+    <a href="{{ url_for('ti_bp.tickets') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-ticket"></i>
+        <span>Tickets</span>
+    </a>
+    {% elif current_user.rol == 'ti' %}
+    <a href="{{ url_for('ti_bp.tickets') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-ticket-simple"></i>
+        <span>Tickets</span>
+    </a>
+    <a href="{{ url_for('ti_bp.conexiones') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-network-wired"></i>
+        <span>Servidores</span>
+    </a>
+    {% elif current_user.rol == 'marketing' %}
+    <a href="{{ url_for('marketing_bp.contenidos') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Redes</span>
+    </a>
+    <a href="{{ url_for('marketing_bp.grabaciones') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-clapperboard"></i>
+        <span>Rodajes</span>
+    </a>
+    <a href="{{ url_for('marketing_bp.social_hub') }}" class="mobile-nav-item">
+        <i class="fa-solid fa-share-nodes"></i>
+        <span>Brand</span>
+    </a>
+    {% endif %}
+
+    <button type="button" class="mobile-nav-item border-0 bg-transparent" data-bs-toggle="offcanvas" data-bs-target="#sidebarZenic">
+        <i class="fa-solid fa-bars"></i>
+        <span>Menú</span>
+    </button>
+</nav>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -776,6 +991,17 @@
                 navigator.serviceWorker.register('/sw.js', { scope: '/' })
                     .then(reg => {
                         console.log('[PWA] Service Worker registrado exitosamente en ámbito:', reg.scope);
+                        // Chequear actualizaciones periódicamente
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            if (installingWorker) {
+                                installingWorker.onstatechange = () => {
+                                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('[PWA] Nueva versión disponible en segundo plano.');
+                                    }
+                                };
+                            }
+                        };
                     })
                     .catch(err => {
                         console.warn('[PWA] Error registrando Service Worker:', err);
@@ -786,25 +1012,37 @@
 
     // Soporte para botón o prompt nativo de instalación PWA
     let deferredInstallPrompt = null;
+    const installBtn = document.getElementById('btnInstallPwa');
+
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredInstallPrompt = e;
-        // Si existe un botón con ID #btnInstallPwa en el navbar o sidebar, activarlo
-        const installBtn = document.getElementById('btnInstallPwa');
         if (installBtn) {
-            installBtn.style.display = 'inline-flex';
-            installBtn.addEventListener('click', () => {
-                if (deferredInstallPrompt) {
-                    deferredInstallPrompt.prompt();
-                    deferredInstallPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('[PWA] El usuario instaló la aplicación');
-                        }
-                        deferredInstallPrompt = null;
-                        installBtn.style.display = 'none';
-                    });
+            installBtn.classList.remove('d-none');
+            installBtn.classList.add('d-inline-flex');
+        }
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                const { outcome } = await deferredInstallPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('[PWA] Usuario aceptó la instalación.');
                 }
-            });
+                deferredInstallPrompt = null;
+                installBtn.classList.add('d-none');
+                installBtn.classList.remove('d-inline-flex');
+            }
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        console.log('[PWA] Aplicación instalada correctamente.');
+        if (installBtn) {
+            installBtn.classList.add('d-none');
+            installBtn.classList.remove('d-inline-flex');
         }
     });
 </script>

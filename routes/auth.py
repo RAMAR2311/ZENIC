@@ -20,9 +20,13 @@ def login():
             flash('¡Sesión iniciada con éxito!', 'success')
             
             # Redirección inteligente basada en ROL
-            if user.rol == 'negociador':
-                return redirect(url_for('negociaciones_bp.dashboard_negociador'))
-            return redirect(url_for('index'))
+            if user.rol == 'marketing':
+                return redirect(url_for('marketing_bp.dashboard'))
+            elif user.rol == 'ti':
+                return redirect(url_for('ti_bp.tickets'))
+            elif user.rol == 'operaciones_finanzas':
+                return redirect(url_for('locales_bp.dashboard'))
+            return redirect(url_for('dashboard_bp.master'))
         
         flash('Tus credenciales (Correo o Contraseña) son inválidas.', 'error')
         return redirect(url_for('auth_bp.login'))

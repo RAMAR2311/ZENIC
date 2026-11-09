@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Social Hub & Marca Oficial — Marketing{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: var(--zenic-cyan-neon);">
+                <i class="fa-solid fa-share-nodes me-2"></i>Social Hub & Recursos de Marca Zenic
+            </h1>
+            <p class="text-muted small mb-0">Accesos directos a redes oficiales, enlaces y manual de identidad corporativa.</p>
+        </div>
+        <a href="{{ url_for('marketing_bp.dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Volver al Portal
+        </a>
+    </div>
+
+    <!-- Canales Oficiales -->
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i>Canales Oficiales Zenic S.A.S.</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100" style="background: var(--zenic-surface);">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="background: rgba(225, 48, 108, 0.1); color: #E1306C; width: 50px; height: 50px;">
+                        <i class="fa-brands fa-instagram fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Instagram</div>
+                        <div class="small text-muted">@zenic.crm</div>
+                    </div>
+                </div>
+                <a href="https://instagram.com" target="_blank" class="btn btn-sm btn-outline-danger w-100 mt-auto">
+                    <i class="fa-solid fa-external-link me-1"></i> Abrir Perfil & DMs
+                </a>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100" style="background: var(--zenic-surface);">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="background: rgba(0, 0, 0, 0.08); color: #000; width: 50px; height: 50px;">
+                        <i class="fa-brands fa-tiktok fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">TikTok</div>
+                        <div class="small text-muted">@zenic_software</div>
+                    </div>
+                </div>
+                <a href="https://tiktok.com" target="_blank" class="btn btn-sm btn-outline-dark w-100 mt-auto">
+                    <i class="fa-solid fa-external-link me-1"></i> Ver Tendencias
+                </a>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100" style="background: var(--zenic-surface);">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="background: rgba(10, 102, 194, 0.1); color: #0A66C2; width: 50px; height: 50px;">
+                        <i class="fa-brands fa-linkedin fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">LinkedIn</div>
+                        <div class="small text-muted">Zenic S.A.S.</div>
+                    </div>
+                </div>
+                <a href="https://linkedin.com" target="_blank" class="btn btn-sm btn-outline-primary w-100 mt-auto">
+                    <i class="fa-solid fa-external-link me-1"></i> Red B2B
+                </a>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100" style="background: var(--zenic-surface);">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="background: rgba(255, 0, 0, 0.1); color: #FF0000; width: 50px; height: 50px;">
+                        <i class="fa-brands fa-youtube fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">YouTube</div>
+                        <div class="small text-muted">Zenic Academy</div>
+                    </div>
+                </div>
+                <a href="https://youtube.com" target="_blank" class="btn btn-sm btn-outline-danger w-100 mt-auto">
+                    <i class="fa-solid fa-external-link me-1"></i> Canal de Demos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brand Kit & Paleta de Identidad -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="background: var(--zenic-surface);">
+        <h5 class="fw-bold mb-3"><i class="fa-solid fa-palette me-2 text-warning"></i>Guía Rápida de Identidad y Colores Zenic</h5>
+        <div class="row g-3">
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded-3 text-white text-center fw-bold shadow-sm" style="background: #7A3EB0;">
+                    Púrpura Neural<br><span class="fw-normal small">#7A3EB0</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded-3 text-white text-center fw-bold shadow-sm" style="background: #4A7BB0;">
+                    Azul Eléctrico<br><span class="fw-normal small">#4A7BB0</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded-3 text-dark text-center fw-bold shadow-sm" style="background: #38BDF8;">
+                    Cyan Neón<br><span class="fw-normal small">#38BDF8</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 rounded-3 text-white text-center fw-bold shadow-sm" style="background: #121216;">
+                    Obsidian Dark<br><span class="fw-normal small">#121216</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

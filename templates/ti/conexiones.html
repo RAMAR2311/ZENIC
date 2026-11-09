@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Conexiones & Servidores — TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-3">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: var(--zenic-blue-steel);">
+                <i class="fa-solid fa-server me-2"></i>Conexiones & Monitoreo de Sistemas
+            </h1>
+            <p class="text-muted small mb-0">Acceso a las instancias clientes desplegadas, health check y credenciales.</p>
+        </div>
+        <a href="{{ url_for('ti_bp.tickets') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-ticket"></i> Ver Tickets de Soporte
+        </a>
+    </div>
+
+    <div class="row g-3">
+        {% for l in locales %}
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100" style="background: var(--zenic-surface);">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold mb-0 text-truncate" style="max-width: 200px;">{{ l.nombre_marca }}</h5>
+                    {% if l.is_online %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="fa-solid fa-circle-dot me-1"></i>ONLINE
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>OFFLINE
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="small text-muted mb-3">
+                    <div><strong>Versión:</strong> {{ l.version_software }}</div>
+                    <div><strong>Último Chequeo:</strong> {{ l.last_checked.strftime('%d/%m/%Y %H:%M') if l.last_checked else 'Pendiente' }}</div>
+                    <div class="text-truncate">
+                        <strong>URL:</strong> 
+                        {% if l.url_instancia %}
+                        <a href="{{ l.url_instancia }}" target="_blank" rel="noopener noreferrer">{{ l.url_instancia }}</a>
+                        {% else %}
+                        <span class="text-muted">Sin URL asignada</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2 border-top d-flex gap-2">
+                    {% if l.url_instancia %}
+                    <a href="{{ l.url_instancia }}" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Abrir CRM
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('locales_bp.detalle_local', local_id=l.id) }}" class="btn btn-sm btn-light border">
+                        <i class="fa-solid fa-key me-1"></i> Bóveda
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5 text-muted">
+            No hay sistemas registrados actualmente.
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+

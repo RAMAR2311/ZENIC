@@ -8,6 +8,8 @@
   "theme_color": "#7A3EB0",
   "orientation": "any",
   "scope": "/",
+  "lang": "es-CO",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "/static/img/icons/icon-72x72.png",
@@ -64,21 +66,33 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["business", "finance", "productivity"],
   "shortcuts": [
     {
       "name": "Dashboard Ejecutivo",
+      "short_name": "Dashboard",
+      "description": "Ver métricas y estado global de Zenic CRM",
       "url": "/",
       "icons": [{ "src": "/static/img/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Clientes / Locales",
-      "url": "/#locales",
+      "name": "Clientes & Locales",
+      "short_name": "Clientes",
+      "description": "Gestión de instancias clientes",
+      "url": "/dashboard#locales",
       "icons": [{ "src": "/static/img/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "Facturas",
-      "url": "/ingresos/dashboard",
+      "name": "Facturas & Cobros",
+      "short_name": "Cobros",
+      "description": "Revisar facturación recurrente",
+      "url": "/ingresos",
+      "icons": [{ "src": "/static/img/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Tickets de Soporte",
+      "short_name": "Tickets TI",
+      "description": "Gestión de soporte y cambios",
+      "url": "/ti/tickets",
       "icons": [{ "src": "/static/img/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]

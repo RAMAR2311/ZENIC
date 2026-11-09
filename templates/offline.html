@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin Conexión — Zenic Master Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        body {
+            min-height: 100vh;
+            background: #0B0B0E;
+            color: #F8FAFC;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        .offline-card {
+            background: #121216;
+            border: 1px solid #27272A;
+            border-radius: 20px;
+            padding: 40px 30px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        }
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: rgba(122, 62, 176, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #8A45D1;
+        }
+        .icon-circle svg {
+            width: 40px;
+            height: 40px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7A3EB0, #38BDF8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        p {
+            font-size: 0.95rem;
+            color: #94A3B8;
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+        .btn-retry {
+            display: inline-block;
+            background: linear-gradient(135deg, #7A3EB0, #5C8AC8);
+            color: #FFFFFF;
+            font-weight: 600;
+            text-decoration: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-retry:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="icon-circle">
+            <svg viewBox="0 0 24 24">
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                <line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+        </div>
+        <h1>Modo Sin Conexión</h1>
+        <p>No tienes acceso a Internet en este momento. La aplicación se reconectará de inmediato cuando recuperes señal.</p>
+        <button class="btn-retry" onclick="window.location.reload()">Reintentar Conexión</button>
+    </div>
+</body>
+</html>
+

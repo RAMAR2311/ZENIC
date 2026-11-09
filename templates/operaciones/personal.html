@@ -1,30 +1,32 @@
 {% extends "base.html" %}
-{% block title %}Personal{% endblock %}
+{% block title %}Personal & Roles de Acceso{% endblock %}
 
 {% block content %}
 <div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
     <div>
         <h1 class="page-title">
             <i class="fa-solid fa-users me-2" style="color: var(--zenic-accent)"></i>
-            Gestión de Personal
+            Gestión de Personal y Accesos
         </h1>
-        <p class="page-subtitle">Administra los empleados y su información de contacto</p>
+        <p class="page-subtitle">Administra los empleados, su información de contacto y su rol de ingreso al sistema</p>
     </div>
     <button class="btn-zenic btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalPersonal" style="background-color: var(--zenic-accent); border-color: var(--zenic-accent);">
-        <i class="fa-solid fa-user-plus"></i> Registrar Empleado
+        <i class="fa-solid fa-user-plus me-1"></i> Registrar Empleado
     </button>
 </div>
 
 <div class="card-zenic">
     <div class="table-responsive">
-        <table class="table table-zenic mb-0">
+        <table class="table table-zenic align-middle mb-0">
             <thead>
                 <tr>
                     <th>Nombre</th>
                     <th>Cargo</th>
                     <th>Contacto</th>
+                    <th>Rol en el Sistema</th>
                     <th>Fecha Ingreso</th>
                     <th>Estado</th>
+                    <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,6 +38,30 @@
                         <div class="small">{{ p.email or 'Sin email' }}</div>
                         <div class="text-muted small">{{ p.telefono or 'Sin teléfono' }}</div>
                     </td>
+                    <td>
+                        {% set rol_actual = p.usuario.rol if p.usuario else '' %}
+                        {% if rol_actual == 'admin' %}
+                            <span class="badge rounded-pill" style="background: rgba(122, 62, 176, 0.15); color: var(--zenic-purple-neural); border: 1px solid rgba(122, 62, 176, 0.3);">
+                                <i class="fa-solid fa-crown me-1"></i>Administrador
+                            </span>
+                        {% elif rol_actual == 'operaciones_finanzas' %}
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">
+                                <i class="fa-solid fa-briefcase me-1"></i>Operaciones & Finanzas
+                            </span>
+                        {% elif rol_actual == 'ti' %}
+                            <span class="badge rounded-pill bg-info-subtle text-info border border-info-subtle">
+                                <i class="fa-solid fa-laptop-code me-1"></i>TI & Soporte
+                            </span>
+                        {% elif rol_actual == 'marketing' %}
+                            <span class="badge rounded-pill bg-warning-subtle text-warning border border-warning-subtle">
+                                <i class="fa-solid fa-bullhorn me-1"></i>Marketing
+                            </span>
+                        {% else %}
+                            <span class="badge rounded-pill bg-light text-muted border">
+                                <i class="fa-solid fa-ban me-1"></i>Sin acceso al sistema
+                            </span>
+                        {% endif %}
+                    </td>
                     <td>{{ p.fecha_ingreso | fecha_corta }}</td>
                     <td>
                         {% if p.estado == 'Activo' %}
@@ -44,9 +70,25 @@
                         <span class="badge bg-secondary">Inactivo</span>
                         {% endif %}
                     </td>
+                    <td class="text-end">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditar{{ p.id }}" title="Editar empleado y rol">
+                                <i class="fa-solid fa-pen-to-square me-1"></i>Editar
+                            </button>
+                            {% if not (p.user_id and p.user_id == current_user.id) %}
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modalEliminar{{ p.id }}" title="Eliminar empleado">
+                                <i class="fa-solid fa-trash-can me-1"></i>Eliminar
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled title="Tu cuenta actual">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="text-center py-4 text-muted">No hay personal registrado.</td></tr>
+                <tr><td colspan="7" class="text-center py-4 text-muted">No hay personal registrado.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -55,8 +97,9 @@
 {% endblock %}
 
 {% block modals %}
+<!-- Modal Registrar Nuevo Empleado -->
 <div class="modal fade" id="modalPersonal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ url_for('operaciones_bp.personal') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -66,30 +109,179 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nombre Completo</label>
-                        <input type="text" class="form-control" name="nombre" required>
+                        <label class="form-label fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="nombre" placeholder="Ej: Laura Gómez" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Cargo</label>
-                        <input type="text" class="form-control" name="cargo" required>
+                        <label class="form-label fw-semibold">Cargo en la Empresa <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="cargo" placeholder="Ej: Especialista de Marketing / Desarrollador TI" required>
                     </div>
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" name="telefono">
+                            <label class="form-label fw-semibold">Teléfono</label>
+                            <input type="text" class="form-control" name="telefono" placeholder="Ej: 3001234567">
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email">
+                            <label class="form-label fw-semibold">Email <span id="emailAsterisk" class="text-danger d-none">*</span></label>
+                            <input type="email" class="form-control" name="email" id="inputEmailNuevo" placeholder="correo@zenic.co">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px solid var(--zenic-border);">
+                        <h6 class="fw-bold mb-2" style="color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-key me-1"></i>Acceso al Sistema (Zenic CRM)
+                        </h6>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Rol / Perfil de Usuario</label>
+                            <select class="form-select" name="rol_sistema" id="selectRolNuevo" onchange="togglePasswordNuevo()">
+                                <option value="">Sin acceso al sistema (Solo registro de personal)</option>
+                                <option value="operaciones_finanzas">💼 Operaciones y Finanzas (Clientes, Pagos, Gastos)</option>
+                                <option value="ti">💻 TI y Soporte (Conexiones, Bóveda y Tickets)</option>
+                                <option value="marketing">🎨 Marketing (Calendario de Redes, Grabaciones y Social Hub)</option>
+                                <option value="admin">👑 Administrador (Acceso Total)</option>
+                            </select>
+                        </div>
+
+                        <div id="contenedorPasswordNuevo" class="mt-3 d-none">
+                            <label class="form-label small fw-semibold">Contraseña de Ingreso <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" name="password" id="inputPasswordNuevo" placeholder="Define la contraseña para iniciar sesión">
+                            <div class="form-text small">El empleado ingresará en <code>/auth/login</code> con su correo y esta contraseña.</div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-zenic btn-sm">Guardar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm">Guardar Empleado</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Modales para Editar y Eliminar cada empleado -->
+{% for p in empleados %}
+{% set rol_emp = p.usuario.rol if p.usuario else '' %}
+
+<!-- Modal Editar Empleado -->
+<div class="modal fade" id="modalEditar{{ p.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('operaciones_bp.editar_personal', personal_id=p.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Editar Empleado — {{ p.nombre }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-sm" name="nombre" value="{{ p.nombre }}" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-7">
+                            <label class="form-label small fw-semibold">Cargo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-sm" name="cargo" value="{{ p.cargo }}" required>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small fw-semibold">Estado Laboral</label>
+                            <select name="estado" class="form-select form-select-sm">
+                                <option value="Activo" {% if p.estado == 'Activo' %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if p.estado == 'Inactivo' %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Teléfono</label>
+                            <input type="text" class="form-control form-control-sm" name="telefono" value="{{ p.telefono or '' }}" placeholder="3001234567">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Correo Electrónico (Login)</label>
+                            <input type="email" class="form-control form-control-sm" name="email" value="{{ p.email or '' }}" placeholder="usuario@zenic.co">
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+                    <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px solid var(--zenic-border);">
+                        <h6 class="fw-bold mb-2 small" style="color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-user-shield me-1"></i>Permisos y Acceso al Sistema
+                        </h6>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Rol en el Sistema</label>
+                            <select class="form-select form-select-sm" name="rol_sistema">
+                                <option value="" {% if not rol_emp %}selected{% endif %}>Sin acceso al sistema</option>
+                                <option value="operaciones_finanzas" {% if rol_emp == 'operaciones_finanzas' %}selected{% endif %}>💼 Operaciones y Finanzas</option>
+                                <option value="ti" {% if rol_emp == 'ti' %}selected{% endif %}>💻 TI y Soporte</option>
+                                <option value="marketing" {% if rol_emp == 'marketing' %}selected{% endif %}>🎨 Marketing</option>
+                                <option value="admin" {% if rol_emp == 'admin' %}selected{% endif %}>👑 Administrador</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-1">
+                            <label class="form-label small fw-semibold">
+                                {% if p.usuario %}Nueva Contraseña (opcional){% else %}Contraseña Inicial (si asignas un rol){% endif %}
+                            </label>
+                            <input type="password" class="form-control form-control-sm" name="password" placeholder="{% if p.usuario %}Dejar vacío para conservar la actual{% else %}Ingresa una contraseña{% endif %}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminación -->
+{% if not (p.user_id and p.user_id == current_user.id) %}
+<div class="modal fade" id="modalEliminar{{ p.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <form action="{{ url_for('operaciones_bp.eliminar_personal', personal_id=p.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Eliminar Empleado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-3">
+                    <p class="mb-2">¿Estás seguro de que deseas eliminar a <strong>{{ p.nombre }}</strong>?</p>
+                    {% if p.usuario %}
+                    <p class="small text-muted mb-0">También se revocará su cuenta de acceso ({{ p.usuario.email }}) al sistema.</p>
+                    {% endif %}
+                </div>
+                <div class="modal-footer border-top-0 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger btn-sm">Sí, Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<script>
+function togglePasswordNuevo() {
+    const selectRol = document.getElementById('selectRolNuevo');
+    const contenedorPass = document.getElementById('contenedorPasswordNuevo');
+    const inputPass = document.getElementById('inputPasswordNuevo');
+    const inputEmail = document.getElementById('inputEmailNuevo');
+    const emailAsterisk = document.getElementById('emailAsterisk');
+
+    if (selectRol.value !== '') {
+        contenedorPass.classList.remove('d-none');
+        inputPass.setAttribute('required', 'required');
+        inputEmail.setAttribute('required', 'required');
+        emailAsterisk.classList.remove('d-none');
+    } else {
+        contenedorPass.classList.add('d-none');
+        inputPass.removeAttribute('required');
+        inputEmail.removeAttribute('required');
+        emailAsterisk.classList.add('d-none');
+    }
+}
+</script>
 {% endblock %}

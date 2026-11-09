@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Cargar variables de entorno ANTES de importar modelos (necesario para VAULT KEY)
 load_dotenv()
 
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, current_user
@@ -46,11 +46,22 @@ def create_app():
     login_manager.login_message = "Por favor inicia sesion para continuar."
     login_manager.init_app(app)
 
-    scheduler.init_app(app)
-    
-    from uptime_monitor import check_locales_health
-    scheduler.add_job(id='uptime_monitor', func=check_locales_health, args=[app], trigger='interval', minutes=5)
-    scheduler.start()
+    # Iniciar scheduler solo en el proceso principal (evita doble ejecución con reloaders de Flask y workers múltiples WSGI)
+    scheduler_enabled = os.environ.get("ENABLE_SCHEDULER", "true").lower() in ("true", "1", "yes")
+    is_main_process = os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not app.debug
+
+    if scheduler_enabled and is_main_process and not scheduler.running:
+        scheduler.init_app(app)
+        from uptime_monitor import check_locales_health
+        scheduler.add_job(
+            id="uptime_monitor",
+            func=check_locales_health,
+            args=[app],
+            trigger="interval",
+            minutes=5,
+            replace_existing=True,
+        )
+        scheduler.start()
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -62,6 +73,8 @@ def create_app():
     from routes.finanzas import finanzas_bp
     from routes.operaciones import operaciones_bp
     from routes.dashboard import dashboard_bp
+    from routes.ti import ti_bp
+    from routes.marketing import marketing_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(dashboard_bp, url_prefix="")
@@ -69,6 +82,8 @@ def create_app():
     app.register_blueprint(ingresos_bp, url_prefix="")
     app.register_blueprint(finanzas_bp, url_prefix="")
     app.register_blueprint(operaciones_bp, url_prefix="/operaciones")
+    app.register_blueprint(ti_bp)
+    app.register_blueprint(marketing_bp)
 
     # -- Filtros de Plantilla -------------------------------------------------
     @app.template_filter("fromjson")
@@ -119,6 +134,10 @@ def create_app():
     @app.route("/favicon.ico")
     def favicon():
         return send_from_directory(app.static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon")
+
+    @app.route("/offline")
+    def offline():
+        return render_template("offline.html")
 
     # -- Ruta Raiz ------------------------------------------------------------
     @app.route("/")

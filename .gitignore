@@ -7,5 +7,5 @@ static/uploads/
 scratch/
 venv/
 .venv/
-Nueva carpeta/
+scripts/legacy_or_tools/
 temp_db*.py

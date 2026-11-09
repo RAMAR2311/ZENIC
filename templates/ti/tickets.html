@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets de Soporte & Cambios — TI{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-3">
+
+    <!-- Header & Acciones -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: var(--zenic-blue-steel);">
+                <i class="fa-solid fa-ticket-simple me-2"></i>Tickets de Soporte & Solicitudes de Clientes
+            </h1>
+            <p class="text-muted small mb-0">Gestión de cambios y soporte técnico coordinado entre Operaciones y TI.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoTicket" style="background: linear-gradient(135deg, var(--zenic-purple-neural), var(--zenic-blue-electric)); border: none;">
+                <i class="fa-solid fa-plus"></i> Nuevo Ticket
+            </button>
+            {% if current_user.rol in ['ti', 'admin'] %}
+            <a href="{{ url_for('ti_bp.conexiones') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fa-solid fa-server"></i> Panel de Conexiones
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Métricas Rápidas -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-warning) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Tickets en Cola</div>
+                        <div class="fs-3 fw-bold" style="color: var(--zenic-warning);">{{ total_pendientes }}</div>
+                    </div>
+                    <i class="fa-solid fa-clock-rotate-left fs-2 opacity-25" style="color: var(--zenic-warning);"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-danger) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Prioridad Urgente</div>
+                        <div class="fs-3 fw-bold text-danger">{{ total_urgentes }}</div>
+                    </div>
+                    <i class="fa-solid fa-triangle-exclamation fs-2 opacity-25 text-danger"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-success) !important;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Tickets Resueltos</div>
+                        <div class="fs-3 fw-bold" style="color: var(--zenic-success);">{{ total_resueltos }}</div>
+                    </div>
+                    <i class="fa-solid fa-circle-check fs-2 opacity-25" style="color: var(--zenic-success);"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4" style="background: var(--zenic-surface);">
+        <form method="GET" class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todos los Estados</option>
+                    <option value="Pendiente" {% if estado_filtro == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                    <option value="En Desarrollo" {% if estado_filtro == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
+                    <option value="En Pruebas" {% if estado_filtro == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
+                    <option value="Resuelto" {% if estado_filtro == 'Resuelto' %}selected{% endif %}>Resuelto</option>
+                </select>
+            </div>
+            <div class="col-12 col-md-5">
+                <select name="local_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todos los Clientes / Locales</option>
+                    {% for l in locales %}
+                    <option value="{{ l.id }}" {% if local_filtro == l.id|string %}selected{% endif %}>{{ l.nombre_marca }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3 text-end">
+                <a href="{{ url_for('ti_bp.tickets') }}" class="btn btn-sm btn-outline-secondary w-100">Limpiar Filtros</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Listado de Tickets -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden" style="background: var(--zenic-surface);">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="small text-uppercase text-muted">
+                        <th>ID</th>
+                        <th>Cliente / Local</th>
+                        <th>Solicitud</th>
+                        <th>Categoría</th>
+                        <th>Prioridad</th>
+                        <th>Estado</th>
+                        <th>Solicitante</th>
+                        <th>Fecha</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in tickets %}
+                    <tr>
+                        <td class="fw-bold">#{{ t.id }}</td>
+                        <td>
+                            {% if t.local %}
+                            <span class="badge bg-light text-dark border">{{ t.local.nombre_marca }}</span>
+                            {% else %}
+                            <span class="text-muted small">General</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-truncate" style="max-width: 280px;" title="{{ t.titulo }}">{{ t.titulo }}</div>
+                            <div class="small text-muted text-truncate" style="max-width: 280px;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                        </td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ t.categoria }}</span></td>
+                        <td>
+                            {% if t.prioridad == 'Urgente' %}
+                            <span class="badge bg-danger">Urgente</span>
+                            {% elif t.prioridad == 'Alta' %}
+                            <span class="badge bg-warning text-dark">Alta</span>
+                            {% else %}
+                            <span class="badge bg-info-subtle text-info">{{ t.prioridad }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.estado == 'Resuelto' %}
+                            <span class="badge bg-success-subtle text-success"><i class="fa-solid fa-check me-1"></i>Resuelto</span>
+                            {% elif t.estado == 'En Desarrollo' %}
+                            <span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-code me-1"></i>En Desarrollo</span>
+                            {% else %}
+                            <span class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-clock me-1"></i>{{ t.estado }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="small">{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</td>
+                        <td class="small text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}">
+                                <i class="fa-solid fa-eye me-1"></i>Detalle
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Modal Detalle / Edición -->
+                    <div class="modal fade" id="modalEditarTicket{{ t.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow rounded-4">
+                                <div class="modal-header border-bottom-0 pb-0">
+                                    <h5 class="modal-title fw-bold">Ticket #{{ t.id }} — {{ t.titulo }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted small fw-bold">Descripción Completa</label>
+                                        <div class="p-3 bg-light rounded-3 small">{{ t.descripcion }}</div>
+                                    </div>
+                                    <div class="row g-2 mb-3 small">
+                                        <div class="col-6"><strong>Cliente:</strong> {{ t.local.nombre_marca if t.local else 'Interno' }}</div>
+                                        <div class="col-6"><strong>Solicitante:</strong> {{ t.solicitante.nombre if t.solicitante else 'N/A' }}</div>
+                                        <div class="col-6"><strong>Prioridad:</strong> {{ t.prioridad }}</div>
+                                        <div class="col-6"><strong>Categoría:</strong> {{ t.categoria }}</div>
+                                    </div>
+
+                                    {% if current_user.rol in ['ti', 'admin'] %}
+                                    <form action="{{ url_for('ti_bp.actualizar_ticket', ticket_id=t.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Cambiar Estado</label>
+                                            <select name="estado" class="form-select form-select-sm">
+                                                <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                                <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
+                                                <option value="En Pruebas" {% if t.estado == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
+                                                <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>Resuelto</option>
+                                                <option value="Cancelado" {% if t.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Asignado a (TI)</label>
+                                            <select name="asignado_id" class="form-select form-select-sm">
+                                                <option value="">Sin Asignar</option>
+                                                {% for u in usuarios_ti %}
+                                                <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Notas de Resolución / Cambios Realizados</label>
+                                            <textarea name="notas_resolucion" class="form-control form-control-sm" rows="3" placeholder="Detalla qué cambios o correcciones se aplicaron...">{{ t.notas_resolucion or '' }}</textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">Guardar Actualización</button>
+                                    </form>
+                                    {% else %}
+                                    {% if t.notas_resolucion %}
+                                    <div class="p-3 bg-success-subtle text-success rounded-3 small">
+                                        <strong>Respuesta TI:</strong><br>{{ t.notas_resolucion }}
+                                    </div>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nuevo Ticket -->
+<div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Cliente / Local Afectado</label>
+                        <select name="local_id" class="form-select" required>
+                            <option value="">Selecciona el cliente...</option>
+                            {% for l in locales %}
+                            <option value="{{ l.id }}">{{ l.nombre_marca }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Título del Ticket</label>
+                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Ajustar reporte de ventas / Error en sincronización" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Categoría</label>
+                            <select name="categoria" class="form-select">
+                                <option value="Soporte">Soporte Operativo</option>
+                                <option value="Error de Sistema">Error de Sistema (Bug)</option>
+                                <option value="Nueva Función">Nueva Función / Ajuste</option>
+                                <option value="Base de Datos">Base de Datos</option>
+                                <option value="Despliegue">Despliegue / Servidor</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold">Prioridad</label>
+                            <select name="prioridad" class="form-select">
+                                <option value="Baja">Baja</option>
+                                <option value="Media" selected>Media</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Urgente">Urgente (Bloqueante)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Descripción Detallada del Cambio o Problema</label>
+                        <textarea name="descripcion" rows="4" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué falla se presenta..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar y Enviar a TI</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -236,6 +236,9 @@ class Personal(db.Model):
     email = db.Column(db.String(150), nullable=True)
     estado = db.Column(db.String(20), nullable=False, default="Activo")
     fecha_ingreso = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    usuario = db.relationship('User', backref=db.backref('personal_perfil', uselist=False, lazy=True))
 
 class ActivoFijo(db.Model):
     __tablename__ = 'activos_fijos'
@@ -248,3 +251,94 @@ class ActivoFijo(db.Model):
     fecha_adquisicion = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
     
     personal = db.relationship('Personal', backref=db.backref('equipos', lazy=True))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELO: TicketCambio (Soporte TI & Solicitudes de Clientes)
+# ─────────────────────────────────────────────────────────────────────────────
+class TicketCambio(db.Model):
+    """
+    Gestión de tickets de soporte técnico, correcciones y cambios solicitados
+    por Operaciones para clientes (Locales) y atendidos por el equipo de TI.
+    """
+    __tablename__ = "tickets_cambio"
+
+    id = db.Column(db.Integer, primary_key=True)
+    local_id = db.Column(db.Integer, db.ForeignKey("locales.id", ondelete="SET NULL"), nullable=True)
+    solicitante_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    asignado_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text, nullable=False)
+    categoria = db.Column(
+        db.String(50),
+        nullable=False,
+        default="Soporte", # Soporte, Error de Sistema, Nueva Función, Despliegue, Base de Datos
+    )
+    prioridad = db.Column(
+        db.String(20),
+        nullable=False,
+        default="Media", # Baja, Media, Alta, Urgente
+    )
+    estado = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Pendiente", # Pendiente, En Desarrollo, En Pruebas, Resuelto, Cancelado
+    )
+    notas_resolucion = db.Column(db.Text, nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+    fecha_actualizacion = db.Column(db.DateTime, default=obtener_hora_bogota, onupdate=obtener_hora_bogota)
+    fecha_cierre = db.Column(db.DateTime, nullable=True)
+
+    local = db.relationship("Local", backref=db.backref("tickets", lazy=True))
+    solicitante = db.relationship("User", foreign_keys=[solicitante_id], backref=db.backref("tickets_solicitados", lazy=True))
+    asignado = db.relationship("User", foreign_keys=[asignado_id], backref=db.backref("tickets_asignados", lazy=True))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELOS: Marketing (Contenido, Grabaciones, Recursos)
+# ─────────────────────────────────────────────────────────────────────────────
+class ContenidoMarketing(db.Model):
+    """
+    Planificación de contenidos para redes sociales oficiales de Zenic.
+    """
+    __tablename__ = "marketing_contenidos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    red_social = db.Column(db.String(50), nullable=False) # Instagram, TikTok, LinkedIn, YouTube, Facebook, Multi-Plataforma
+    formato = db.Column(db.String(50), nullable=False, default="Reel") # Reel, TikTok, Carrusel, Historia, Post, Video Largo
+    estado = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Idea", # Idea, En Guion, Listo para Grabar, En Edicion, Aprobado, Publicado
+    )
+    fecha_programada = db.Column(db.Date, nullable=True)
+    copy = db.Column(db.Text, nullable=True)
+    link_recurso = db.Column(db.String(500), nullable=True) # Enlace a Drive, Canva, etc.
+    autor_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+
+    autor = db.relationship("User", backref=db.backref("contenidos_creados", lazy=True))
+
+
+class SesionGrabacion(db.Model):
+    """
+    Agenda de grabaciones y producciones audiovisuales del equipo de marketing.
+    """
+    __tablename__ = "marketing_grabaciones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    fecha_grabacion = db.Column(db.DateTime, nullable=False)
+    locacion = db.Column(db.String(200), nullable=False) # Oficina Zenic, Local Cliente, Estudio, Remoto
+    objetivo = db.Column(db.Text, nullable=True)
+    participantes = db.Column(db.String(255), nullable=True) # Personal o actores
+    equipos_requeridos = db.Column(db.Text, nullable=True) # Cámaras, luces, trípodes
+    estado = db.Column(
+        db.String(30),
+        nullable=False,
+        default="Programada", # Programada, Realizada, Cancelada, Pospuesta
+    )
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+
