@@ -1,6 +1,6 @@
 {
-  "name": "Zenic Master Control",
-  "short_name": "Zenic CRM",
+  "name": "Zenic",
+  "short_name": "Zenic",
   "description": "Sistema Centralizado de Administración, Finanzas y Operaciones Zenic S.A.S.",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
@@ -71,7 +71,7 @@
     {
       "name": "Dashboard Ejecutivo",
       "short_name": "Dashboard",
-      "description": "Ver métricas y estado global de Zenic CRM",
+      "description": "Ver métricas y estado global de Zenic",
       "url": "/",
       "icons": [{ "src": "/static/img/icons/icon-96x96.png", "sizes": "96x96" }]
     },
