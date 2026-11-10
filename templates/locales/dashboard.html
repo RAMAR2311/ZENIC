@@ -243,40 +243,6 @@
                                 <i class="fa-solid fa-trash fa-xs"></i>
                             </button>
                         </div>
-
-                        <!-- Modal Confirmar Eliminar -->
-                        <div class="modal fade" id="modalEliminar{{ local.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">
-                                            <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>
-                                            Confirmar Eliminación
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body text-start">
-                                        <p style="color:var(--zenic-text-muted)">
-                                            ¿Estás seguro de eliminar el local
-                                            <strong style="color:var(--zenic-danger)">{{ local.nombre_marca }}</strong>?
-                                        </p>
-                                        <p style="font-size:0.8rem;color:var(--zenic-text-muted)">
-                                            Esta acción no se puede deshacer.
-                                        </p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button class="btn btn-sm btn-zenic-outline" data-bs-dismiss="modal">Cancelar</button>
-                                        <form method="POST"
-                                              action="{{ url_for('locales_bp.eliminar_local', local_id=local.id) }}">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-danger-soft">
-                                                <i class="fa-solid fa-trash me-1"></i>Eliminar
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -329,6 +295,44 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block modals %}
+{% for local in locales %}
+<!-- Modal Confirmar Eliminar -->
+<div class="modal fade" id="modalEliminar{{ local.id }}" tabindex="-1" aria-labelledby="modalEliminarLabel{{ local.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEliminarLabel{{ local.id }}">
+                    <i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body text-start">
+                <p style="color:var(--zenic-text-muted)">
+                    ¿Estás seguro de eliminar el local
+                    <strong style="color:var(--zenic-danger)">{{ local.nombre_marca }}</strong>?
+                </p>
+                <p style="font-size:0.8rem;color:var(--zenic-text-muted)">
+                    Esta acción no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm btn-zenic-outline" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST"
+                      action="{{ url_for('locales_bp.eliminar_local', local_id=local.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger-soft">
+                        <i class="fa-solid fa-trash me-1"></i>Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}

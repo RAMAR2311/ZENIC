@@ -100,14 +100,16 @@
     </div>
 
 </div>
+{% endblock %}
 
+{% block modals %}
 <!-- Modal Nuevo Contenido -->
-<div class="modal fade" id="modalNuevoContenido" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalNuevoContenido" tabindex="-1" aria-labelledby="modalNuevoContenidoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Planificar Nuevo Contenido</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold" id="modalNuevoContenidoLabel"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Planificar Nuevo Contenido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="{{ url_for('marketing_bp.contenidos') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

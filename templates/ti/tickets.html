@@ -147,66 +147,6 @@
                             </button>
                         </td>
                     </tr>
-
-                    <!-- Modal Detalle / Edición -->
-                    <div class="modal fade" id="modalEditarTicket{{ t.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content border-0 shadow rounded-4">
-                                <div class="modal-header border-bottom-0 pb-0">
-                                    <h5 class="modal-title fw-bold">Ticket #{{ t.id }} — {{ t.titulo }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="mb-3">
-                                        <label class="form-label text-muted small fw-bold">Descripción Completa</label>
-                                        <div class="p-3 bg-light rounded-3 small">{{ t.descripcion }}</div>
-                                    </div>
-                                    <div class="row g-2 mb-3 small">
-                                        <div class="col-6"><strong>Cliente:</strong> {{ t.local.nombre_marca if t.local else 'Interno' }}</div>
-                                        <div class="col-6"><strong>Solicitante:</strong> {{ t.solicitante.nombre if t.solicitante else 'N/A' }}</div>
-                                        <div class="col-6"><strong>Prioridad:</strong> {{ t.prioridad }}</div>
-                                        <div class="col-6"><strong>Categoría:</strong> {{ t.categoria }}</div>
-                                    </div>
-
-                                    {% if current_user.rol in ['ti', 'admin'] %}
-                                    <form action="{{ url_for('ti_bp.actualizar_ticket', ticket_id=t.id) }}" method="POST">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <div class="mb-3">
-                                            <label class="form-label small fw-bold">Cambiar Estado</label>
-                                            <select name="estado" class="form-select form-select-sm">
-                                                <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
-                                                <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
-                                                <option value="En Pruebas" {% if t.estado == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
-                                                <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>Resuelto</option>
-                                                <option value="Cancelado" {% if t.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label small fw-bold">Asignado a (TI)</label>
-                                            <select name="asignado_id" class="form-select form-select-sm">
-                                                <option value="">Sin Asignar</option>
-                                                {% for u in usuarios_ti %}
-                                                <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label small fw-bold">Notas de Resolución / Cambios Realizados</label>
-                                            <textarea name="notas_resolucion" class="form-control form-control-sm" rows="3" placeholder="Detalla qué cambios o correcciones se aplicaron...">{{ t.notas_resolucion or '' }}</textarea>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary btn-sm w-100">Guardar Actualización</button>
-                                    </form>
-                                    {% else %}
-                                    {% if t.notas_resolucion %}
-                                    <div class="p-3 bg-success-subtle text-success rounded-3 small">
-                                        <strong>Respuesta TI:</strong><br>{{ t.notas_resolucion }}
-                                    </div>
-                                    {% endif %}
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% else %}
                     <tr>
                         <td colspan="9" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
@@ -217,14 +157,16 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block modals %}
 <!-- Modal Nuevo Ticket -->
-<div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-labelledby="modalNuevoTicketLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow rounded-4">
             <div class="modal-header">
-                <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title fw-bold" id="modalNuevoTicketLabel"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -276,5 +218,66 @@
         </div>
     </div>
 </div>
-{% endblock %}
 
+<!-- Modales Detalle / Edición para cada Ticket -->
+{% for t in tickets %}
+<div class="modal fade" id="modalEditarTicket{{ t.id }}" tabindex="-1" aria-labelledby="modalEditarTicketLabel{{ t.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modalEditarTicketLabel{{ t.id }}">Ticket #{{ t.id }} — {{ t.titulo }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">Descripción Completa</label>
+                    <div class="p-3 bg-light rounded-3 small">{{ t.descripcion }}</div>
+                </div>
+                <div class="row g-2 mb-3 small">
+                    <div class="col-6"><strong>Cliente:</strong> {{ t.local.nombre_marca if t.local else 'Interno' }}</div>
+                    <div class="col-6"><strong>Solicitante:</strong> {{ t.solicitante.nombre if t.solicitante else 'N/A' }}</div>
+                    <div class="col-6"><strong>Prioridad:</strong> {{ t.prioridad }}</div>
+                    <div class="col-6"><strong>Categoría:</strong> {{ t.categoria }}</div>
+                </div>
+
+                {% if current_user.rol in ['ti', 'admin'] %}
+                <form action="{{ url_for('ti_bp.actualizar_ticket', ticket_id=t.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Cambiar Estado</label>
+                        <select name="estado" class="form-select form-select-sm">
+                            <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                            <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
+                            <option value="En Pruebas" {% if t.estado == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
+                            <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>Resuelto</option>
+                            <option value="Cancelado" {% if t.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Asignado a (TI)</label>
+                        <select name="asignado_id" class="form-select form-select-sm">
+                            <option value="">Sin Asignar</option>
+                            {% for u in usuarios_ti %}
+                            <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Notas de Resolución / Cambios Realizados</label>
+                        <textarea name="notas_resolucion" class="form-control form-control-sm" rows="3" placeholder="Detalla qué cambios o correcciones se aplicaron...">{{ t.notas_resolucion or '' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100">Guardar Actualización</button>
+                </form>
+                {% else %}
+                {% if t.notas_resolucion %}
+                <div class="p-3 bg-success-subtle text-success rounded-3 small">
+                    <strong>Respuesta TI:</strong><br>{{ t.notas_resolucion }}
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

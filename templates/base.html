@@ -531,7 +531,17 @@
             border-radius: var(--radius-sm) !important;
         }
 
-        /* ── Modales ── */
+        /* ── Modales & Capas de Superposición ── */
+        .modal {
+            z-index: 2060 !important;
+        }
+        .modal-backdrop {
+            z-index: 2050 !important;
+        }
+        .modal-dialog {
+            z-index: 2070 !important;
+            pointer-events: auto !important;
+        }
         .modal-content {
             background: #FFFFFF !important;
             border: 1px solid var(--zenic-border) !important;
@@ -539,6 +549,7 @@
             color: var(--zenic-text-main) !important;
             box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
             overflow: hidden;
+            pointer-events: auto !important;
         }
         .modal-header {
             background: var(--zenic-surface-subtle) !important;
@@ -626,7 +637,6 @@
 
         .main-content {
             position: relative;
-            z-index: 1;
             padding: 1.5rem 0 5rem;
         }
 
