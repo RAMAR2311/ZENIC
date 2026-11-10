@@ -94,7 +94,7 @@
         <div class="kpi-card kpi-green">
             <i class="fa-solid fa-server kpi-icon"></i>
             <div class="kpi-label">Instancias</div>
-            <div class="kpi-value" style="color: {% if offline_count > 0 %}var(--zenic-danger){% else %}var(--zenic-success){% endif %}">
+            <div class="kpi-value {% if offline_count > 0 %}text-danger{% else %}text-success{% endif %}">
                 {{ total_locales }}
             </div>
             <div class="kpi-sub">
