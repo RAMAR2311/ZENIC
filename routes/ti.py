@@ -3,16 +3,130 @@ routes/ti.py — Módulo de TI: Conexiones, Uptime & Tickets de Cambios
 ====================================================================
 Gestiona las solicitudes técnicas creadas por Operaciones para los clientes
 y centraliza los accesos a instancias y monitor de estado.
+Incluye optimización y compresión automática de imágenes y videos adjuntos.
 """
 
+import os
+import shutil
+import subprocess
 from datetime import datetime
-from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
+from PIL import Image, ImageOps
+from werkzeug.utils import secure_filename
+
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort, current_app
 from flask_login import login_required, current_user
 
 from models import db, TicketCambio, Local, User, obtener_hora_bogota
 from decorators import ti_required, tickets_access_required
 
 ti_bp = Blueprint("ti_bp", __name__, url_prefix="/ti")
+
+EXTENSIONES_IMAGENES = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+EXTENSIONES_VIDEOS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
+MAX_FILE_SIZE = 45 * 1024 * 1024  # 45 MB máximo antes de compresión
+
+
+def optimizar_imagen(input_file, output_path, max_dim=1280, quality=80):
+    """
+    Redimensiona y comprime una imagen a formato JPEG o WebP optimizado
+    manteniendo la proporción y corrigiendo la rotación EXIF si viene de celular.
+    """
+    img = Image.open(input_file)
+    # Corregir orientación de fotos tomadas con móvil (cámara vertical/horizontal)
+    img = ImageOps.exif_transpose(img)
+
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    width, height = img.size
+    if width > max_dim or height > max_dim:
+        img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+
+    img.save(output_path, "JPEG", optimize=True, quality=quality)
+
+
+def optimizar_video(input_path, output_path):
+    """
+    Intenta comprimir video usando ffmpeg si está disponible en el servidor.
+    Reduce resolución a máx 720p y usa H.264/AAC con CRF 28 para reducir peso drásticamente.
+    Si ffmpeg no está disponible, se copia el video original directamente.
+    """
+    ffmpeg_bin = shutil.which("ffmpeg")
+    if not ffmpeg_bin:
+        shutil.copyfile(input_path, output_path)
+        return
+
+    # Comando ffmpeg para reducción de tamaño eficiente
+    cmd = [
+        ffmpeg_bin,
+        "-y",
+        "-i", input_path,
+        "-vcodec", "libx264",
+        "-crf", "28",
+        "-preset", "faster",
+        "-vf", "scale='min(1280,iw)':-2",
+        "-acodec", "aac",
+        "-b:a", "128k",
+        "-movflags", "+faststart",
+        output_path
+    ]
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+        if res.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            shutil.copyfile(input_path, output_path)
+    except Exception:
+        shutil.copyfile(input_path, output_path)
+
+
+def procesar_adjunto_ticket(archivo):
+    """
+    Valida, comprime y almacena el archivo adjunto (imagen o video).
+    Retorna tupla: (nombre_archivo_final, tipo_adjunto)
+    """
+    if not archivo or not archivo.filename:
+        return None, None
+
+    filename_orig = secure_filename(archivo.filename)
+    if not filename_orig:
+        return None, None
+
+    _, ext = os.path.splitext(filename_orig)
+    ext = ext.lower()
+
+    if ext not in EXTENSIONES_IMAGENES and ext not in EXTENSIONES_VIDEOS:
+        raise ValueError("Formato de archivo no permitido. Solo se aceptan imágenes (JPG, PNG, WEBP) o videos (MP4, MOV, WEBM).")
+
+    upload_folder = current_app.config.get("TICKETS_UPLOAD_FOLDER")
+    os.makedirs(upload_folder, exist_ok=True)
+
+    timestamp = obtener_hora_bogota().strftime("%Y%m%d%H%M%S")
+
+    if ext in EXTENSIONES_IMAGENES:
+        filename_final = f"ticket_{timestamp}_{filename_orig[:20]}.jpg"
+        output_path = os.path.join(upload_folder, filename_final)
+        optimizar_imagen(archivo.stream, output_path)
+        return filename_final, "imagen"
+
+    elif ext in EXTENSIONES_VIDEOS:
+        temp_input_filename = f"temp_{timestamp}_{filename_orig}"
+        temp_input_path = os.path.join(upload_folder, temp_input_filename)
+        archivo.save(temp_input_path)
+
+        filename_final = f"ticket_{timestamp}_{os.path.splitext(filename_orig)[0][:20]}.mp4"
+        output_path = os.path.join(upload_folder, filename_final)
+
+        try:
+            optimizar_video(temp_input_path, output_path)
+        finally:
+            if os.path.exists(temp_input_path):
+                try:
+                    os.remove(temp_input_path)
+                except OSError:
+                    pass
+
+        return filename_final, "video"
+
+    return None, None
 
 
 @ti_bp.route("/tickets", methods=["GET"])
@@ -62,16 +176,30 @@ def tickets():
 @login_required
 @tickets_access_required
 def nuevo_ticket():
-    """Creación de un nuevo ticket de soporte por parte de Operaciones o Admin."""
+    """Creación de un nuevo ticket de soporte por parte de Operaciones o Admin con adjuntos multimedia."""
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     local_id = request.form.get("local_id")
     categoria = request.form.get("categoria", "Soporte")
     prioridad = request.form.get("prioridad", "Media")
+    archivo_adjunto = request.files.get("adjunto")
 
     if not titulo or not descripcion:
         flash("El título y la descripción son obligatorios.", "error")
         return redirect(url_for("ti_bp.tickets"))
+
+    adjunto_ruta = None
+    adjunto_tipo = None
+
+    if archivo_adjunto and archivo_adjunto.filename:
+        try:
+            adjunto_ruta, adjunto_tipo = procesar_adjunto_ticket(archivo_adjunto)
+        except ValueError as e:
+            flash(str(e), "error")
+            return redirect(url_for("ti_bp.tickets"))
+        except Exception as e:
+            flash(f"Error procesando el archivo multimedia: {str(e)}", "error")
+            return redirect(url_for("ti_bp.tickets"))
 
     ticket = TicketCambio(
         titulo=titulo,
@@ -80,7 +208,9 @@ def nuevo_ticket():
         categoria=categoria,
         prioridad=prioridad,
         solicitante_id=current_user.id,
-        estado="Pendiente"
+        estado="Pendiente",
+        adjunto_ruta=adjunto_ruta,
+        adjunto_tipo=adjunto_tipo
     )
 
     db.session.add(ticket)
@@ -126,4 +256,3 @@ def conexiones():
     """Centro de conexiones de sistemas: Uptime, URLs y acceso a servidores."""
     locales = Local.query.order_by(Local.nombre_marca).all()
     return render_template("ti/conexiones.html", locales=locales)
-

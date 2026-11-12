@@ -286,6 +286,8 @@ class TicketCambio(db.Model):
         default="Pendiente", # Pendiente, En Desarrollo, En Pruebas, Resuelto, Cancelado
     )
     notas_resolucion = db.Column(db.Text, nullable=True)
+    adjunto_ruta = db.Column(db.String(255), nullable=True) # Nombre de archivo de imagen o video optimizado
+    adjunto_tipo = db.Column(db.String(20), nullable=True)  # 'imagen', 'video'
     fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
     fecha_actualizacion = db.Column(db.DateTime, default=obtener_hora_bogota, onupdate=obtener_hora_bogota)
     fecha_cierre = db.Column(db.DateTime, nullable=True)

@@ -11,7 +11,7 @@
             <h1 class="h3 fw-bold mb-1" style="color: var(--zenic-blue-steel);">
                 <i class="fa-solid fa-ticket-simple me-2"></i>Tickets de Soporte & Solicitudes de Clientes
             </h1>
-            <p class="text-muted small mb-0">Gestión de cambios y soporte técnico coordinado entre Operaciones y TI.</p>
+            <p class="text-muted small mb-0">Gestión de cambios y soporte técnico coordinado entre Operaciones y TI con evidencia visual.</p>
         </div>
         <div class="d-flex gap-2">
             <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoTicket" style="background: linear-gradient(135deg, var(--zenic-purple-neural), var(--zenic-blue-electric)); border: none;">
@@ -99,6 +99,7 @@
                         <th>Solicitud</th>
                         <th>Categoría</th>
                         <th>Prioridad</th>
+                        <th>Evidencia</th>
                         <th>Estado</th>
                         <th>Solicitante</th>
                         <th>Fecha</th>
@@ -117,8 +118,8 @@
                             {% endif %}
                         </td>
                         <td>
-                            <div class="fw-semibold text-truncate" style="max-width: 280px;" title="{{ t.titulo }}">{{ t.titulo }}</div>
-                            <div class="small text-muted text-truncate" style="max-width: 280px;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
+                            <div class="fw-semibold text-truncate" style="max-width: 250px;" title="{{ t.titulo }}">{{ t.titulo }}</div>
+                            <div class="small text-muted text-truncate" style="max-width: 250px;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
                         </td>
                         <td><span class="badge bg-secondary-subtle text-secondary">{{ t.categoria }}</span></td>
                         <td>
@@ -128,6 +129,21 @@
                             <span class="badge bg-warning text-dark">Alta</span>
                             {% else %}
                             <span class="badge bg-info-subtle text-info">{{ t.prioridad }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if t.adjunto_ruta %}
+                                {% if t.adjunto_tipo == 'imagen' %}
+                                <a href="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" target="_blank" class="badge rounded-pill bg-primary-subtle text-primary text-decoration-none">
+                                    <i class="fa-solid fa-image me-1"></i>Foto
+                                </a>
+                                {% elif t.adjunto_tipo == 'video' %}
+                                <a href="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" target="_blank" class="badge rounded-pill bg-danger-subtle text-danger text-decoration-none">
+                                    <i class="fa-solid fa-video me-1"></i>Video
+                                </a>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted small">—</span>
                             {% endif %}
                         </td>
                         <td>
@@ -149,7 +165,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="9" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
+                        <td colspan="10" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -168,7 +184,7 @@
                 <h5 class="modal-title fw-bold" id="modalNuevoTicketLabel"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST">
+            <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data" id="formNuevoTicket">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
@@ -182,7 +198,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Título del Ticket</label>
-                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Ajustar reporte de ventas / Error en sincronización" required>
+                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Error al emitir factura / Solicitar ajuste de precios" required>
                     </div>
                     <div class="row g-2 mb-3">
                         <div class="col-6">
@@ -207,12 +223,32 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Descripción Detallada del Cambio o Problema</label>
-                        <textarea name="descripcion" rows="4" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué falla se presenta..." required></textarea>
+                        <textarea name="descripcion" rows="3" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué falla se presenta..." required></textarea>
                     </div>
+
+                    <!-- Adjunto Multimedia (Imagen o Video con compresión inteligente) -->
+                    <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px dashed var(--zenic-border);">
+                        <label class="form-label small fw-bold d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-photo-film text-primary"></i> Evidencia Multimedia (Imagen o Video)
+                        </label>
+                        <div class="text-muted small mb-2" style="font-size: 0.76rem;">
+                            Las imágenes se comprimen automáticamente en el navegador y el servidor. Máximo 45MB.
+                        </div>
+                        <input type="file" name="adjunto" id="inputAdjuntoTicket" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm">
+                        <div id="previewContainer" class="mt-2 d-none">
+                            <div class="d-flex align-items-center gap-2 small">
+                                <span class="badge bg-secondary" id="badgeTipoArchivo">Archivo</span>
+                                <span class="text-muted" id="txtPesoArchivo"></span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="modal-footer border-top-0">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Registrar y Enviar a TI</button>
+                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" id="btnSubmitTicket">
+                        <span>Registrar y Enviar a TI</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -233,6 +269,35 @@
                     <label class="form-label text-muted small fw-bold">Descripción Completa</label>
                     <div class="p-3 bg-light rounded-3 small">{{ t.descripcion }}</div>
                 </div>
+
+                {% if t.adjunto_ruta %}
+                <div class="mb-3">
+                    <label class="form-label text-muted small fw-bold">Evidencia Adjunta</label>
+                    <div class="p-2 border rounded-3 text-center bg-light">
+                        {% if t.adjunto_tipo == 'imagen' %}
+                        <a href="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" target="_blank">
+                            <img src="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" alt="Evidencia Ticket #{{ t.id }}" class="img-fluid rounded-3" style="max-height: 240px; object-fit: contain;">
+                        </a>
+                        <div class="mt-1">
+                            <a href="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" target="_blank" class="small text-decoration-none">
+                                <i class="fa-solid fa-up-right-from-square me-1"></i>Ver en tamaño completo
+                            </a>
+                        </div>
+                        {% elif t.adjunto_tipo == 'video' %}
+                        <video controls class="w-100 rounded-3 shadow-sm" style="max-height: 260px;">
+                            <source src="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" type="video/mp4">
+                            Tu navegador no soporta reproducción de video.
+                        </video>
+                        <div class="mt-1">
+                            <a href="{{ url_for('static', filename='uploads/tickets/' + t.adjunto_ruta) }}" target="_blank" class="small text-decoration-none">
+                                <i class="fa-solid fa-download me-1"></i>Descargar Video
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="row g-2 mb-3 small">
                     <div class="col-6"><strong>Cliente:</strong> {{ t.local.nombre_marca if t.local else 'Interno' }}</div>
                     <div class="col-6"><strong>Solicitante:</strong> {{ t.solicitante.nombre if t.solicitante else 'N/A' }}</div>
@@ -280,4 +345,103 @@
     </div>
 </div>
 {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Compresión ligera del lado del cliente (Frontend) para imágenes antes de enviar
+    const fileInput = document.getElementById('inputAdjuntoTicket');
+    const previewContainer = document.getElementById('previewContainer');
+    const badgeTipo = document.getElementById('badgeTipoArchivo');
+    const txtPeso = document.getElementById('txtPesoArchivo');
+    const btnSubmit = document.getElementById('btnSubmitTicket');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (!file) {
+                previewContainer.classList.add('d-none');
+                return;
+            }
+
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            previewContainer.classList.remove('d-none');
+
+            if (file.type.startsWith('image/')) {
+                badgeTipo.textContent = 'Imagen';
+                badgeTipo.className = 'badge bg-primary';
+                txtPeso.textContent = `Tamaño original: ${sizeMB} MB (se optimizará al subir)`;
+
+                // Si la imagen es muy pesada (> 1MB), redimensionar con Canvas para ahorrar datos móviles
+                if (file.size > 1024 * 1024) {
+                    try {
+                        const compressedBlob = await compressImageOnClient(file, 1600, 0.8);
+                        const newFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(newFile);
+                        fileInput.files = dataTransfer.files;
+                        const newSizeMB = (newFile.size / (1024 * 1024)).toFixed(2);
+                        txtPeso.textContent = `Optimizado localmente: ${newSizeMB} MB`;
+                    } catch (e) {
+                        console.warn('Compresión en cliente omitida:', e);
+                    }
+                }
+            } else if (file.type.startsWith('video/')) {
+                badgeTipo.textContent = 'Video';
+                badgeTipo.className = 'badge bg-danger';
+                txtPeso.textContent = `Tamaño: ${sizeMB} MB (máx 45MB)`;
+
+                if (file.size > 45 * 1024 * 1024) {
+                    alert('El video supera el límite recomendado de 45 MB. Por favor sube un clip más corto para evitar saturar el servidor.');
+                    this.value = '';
+                    previewContainer.classList.add('d-none');
+                }
+            }
+        });
+    }
+
+    function compressImageOnClient(file, maxDimension, quality) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxDimension || height > maxDimension) {
+                        if (width > height) {
+                            height = Math.round((height * maxDimension) / width);
+                            width = maxDimension;
+                        } else {
+                            width = Math.round((width * maxDimension) / height);
+                            height = maxDimension;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+                };
+                img.onerror = (err) => reject(err);
+            };
+            reader.onerror = (err) => reject(err);
+        });
+    }
+
+    const formTicket = document.getElementById('formNuevoTicket');
+    if (formTicket) {
+        formTicket.addEventListener('submit', () => {
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando y Subiendo...';
+            }
+        });
+    }
+</script>
 {% endblock %}

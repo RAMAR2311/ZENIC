@@ -36,6 +36,10 @@ def create_app():
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+    TICKETS_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'tickets')
+    os.makedirs(TICKETS_UPLOAD_FOLDER, exist_ok=True)
+    app.config['TICKETS_UPLOAD_FOLDER'] = TICKETS_UPLOAD_FOLDER
+
     # -- Extensiones ----------------------------------------------------------
     db.init_app(app)
     Migrate(app, db)
