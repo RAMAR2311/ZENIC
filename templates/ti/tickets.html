@@ -256,83 +256,78 @@
 <!-- Modal Nuevo Ticket -->
 <div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-labelledby="modalNuevoTicketLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow rounded-4">
+        <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data" id="formNuevoTicket" class="modal-content border-0 shadow rounded-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="modal-header">
                 <h5 class="modal-title fw-bold" id="modalNuevoTicketLabel"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data" id="formNuevoTicket">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Cliente / Local Afectado</label>
-                        <select name="local_id" class="form-select" required>
-                            <option value="">Selecciona el cliente...</option>
-                            {% for l in locales %}
-                            <option value="{{ l.id }}">{{ l.nombre_marca }}</option>
-                            {% endfor %}
+            <div class="modal-body pb-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Cliente / Local Afectado</label>
+                    <select name="local_id" class="form-select" required>
+                        <option value="">Selecciona el cliente...</option>
+                        {% for l in locales %}
+                        <option value="{{ l.id }}">{{ l.nombre_marca }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Título del Ticket</label>
+                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Error al emitir factura / Solicitar ajuste de precios" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Categoría</label>
+                        <select name="categoria" class="form-select">
+                            <option value="Soporte">Soporte Operativo</option>
+                            <option value="Error de Sistema">Error de Sistema (Bug)</option>
+                            <option value="Nueva Función">Nueva Función / Ajuste</option>
+                            <option value="Base de Datos">Base de Datos</option>
+                            <option value="Despliegue">Despliegue / Servidor</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Título del Ticket</label>
-                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Error al emitir factura / Solicitar ajuste de precios" required>
+                    <div class="col-6">
+                        <label class="form-label small fw-bold">Prioridad</label>
+                        <select name="prioridad" class="form-select">
+                            <option value="Baja">Baja</option>
+                            <option value="Media" selected>Media</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Urgente">Urgente (Bloqueante)</option>
+                        </select>
                     </div>
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Categoría</label>
-                            <select name="categoria" class="form-select">
-                                <option value="Soporte">Soporte Operativo</option>
-                                <option value="Error de Sistema">Error de Sistema (Bug)</option>
-                                <option value="Nueva Función">Nueva Función / Ajuste</option>
-                                <option value="Base de Datos">Base de Datos</option>
-                                <option value="Despliegue">Despliegue / Servidor</option>
-                            </select>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold">Prioridad</label>
-                            <select name="prioridad" class="form-select">
-                                <option value="Baja">Baja</option>
-                                <option value="Media" selected>Media</option>
-                                <option value="Alta">Alta</option>
-                                <option value="Urgente">Urgente (Bloqueante)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <label class="form-label small fw-bold mb-0">Descripción Detallada del Cambio o Problema</label>
-                            <span class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-align-left me-1"></i>Con saltos de línea y párrafos</span>
-                        </div>
-                        <textarea name="descripcion" rows="5" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué problema se presenta:&#10;&#10;1. ¿Qué sucedió?&#10;2. ¿En qué módulo o pantalla?&#10;3. ¿Qué resultado se espera?" style="line-height: 1.6; text-align: justify; text-justify: inter-word; font-size: 0.92rem; border-radius: 10px; padding: 0.85rem; resize: vertical;" required></textarea>
-                        <div class="form-text" style="font-size: 0.74rem;">
-                            Puedes usar saltos de línea (<kbd>Enter</kbd>), viñetas o listas numeradas. Se guardarán y mostrarán con el mismo formato organizado.
-                        </div>
-                    </div>
-
-                    <!-- Adjunto Multimedia (Imágenes o Videos con compresión inteligente) -->
-                    <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px dashed var(--zenic-border);">
-                        <label class="form-label small fw-bold d-flex align-items-center gap-2 mb-1">
-                            <i class="fa-solid fa-photo-film text-primary"></i> Evidencia Multimedia (Imágenes o Videos)
-                        </label>
-                        <div class="text-muted small mb-2" style="font-size: 0.76rem;">
-                            Puedes seleccionar múltiples fotos o videos a la vez. Las imágenes se optimizan automáticamente. Máximo 45MB por video.
-                        </div>
-                        <input type="file" name="adjunto" id="inputAdjuntoTicket" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
-                        <div id="previewContainer" class="mt-2 d-none">
-                            <div class="small fw-semibold text-muted mb-1" id="txtArchivosSeleccionados">Archivos seleccionados:</div>
-                            <div id="listaPrevisualizaciones" class="d-flex flex-wrap gap-2"></div>
-                        </div>
-                    </div>
-
                 </div>
-                <div class="modal-footer border-top-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" id="btnSubmitTicket">
-                        <span>Registrar y Enviar a TI</span>
-                    </button>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label class="form-label small fw-bold mb-0">Descripción Detallada del Cambio o Problema</label>
+                        <span class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-align-left me-1"></i>Con saltos de línea</span>
+                    </div>
+                    <textarea name="descripcion" rows="4" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué problema se presenta..." style="line-height: 1.5; font-size: 0.9rem; border-radius: 10px; resize: vertical;" required></textarea>
                 </div>
-            </form>
-        </div>
+
+                <!-- Adjunto Multimedia (Imágenes o Videos con compresión inteligente) -->
+                <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px dashed var(--zenic-border);">
+                    <label class="form-label small fw-bold d-flex align-items-center gap-2 mb-1">
+                        <i class="fa-solid fa-photo-film text-primary"></i> Evidencia Multimedia (Imágenes o Videos)
+                    </label>
+                    <div class="text-muted small mb-2" style="font-size: 0.76rem;">
+                        Puedes adjuntar múltiples fotos o videos. Se optimizan automáticamente. Máx 45MB por video.
+                    </div>
+                    <input type="file" name="adjunto" id="inputAdjuntoTicket" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
+                    <div id="previewContainer" class="mt-2 d-none">
+                        <div class="small fw-semibold text-muted mb-1" id="txtArchivosSeleccionados">Archivos seleccionados:</div>
+                        <div id="listaPrevisualizaciones" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light p-3">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 px-3 fw-semibold" id="btnSubmitTicket" style="min-height: 42px;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Registrar y Enviar a TI</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
