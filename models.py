@@ -286,8 +286,24 @@ class TicketCambio(db.Model):
         default="Pendiente", # Pendiente, En Desarrollo, En Pruebas, Resuelto, Cancelado
     )
     notas_resolucion = db.Column(db.Text, nullable=True)
-    adjunto_ruta = db.Column(db.String(255), nullable=True) # Nombre de archivo de imagen o video optimizado
-    adjunto_tipo = db.Column(db.String(20), nullable=True)  # 'imagen', 'video'
+    adjunto_ruta = db.Column(db.Text, nullable=True) # Nombre de archivo o lista en formato JSON de múltiples archivos
+    adjunto_tipo = db.Column(db.String(50), nullable=True)  # 'imagen', 'video', o 'multiple'
+
+    @property
+    def adjuntos(self):
+        """Retorna una lista normalizada de diccionarios [{'ruta': ..., 'tipo': ...}]"""
+        if not self.adjunto_ruta:
+            return []
+        import json
+        try:
+            # Intenta parsear como JSON si son múltiples
+            data = json.loads(self.adjunto_ruta)
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+        # Si era un solo archivo antiguo guardado como string simple
+        return [{"ruta": self.adjunto_ruta, "tipo": self.adjunto_tipo or "imagen"}]
     fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
     fecha_actualizacion = db.Column(db.DateTime, default=obtener_hora_bogota, onupdate=obtener_hora_bogota)
     fecha_cierre = db.Column(db.DateTime, nullable=True)

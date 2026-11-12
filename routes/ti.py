@@ -6,6 +6,7 @@ y centraliza los accesos a instancias y monitor de estado.
 Incluye optimización y compresión automática de imágenes y videos adjuntos.
 """
 
+import json
 import os
 import shutil
 import subprocess
@@ -176,30 +177,43 @@ def tickets():
 @login_required
 @tickets_access_required
 def nuevo_ticket():
-    """Creación de un nuevo ticket de soporte por parte de Operaciones o Admin con adjuntos multimedia."""
+    """Creación de un nuevo ticket de soporte por parte de Operaciones o Admin con soporte de múltiples adjuntos multimedia."""
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     local_id = request.form.get("local_id")
     categoria = request.form.get("categoria", "Soporte")
     prioridad = request.form.get("prioridad", "Media")
-    archivo_adjunto = request.files.get("adjunto")
+    archivos_adjuntos = request.files.getlist("adjunto")
 
     if not titulo or not descripcion:
         flash("El título y la descripción son obligatorios.", "error")
         return redirect(url_for("ti_bp.tickets"))
 
+    adjuntos_procesados = []
+
+    for archivo in archivos_adjuntos:
+        if archivo and archivo.filename:
+            try:
+                ruta, tipo = procesar_adjunto_ticket(archivo)
+                if ruta:
+                    adjuntos_procesados.append({"ruta": ruta, "tipo": tipo})
+            except ValueError as e:
+                flash(str(e), "error")
+                return redirect(url_for("ti_bp.tickets"))
+            except Exception as e:
+                flash(f"Error procesando archivo '{archivo.filename}': {str(e)}", "error")
+                return redirect(url_for("ti_bp.tickets"))
+
     adjunto_ruta = None
     adjunto_tipo = None
 
-    if archivo_adjunto and archivo_adjunto.filename:
-        try:
-            adjunto_ruta, adjunto_tipo = procesar_adjunto_ticket(archivo_adjunto)
-        except ValueError as e:
-            flash(str(e), "error")
-            return redirect(url_for("ti_bp.tickets"))
-        except Exception as e:
-            flash(f"Error procesando el archivo multimedia: {str(e)}", "error")
-            return redirect(url_for("ti_bp.tickets"))
+    if adjuntos_procesados:
+        if len(adjuntos_procesados) == 1:
+            adjunto_ruta = adjuntos_procesados[0]["ruta"]
+            adjunto_tipo = adjuntos_procesados[0]["tipo"]
+        else:
+            adjunto_ruta = json.dumps(adjuntos_procesados)
+            adjunto_tipo = "multiple"
 
     ticket = TicketCambio(
         titulo=titulo,
@@ -257,16 +271,18 @@ def eliminar_ticket(ticket_id):
     ticket = TicketCambio.query.get_or_404(ticket_id)
     id_ticket = ticket.id
 
-    # Eliminar archivo adjunto del servidor si existe
-    if ticket.adjunto_ruta:
-        upload_folder = current_app.config.get("TICKETS_UPLOAD_FOLDER")
-        if upload_folder:
-            archivo_path = os.path.join(upload_folder, ticket.adjunto_ruta)
-            if os.path.exists(archivo_path):
-                try:
-                    os.remove(archivo_path)
-                except OSError:
-                    pass
+    # Eliminar archivos adjuntos del servidor si existen
+    upload_folder = current_app.config.get("TICKETS_UPLOAD_FOLDER")
+    if upload_folder:
+        for adj in ticket.adjuntos:
+            ruta = adj.get("ruta")
+            if ruta:
+                archivo_path = os.path.join(upload_folder, ruta)
+                if os.path.exists(archivo_path):
+                    try:
+                        os.remove(archivo_path)
+                    except OSError:
+                        pass
 
     db.session.delete(ticket)
     db.session.commit()
