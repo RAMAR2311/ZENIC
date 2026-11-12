@@ -281,8 +281,14 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Descripción Detallada del Cambio o Problema</label>
-                        <textarea name="descripcion" rows="3" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué falla se presenta..." required></textarea>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold mb-0">Descripción Detallada del Cambio o Problema</label>
+                            <span class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-align-left me-1"></i>Con saltos de línea y párrafos</span>
+                        </div>
+                        <textarea name="descripcion" rows="5" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué problema se presenta:&#10;&#10;1. ¿Qué sucedió?&#10;2. ¿En qué módulo o pantalla?&#10;3. ¿Qué resultado se espera?" style="line-height: 1.6; text-align: justify; text-justify: inter-word; font-size: 0.92rem; border-radius: 10px; padding: 0.85rem; resize: vertical;" required></textarea>
+                        <div class="form-text" style="font-size: 0.74rem;">
+                            Puedes usar saltos de línea (<kbd>Enter</kbd>), viñetas o listas numeradas. Se guardarán y mostrarán con el mismo formato organizado.
+                        </div>
                     </div>
 
                     <!-- Adjunto Multimedia (Imagen o Video con compresión inteligente) -->
@@ -329,7 +335,7 @@
             <div class="modal-body p-3 p-md-4">
                 <div class="mb-3">
                     <label class="form-label text-muted small fw-bold">Descripción Completa</label>
-                    <div class="p-3 bg-light rounded-3 small" style="white-space: pre-wrap; word-break: break-word;">{{ t.descripcion }}</div>
+                    <div class="p-3 bg-light rounded-3 small" style="white-space: pre-wrap; word-break: break-word; text-align: justify; text-justify: inter-word; line-height: 1.65; border: 1px solid var(--zenic-border);">{{ t.descripcion }}</div>
                 </div>
 
                 {% if t.adjunto_ruta %}
