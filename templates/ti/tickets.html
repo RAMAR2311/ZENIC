@@ -133,9 +133,19 @@
                     <span class="small text-muted">
                         <i class="fa-regular fa-calendar me-1"></i>{{ t.fecha_creacion.strftime('%d/%m/%Y') }}
                     </span>
-                    <button type="button" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}" style="border-radius: 8px;">
-                        <i class="fa-solid fa-eye"></i> Ver Detalle
-                    </button>
+                    <div class="d-flex gap-2">
+                        {% if current_user.rol == 'admin' %}
+                        <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar permanentemente el Ticket #{{ t.id }}?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-2" title="Eliminar Ticket">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}" style="border-radius: 8px;">
+                            <i class="fa-solid fa-eye"></i> Ver Detalle
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -217,9 +227,19 @@
                         <td class="small">{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</td>
                         <td class="small text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                         <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}">
-                                <i class="fa-solid fa-eye me-1"></i>Detalle
-                            </button>
+                            <div class="d-flex justify-content-end gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}" title="Ver Detalle">
+                                    <i class="fa-solid fa-eye me-1"></i>Detalle
+                                </button>
+                                {% if current_user.rol == 'admin' %}
+                                <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar permanentemente el Ticket #{{ t.id }}? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Ticket">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% else %}
@@ -412,8 +432,18 @@
                 {% endif %}
                 {% endif %}
             </div>
-            <div class="modal-footer border-top bg-light">
-                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cerrar</button>
+            <div class="modal-footer border-top bg-light d-flex justify-content-between align-items-center">
+                {% if current_user.rol == 'admin' %}
+                <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar el Ticket #{{ t.id }}? Esta acción es irreversible.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="fa-solid fa-trash-can me-1"></i>Eliminar Ticket
+                    </button>
+                </form>
+                {% else %}
+                <div></div>
+                {% endif %}
+                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>

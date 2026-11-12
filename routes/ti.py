@@ -17,7 +17,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_required, current_user
 
 from models import db, TicketCambio, Local, User, obtener_hora_bogota
-from decorators import ti_required, tickets_access_required
+from decorators import ti_required, tickets_access_required, admin_required
 
 ti_bp = Blueprint("ti_bp", __name__, url_prefix="/ti")
 
@@ -246,6 +246,32 @@ def actualizar_ticket(ticket_id):
 
     db.session.commit()
     flash(f"Ticket #{ticket.id} actualizado exitosamente.", "success")
+    return redirect(url_for("ti_bp.tickets"))
+
+
+@ti_bp.route("/tickets/<int:ticket_id>/eliminar", methods=["POST"])
+@login_required
+@admin_required
+def eliminar_ticket(ticket_id):
+    """Eliminación definitiva de un ticket (restringido únicamente al rol admin)."""
+    ticket = TicketCambio.query.get_or_404(ticket_id)
+    id_ticket = ticket.id
+
+    # Eliminar archivo adjunto del servidor si existe
+    if ticket.adjunto_ruta:
+        upload_folder = current_app.config.get("TICKETS_UPLOAD_FOLDER")
+        if upload_folder:
+            archivo_path = os.path.join(upload_folder, ticket.adjunto_ruta)
+            if os.path.exists(archivo_path):
+                try:
+                    os.remove(archivo_path)
+                except OSError:
+                    pass
+
+    db.session.delete(ticket)
+    db.session.commit()
+
+    flash(f"Ticket #{id_ticket} eliminado correctamente del sistema.", "success")
     return redirect(url_for("ti_bp.tickets"))
 
 
