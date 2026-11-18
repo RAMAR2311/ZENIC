@@ -12,7 +12,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 
-from models import db, ContenidoMarketing, SesionGrabacion, obtener_hora_bogota
+from models import db, ContenidoMarketing, SesionGrabacion, CorteMetricaSocial, obtener_hora_bogota
 from decorators import marketing_required
 
 marketing_bp = Blueprint("marketing_bp", __name__, url_prefix="/marketing")
@@ -154,4 +154,138 @@ def grabaciones():
 def social_hub():
     """Centro de monitoreo de canales oficiales, Brand Kit y redes de Zenic."""
     return render_template("marketing/social_hub.html")
+
+
+@marketing_bp.route("/metricas", methods=["GET", "POST"])
+@login_required
+@marketing_required
+def metricas():
+    """Panel de Crecimiento y Métricas de Redes Sociales (Especificación Santiago/Miguel)."""
+    hoy = obtener_hora_bogota().date()
+
+    if request.method == "POST":
+        red_social = request.form.get("red_social", "Instagram").strip()
+        periodo_tipo = request.form.get("periodo_tipo", "Semanal").strip()
+        etiqueta_periodo = request.form.get("etiqueta_periodo", "").strip()
+        fecha_corte_str = request.form.get("fecha_corte")
+        seguidores_totales = int(request.form.get("seguidores_totales", 0) or 0)
+        visualizaciones = int(request.form.get("visualizaciones", 0) or 0)
+        alcance = int(request.form.get("alcance", 0) or 0)
+        interacciones = int(request.form.get("interacciones", 0) or 0)
+        link_top_post = request.form.get("link_top_post", "").strip() or None
+        leads_generados = int(request.form.get("leads_generados", 0) or 0)
+        notas_campana = request.form.get("notas_campana", "").strip() or None
+
+        fecha_corte = hoy
+        if fecha_corte_str:
+            try:
+                fecha_corte = datetime.strptime(fecha_corte_str, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        if not etiqueta_periodo:
+            etiqueta_periodo = f"{periodo_tipo} al {fecha_corte.strftime('%d/%m/%Y')}"
+
+        nuevo_corte = CorteMetricaSocial(
+            red_social=red_social,
+            periodo_tipo=periodo_tipo,
+            etiqueta_periodo=etiqueta_periodo,
+            fecha_corte=fecha_corte,
+            seguidores_totales=seguidores_totales,
+            visualizaciones=visualizaciones,
+            alcance=alcance,
+            interacciones=interacciones,
+            link_top_post=link_top_post,
+            leads_generados=leads_generados,
+            notas_campana=notas_campana,
+            autor_id=current_user.id
+        )
+        db.session.add(nuevo_corte)
+        db.session.commit()
+        flash(f"✅ Corte de métricas para {red_social} ({etiqueta_periodo}) registrado con éxito.", "success")
+        return redirect(url_for("marketing_bp.metricas", red=red_social))
+
+    red_filtro = request.args.get("red", "Instagram").strip()
+    periodo_filtro = request.args.get("periodo", "").strip()
+
+    query = CorteMetricaSocial.query
+    if red_filtro and red_filtro != "Consolidado":
+        query = query.filter_by(red_social=red_filtro)
+    if periodo_filtro:
+        query = query.filter_by(periodo_tipo=periodo_filtro)
+
+    cortes = query.order_by(CorteMetricaSocial.fecha_corte.desc(), CorteMetricaSocial.id.desc()).all()
+
+    ultimo_corte = cortes[0] if cortes else None
+    corte_anterior = cortes[1] if len(cortes) > 1 else None
+
+    # Cálculo de variaciones porcentuales (▲ +X% / ▼ -Y%)
+    def calc_variacion(val_actual, val_anterior):
+        if not val_anterior or val_anterior == 0:
+            if val_actual and val_actual > 0:
+                return {"pct": 100.0, "sube": True, "neutro": False, "label": "+100%"}
+            return {"pct": 0.0, "sube": False, "neutro": True, "label": "0%"}
+        pct = round(((val_actual - val_anterior) / val_anterior) * 100, 1)
+        sube = pct >= 0
+        signo = "+" if pct > 0 else ""
+        return {"pct": pct, "sube": sube, "neutro": (pct == 0), "label": f"{signo}{pct}%"}
+
+    variaciones = {}
+    if ultimo_corte:
+        val_ant_seg = corte_anterior.seguidores_totales if corte_anterior else 0
+        val_ant_vis = corte_anterior.visualizaciones if corte_anterior else 0
+        val_ant_alc = corte_anterior.alcance if corte_anterior else 0
+        val_ant_int = corte_anterior.interacciones if corte_anterior else 0
+        val_ant_leads = corte_anterior.leads_generados if corte_anterior else 0
+        val_ant_eng = corte_anterior.engagement_rate if corte_anterior else 0.0
+
+        variaciones["seguidores"] = calc_variacion(ultimo_corte.seguidores_totales, val_ant_seg)
+        variaciones["visualizaciones"] = calc_variacion(ultimo_corte.visualizaciones, val_ant_vis)
+        variaciones["alcance"] = calc_variacion(ultimo_corte.alcance, val_ant_alc)
+        variaciones["interacciones"] = calc_variacion(ultimo_corte.interacciones, val_ant_int)
+        variaciones["leads"] = calc_variacion(ultimo_corte.leads_generados, val_ant_leads)
+
+        diff_eng = round(ultimo_corte.engagement_rate - val_ant_eng, 2)
+        variaciones["engagement"] = {
+            "pct": diff_eng,
+            "sube": diff_eng >= 0,
+            "neutro": diff_eng == 0,
+            "label": f"{'+' if diff_eng > 0 else ''}{diff_eng}%"
+        }
+
+    # Datos para Chart.js (orden cronológico ascendente)
+    historico_grafica = list(reversed(cortes[:12]))
+    chart_labels = [c.etiqueta_periodo or c.fecha_corte.strftime("%d/%m") for c in historico_grafica]
+    chart_alcance = [c.alcance for c in historico_grafica]
+    chart_interacciones = [c.interacciones for c in historico_grafica]
+    chart_seguidores = [c.seguidores_totales for c in historico_grafica]
+    chart_leads = [c.leads_generados for c in historico_grafica]
+
+    return render_template(
+        "marketing/metricas.html",
+        cortes=cortes,
+        ultimo_corte=ultimo_corte,
+        corte_anterior=corte_anterior,
+        variaciones=variaciones,
+        red_filtro=red_filtro,
+        periodo_filtro=periodo_filtro,
+        chart_labels=chart_labels,
+        chart_alcance=chart_alcance,
+        chart_interacciones=chart_interacciones,
+        chart_seguidores=chart_seguidores,
+        chart_leads=chart_leads,
+        hoy=hoy
+    )
+
+
+@marketing_bp.route("/metricas/<int:id>/eliminar", methods=["POST"])
+@login_required
+@marketing_required
+def eliminar_metrica(id):
+    corte = CorteMetricaSocial.query.get_or_404(id)
+    red = corte.red_social
+    db.session.delete(corte)
+    db.session.commit()
+    flash("Registro de métrica eliminado.", "info")
+    return redirect(url_for("marketing_bp.metricas", red=red))
 

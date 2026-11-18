@@ -1,101 +1,277 @@
 {% extends "base.html" %}
-{% block title %}Facturas{% endblock %}
+{% block title %}Facturas & Control de Cuentas{% endblock %}
 
 {% block content %}
 <div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
     <div>
         <h1 class="page-title">
             <i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--zenic-gold)"></i>
-            Módulo de Facturas
+            Módulo de Facturas & Cobros
         </h1>
-        <p class="page-subtitle">Emisión y cobro de facturas a locales</p>
+        <p class="page-subtitle">Emisión, validación de ingresos y trazabilidad de cuentas</p>
     </div>
-    <button class="btn-zenic px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
-        <i class="fa-solid fa-plus"></i> Nueva Factura
-    </button>
+    <div class="d-flex gap-2">
+        <button class="btn-zenic px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
+            <i class="fa-solid fa-plus"></i> Nueva Factura
+        </button>
+    </div>
 </div>
 
-<!-- KPIs -->
+{% if tiene_acceso_billeteras %}
+<!-- Bloque Privado: Billeteras de Control (Nu y Nequi) - Solo Perfil Jhon / Admin -->
+<div class="card-zenic mb-4" style="border: 1px solid rgba(130, 10, 209, 0.35); background: linear-gradient(145deg, rgba(20, 20, 30, 0.6) 0%, rgba(30, 20, 45, 0.6) 100%);">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge" style="background: #820ad1; color: #fff; font-size: 0.75rem;"><i class="fa-solid fa-lock me-1"></i> VISTA PRIVADA</span>
+            <h2 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: #fff;">
+                Billeteras de Control de Saldos (Punto de Partida: 15/11/2026)
+            </h2>
+        </div>
+        <small class="text-muted" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-info-circle me-1"></i> Caja inicial $0 al 15/Nov/2026. Control en tiempo real hasta formalización de cuenta empresarial.
+        </small>
+    </div>
+    <div class="p-3">
+        <div class="row g-3">
+            <!-- Cuenta Nu -->
+            <div class="col-12 col-md-6">
+                <div class="p-3 rounded-3" style="background: rgba(130, 10, 209, 0.08); border: 1px solid rgba(130, 10, 209, 0.25);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#820ad1;"></span>
+                            <span style="font-weight:700; font-size: 0.95rem; color:#d8b4fe;">Cuenta Nu (Jhon)</span>
+                        </div>
+                        <span class="badge" style="background: rgba(130, 10, 209, 0.2); color:#c084fc; border:1px solid #820ad1;">Nu Bank</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{{ saldo_nu | cop }}</span>
+                        <small class="text-muted" style="font-size: 0.78rem;">Saldo Real Disponible</small>
+                    </div>
+                    <div class="d-flex justify-content-between pt-2 border-top border-secondary border-opacity-25" style="font-size: 0.8rem;">
+                        <span class="text-success"><i class="fa-solid fa-arrow-down me-1"></i>Cobrado: <strong>{{ ingresos_nu | cop }}</strong></span>
+                        <span class="text-danger"><i class="fa-solid fa-arrow-up me-1"></i>Gastos: <strong>{{ gastos_nu | cop }}</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cuenta Nequi -->
+            <div class="col-12 col-md-6">
+                <div class="p-3 rounded-3" style="background: rgba(255, 0, 85, 0.07); border: 1px solid rgba(255, 0, 85, 0.25);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ff0055;"></span>
+                            <span style="font-weight:700; font-size: 0.95rem; color:#fda4af;">Cuenta Nequi (Jhon)</span>
+                        </div>
+                        <span class="badge" style="background: rgba(255, 0, 85, 0.2); color:#f43f5e; border:1px solid #ff0055;">Nequi</span>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-2 mb-2">
+                        <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{{ saldo_nequi | cop }}</span>
+                        <small class="text-muted" style="font-size: 0.78rem;">Saldo Real Disponible</small>
+                    </div>
+                    <div class="d-flex justify-content-between pt-2 border-top border-secondary border-opacity-25" style="font-size: 0.8rem;">
+                        <span class="text-success"><i class="fa-solid fa-arrow-down me-1"></i>Cobrado: <strong>{{ ingresos_nequi | cop }}</strong></span>
+                        <span class="text-danger"><i class="fa-solid fa-arrow-up me-1"></i>Gastos: <strong>{{ gastos_nequi | cop }}</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- KPIs Financieros Generales -->
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-4 fade-up">
         <div class="kpi-card kpi-green">
             <i class="fa-solid fa-hand-holding-dollar kpi-icon"></i>
-            <div class="kpi-label">Facturas Pagadas</div>
+            <div class="kpi-label">Facturas Pagadas (>= 15/Nov/2026)</div>
             <div class="kpi-value" style="color: var(--zenic-success)">{{ ingresos_actuales | cop }}</div>
-            <div class="kpi-sub">Pagos recibidos este mes</div>
+            <div class="kpi-sub">Caja efectiva desde punto de corte</div>
         </div>
     </div>
     <div class="col-12 col-md-4 fade-up">
         <div class="kpi-card kpi-gold">
             <i class="fa-solid fa-clock kpi-icon"></i>
-            <div class="kpi-label">Facturas Futuras</div>
+            <div class="kpi-label">Facturas Pendientes / Futuras</div>
             <div class="kpi-value" style="color: var(--zenic-gold)">{{ ingresos_futuros | cop }}</div>
-            <div class="kpi-sub">Facturas pendientes emitidas</div>
+            <div class="kpi-sub">Por validar o pendientes de pago</div>
         </div>
     </div>
     <div class="col-12 col-md-4 fade-up">
         <div class="kpi-card" style="border-left: 3px solid var(--zenic-danger)">
             <i class="fa-solid fa-circle-exclamation kpi-icon" style="color:var(--zenic-danger)"></i>
-            <div class="kpi-label">Facturas Vencidas</div>
+            <div class="kpi-label">Facturas Vencidas (Mora)</div>
             <div class="kpi-value" style="color: var(--zenic-danger)">{{ ingresos_vencidos | cop }}</div>
-            <div class="kpi-sub">Locales sin pago o atrasados</div>
+            <div class="kpi-sub">Habilitadas para recordatorio rápido</div>
         </div>
     </div>
 </div>
 
 <!-- Tabla de Facturas -->
 <div class="card-zenic">
-    <div class="p-4 border-bottom">
-        <h2 style="font-size:1rem;font-weight:700;margin:0">Listado de Facturas</h2>
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h2 style="font-size:1rem;font-weight:700;margin:0">Listado de Facturas & Trazabilidad</h2>
+        <span class="badge bg-dark border text-muted">Total: {{ facturas|length }}</span>
     </div>
     <div class="table-responsive">
-        <table class="table table-zenic mb-0">
+        <table class="table table-zenic mb-0 align-middle">
             <thead>
                 <tr>
                     <th>Factura</th>
-                    <th>Local (Cliente)</th>
-                    <th>Emisión</th>
+                    <th>Tipo</th>
+                    <th>Cliente / Local</th>
                     <th>Vencimiento</th>
                     <th>Monto</th>
-                    <th>Estado</th>
+                    <th>Estado / Cuenta</th>
+                    <th>Trazabilidad / Recordatorio</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for f in facturas %}
                 <tr>
-                    <td style="font-weight:600; color:var(--zenic-text-muted)">{{ f.numero_factura }}</td>
-                    <td style="font-weight:600">{{ f.local.nombre_marca }}</td>
-                    <td style="font-size:0.85rem">{{ f.fecha_emision | fecha_corta }}</td>
-                    <td style="font-size:0.85rem">{{ f.fecha_vencimiento | fecha_corta }}</td>
+                    <td>
+                        <span style="font-weight:700; color:var(--zenic-text-muted)">{{ f.numero_factura }}</span>
+                        <div style="font-size:0.75rem; color:var(--zenic-text-muted)">Emisión: {{ f.fecha_emision | fecha_corta }}</div>
+                    </td>
+                    <td>
+                        {% if f.tipo_cobro == 'Instalación' %}
+                        <span class="badge" style="background:rgba(59, 130, 246, 0.2); color:#60a5fa; border:1px solid #3b82f6;">
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i>Instalación
+                        </span>
+                        {% elif f.tipo_cobro == 'Anualidad' %}
+                        <span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#facc15; border:1px solid #eab308;">
+                            <i class="fa-solid fa-calendar-check me-1"></i>Anualidad
+                        </span>
+                        {% else %}
+                        <span class="badge" style="background:rgba(100, 116, 139, 0.2); color:#cbd5e1; border:1px solid #64748b;">
+                            <i class="fa-solid fa-calendar-days me-1"></i>Mensualidad
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-weight:600">{{ f.local.nombre_marca }}</div>
+                        {% if f.local.telefono_cobro %}
+                        <small class="text-muted" style="font-size:0.75rem;"><i class="fa-brands fa-whatsapp text-success me-1"></i>{{ f.local.telefono_cobro }}</small>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.85rem">
+                        {% if f.estado != 'Pagado' and f.fecha_vencimiento < hoy %}
+                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ f.fecha_vencimiento | fecha_corta }}</span>
+                        {% else %}
+                        <span>{{ f.fecha_vencimiento | fecha_corta }}</span>
+                        {% endif %}
+                    </td>
                     <td style="font-weight:700; color:var(--zenic-primary)">{{ f.monto | cop }}</td>
                     <td>
                         {% if f.estado == 'Pagado' %}
-                        <span class="badge" style="background:var(--zenic-success)">Pagado ({{ f.fecha_pago | fecha_corta }})</span>
+                        <span class="badge" style="background:var(--zenic-success)">
+                            <i class="fa-solid fa-check-circle me-1"></i>Pagada ({{ f.fecha_pago | fecha_corta }})
+                        </span>
+                        {% if f.cuenta_destino %}
+                        <div class="mt-1">
+                            <span class="badge" style="background: {{ '#820ad1' if f.cuenta_destino == 'Nu' else '#ff0055' }}; color:#fff; font-size:0.7rem;">
+                                Cuenta {{ f.cuenta_destino }}
+                            </span>
+                        </div>
+                        {% endif %}
                         {% elif f.estado == 'Vencido' %}
-                        <span class="badge" style="background:var(--zenic-danger)">Vencido</span>
+                        <span class="badge" style="background:var(--zenic-danger)">
+                            <i class="fa-solid fa-clock me-1"></i>Vencido
+                        </span>
                         {% else %}
-                        <span class="badge" style="background:var(--zenic-gold)">Pendiente</span>
+                        <span class="badge" style="background:var(--zenic-gold); color:#111;">
+                            <i class="fa-solid fa-hourglass-half me-1"></i>Pendiente
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.78rem;">
+                        {% if f.ultimo_recordatorio %}
+                        <div class="text-info fw-semibold">
+                            <i class="fa-brands fa-whatsapp text-success me-1"></i>Recordatorio enviado
+                        </div>
+                        <div class="text-muted">
+                            {{ f.ultimo_recordatorio.strftime('%d/%m/%Y %H:%M') }}
+                            {% if f.recordatorio_por %}por {{ f.recordatorio_por.nombre }}{% endif %}
+                        </div>
+                        <small class="badge bg-secondary" style="font-size:0.68rem;">{{ f.total_recordatorios }} recordatorio(s)</small>
+                        {% else %}
+                        <span class="text-muted">— Sin recordatorios —</span>
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        <div class="d-flex gap-1 justify-content-center">
+                        <div class="d-flex gap-1 justify-content-center align-items-center">
                             {% if f.estado != 'Pagado' %}
-                            <form action="{{ url_for('ingresos_bp.pagar_factura', factura_id=f.id) }}" method="POST" class="d-inline">
+                            <!-- Botón Validar Pago -->
+                            <button type="button" class="btn btn-sm btn-success text-white" title="Validar Pago Real"
+                                    data-bs-toggle="modal" data-bs-target="#modalValidarPago{{ f.id }}" style="font-size:0.78rem; font-weight:600;">
+                                <i class="fa-solid fa-check-double me-1"></i>Validar Pago
+                            </button>
+
+                            <!-- Modal Validar Pago -->
+                            <div class="modal fade" id="modalValidarPago{{ f.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <form action="{{ url_for('ingresos_bp.validar_pago', factura_id=f.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" style="font-size:1rem; font-weight:700;">
+                                                    <i class="fa-solid fa-circle-check text-success me-2"></i>Validar Pago: {{ f.numero_factura }}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="alert alert-dark p-2 mb-3" style="font-size:0.85rem;">
+                                                    <div><strong>Cliente:</strong> {{ f.local.nombre_marca }}</div>
+                                                    <div><strong>Concepto:</strong> {{ f.tipo_cobro }}</div>
+                                                    <div><strong>Monto:</strong> <span class="text-success fw-bold">{{ f.monto | cop }}</span></div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold" style="font-size:0.85rem;">Cuenta Destino del Ingreso</label>
+                                                    <select class="form-select" name="cuenta_destino" required>
+                                                        <option value="Nu" selected>Cuenta Nu (Jhon)</option>
+                                                        <option value="Nequi">Cuenta Nequi (Jhon)</option>
+                                                        <option value="Bancolombia">Bancolombia Empresarial / Otra</option>
+                                                    </select>
+                                                    <div class="form-text" style="font-size:0.75rem;">Suma automáticamente al saldo de la tarjeta seleccionada.</div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold" style="font-size:0.85rem;">Fecha Real de Pago</label>
+                                                    <input type="date" class="form-control" name="fecha_pago" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                                    <i class="fa-solid fa-check me-1"></i>Confirmar Ingreso & Reactivar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botón Enviar Recordatorio WhatsApp con Constancia -->
+                            <form action="{{ url_for('ingresos_bp.enviar_recordatorio', factura_id=f.id) }}" method="POST" target="_blank" class="d-inline">
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-zenic-outline" title="Marcar Pagada" onclick="return confirm('¿Confirmas el pago de esta factura?')">
-                                    <i class="fa-solid fa-check"></i>
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Enviar recordatorio WhatsApp con constancia"
+                                        onclick="setTimeout(function(){ location.reload(); }, 1200);">
+                                    <i class="fa-brands fa-whatsapp"></i>
                                 </button>
                             </form>
                             {% endif %}
-                            <a href="{{ url_for('ingresos_bp.soporte_factura', factura_id=f.id) }}" target="_blank" class="btn btn-sm btn-zenic" title="Ver Soporte">
+
+                            <!-- Ver Soporte Factura -->
+                            <a href="{{ url_for('ingresos_bp.soporte_factura', factura_id=f.id) }}" target="_blank" class="btn btn-sm btn-zenic" title="Ver Soporte / Recibo">
                                 <i class="fa-solid fa-file-pdf"></i>
                             </a>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="7" class="text-center py-4 text-muted">No hay facturas registradas.</td></tr>
+                <tr><td colspan="8" class="text-center py-4 text-muted">No hay facturas registradas.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -111,22 +287,44 @@
             <form action="{{ url_for('ingresos_bp.nueva_factura') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-plus me-2 text-primary"></i>Emitir Factura</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-plus me-2 text-primary"></i>Emitir Nueva Factura</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Cliente (Local)</label>
+                        <label class="form-label fw-bold">Cliente (Local)</label>
                         <select class="form-select" name="local_id" required>
                             <option value="">Selecciona un local...</option>
                             {% for l in locales %}
-                            <option value="{{ l.id }}">{{ l.nombre_marca }} (Mensualidad: {{ l.mensualidad|cop }})</option>
+                            <option value="{{ l.id }}">{{ l.nombre_marca }} [{{ l.tipo_plan }}] (Mensual: {{ l.mensualidad|cop }} | Anual: {{ l.valor_anualidad|cop }})</option>
                             {% endfor %}
                         </select>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Observaciones (Opcional)</label>
-                        <textarea class="form-control" name="observaciones" rows="2"></textarea>
+                        <label class="form-label fw-bold">Tipo de Cobro</label>
+                        <select class="form-select" name="tipo_cobro" required>
+                            <option value="Mensualidad" selected>Mensualidad (Plan Regular)</option>
+                            <option value="Instalación">Instalación Inicial</option>
+                            <option value="Anualidad">Anualidad (Plan Anual)</option>
+                            <option value="Otro">Otro Servicio / Adicional</option>
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Monto Personalizado (Opcional)</label>
+                            <input type="number" class="form-control" name="monto" placeholder="Dejar vacío para usar valor del plan" step="0.01">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Vencimiento (Opcional)</label>
+                            <input type="date" class="form-control" name="fecha_vencimiento">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Observaciones / Concepto Detallado</label>
+                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Ej. Cobro mensualidad Noviembre 2026"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">

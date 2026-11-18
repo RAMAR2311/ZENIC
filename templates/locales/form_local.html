@@ -33,7 +33,7 @@
     <div class="card-zenic p-4 mb-3">
         <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
                    color:var(--zenic-text-muted);margin-bottom:1.25rem">
-            <i class="fa-solid fa-tag me-2" style="color:var(--zenic-accent)"></i> Identificación
+            <i class="fa-solid fa-tag me-2" style="color:var(--zenic-accent)"></i> Identificación & Modalidad
         </h2>
         <div class="row g-3">
             <div class="col-md-6">
@@ -48,57 +48,105 @@
                        placeholder="https://crm.tekfix.co"
                        value="{{ local.url_instancia if local and local.url_instancia else '' }}">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <label class="form-label">Tipo de Plan / Instancia *</label>
+                <select name="tipo_plan" id="selectTipoPlan" class="form-select" required onchange="togglePlanFields()">
+                    <option value="Mensual" {% if local and local.tipo_plan == 'Mensual' %}selected{% endif %}>📅 Mensual (Día de corte)</option>
+                    <option value="Anual"   {% if local and local.tipo_plan == 'Anual'   %}selected{% endif %}>🏆 Anual (Corte a 1 año)</option>
+                    <option value="Interna" {% if local and local.tipo_plan == 'Interna' %}selected{% endif %}>⚙️ Interna / Operativa (Sin cobro)</option>
+                </select>
+                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                    Las instancias internas se excluyen del MRR y semáforo.
+                </div>
+            </div>
+            <div class="col-md-4">
                 <label class="form-label">Fecha de Lanzamiento *</label>
-                <input type="date" name="fecha_lanzamiento" class="form-control"
+                <input type="date" name="fecha_lanzamiento" id="inputFechaLanzamiento" class="form-control"
                        value="{{ local.fecha_lanzamiento.strftime('%Y-%m-%d') if local and local.fecha_lanzamiento else '' }}"
                        required>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label">Versión del Software</label>
                 <input type="text" name="version_software" class="form-control"
                        placeholder="1.0.0"
                        value="{{ local.version_software if local else '1.0.0' }}">
             </div>
+            <div class="col-md-6">
+                <label class="form-label">Teléfono / WhatsApp de Cobro</label>
+                <div class="input-group">
+                    <span class="input-group-text" style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
+                        <i class="fa-brands fa-whatsapp text-success"></i>
+                    </span>
+                    <input type="text" name="telefono_cobro" class="form-control"
+                           placeholder="Ej: 3001234567 o enlace de grupo"
+                           value="{{ local.telefono_cobro if local and local.telefono_cobro else '' }}">
+                </div>
+                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                    Número para envío de recordatorios de mora con constancia.
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- SECCIÓN 2: Finanzas -->
-    <div class="card-zenic p-4 mb-3">
+    <div class="card-zenic p-4 mb-3" id="seccionFinanzas">
         <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
                    color:var(--zenic-text-muted);margin-bottom:1.25rem">
-            <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas
+            <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas & Cobranza
         </h2>
         <div class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-4" id="colInversion">
                 <label class="form-label">Inversión Inicial (COP) *</label>
                 <div class="input-group">
                     <span class="input-group-text"
                           style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
                     <input type="number" name="inversion_inicial" class="form-control"
                            placeholder="0" min="0" step="1000"
-                           value="{{ local.inversion_inicial if local else '' }}" required>
+                           value="{{ local.inversion_inicial if local else '0' }}" required>
+                </div>
+                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                    Si lanzamiento ≥ 15/11/2026, genera cobro de instalación pendiente.
                 </div>
             </div>
-            <div class="col-md-4">
+
+            <!-- Campo Mensualidad -->
+            <div class="col-md-4" id="colMensualidad">
                 <label class="form-label">Mensualidad (COP) *</label>
                 <div class="input-group">
                     <span class="input-group-text"
                           style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
-                    <input type="number" name="mensualidad" class="form-control"
+                    <input type="number" name="mensualidad" id="inputMensualidad" class="form-control"
                            placeholder="0" min="0" step="1000"
-                           value="{{ local.mensualidad if local else '' }}" required>
+                           value="{{ local.mensualidad if local else '0' }}">
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Día de Corte (1–31) *</label>
-                <input type="number" name="dia_pago" class="form-control"
-                       placeholder="1" min="1" max="31"
-                       value="{{ local.dia_pago if local else '1' }}" required>
+
+            <!-- Campo Anualidad -->
+            <div class="col-md-4" id="colAnualidad" style="display:none;">
+                <label class="form-label">Valor Anualidad (COP) *</label>
+                <div class="input-group">
+                    <span class="input-group-text"
+                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
+                    <input type="number" name="valor_anualidad" id="inputAnualidad" class="form-control"
+                           placeholder="0" min="0" step="1000"
+                           value="{{ local.valor_anualidad if local and local.valor_anualidad else '0' }}">
+                </div>
                 <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Día del mes en que se genera el cobro
+                    Corte automático a 1 año desde fecha de lanzamiento.
                 </div>
             </div>
+
+            <!-- Campo Día de Corte Mensual -->
+            <div class="col-md-4" id="colDiaPago">
+                <label class="form-label">Día de Corte (1–31) *</label>
+                <input type="number" name="dia_pago" id="inputDiaPago" class="form-control"
+                       placeholder="1" min="1" max="31"
+                       value="{{ local.dia_pago if local else '1' }}">
+                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
+                    Primer mes cubierto por instalación (corte a partir del 2do mes).
+                </div>
+            </div>
+
             <div class="col-md-4">
                 <label class="form-label">Estado de Pago *</label>
                 <select name="estado_pago" class="form-select" required>
@@ -182,17 +230,51 @@
 
 {% block scripts %}
 <script>
-    // Toggle contraseña visible
-    document.getElementById('togglePass').addEventListener('click', () => {
-        const inp = document.getElementById('bovedaPass');
-        const ico = document.querySelector('#togglePass i');
-        if (inp.type === 'password') {
-            inp.type = 'text';
-            ico.className = 'fa-solid fa-eye-slash fa-xs';
+    function togglePlanFields() {
+        const plan = document.getElementById('selectTipoPlan').value;
+        const colMensualidad = document.getElementById('colMensualidad');
+        const colAnualidad = document.getElementById('colAnualidad');
+        const colDiaPago = document.getElementById('colDiaPago');
+        const seccionFinanzas = document.getElementById('seccionFinanzas');
+
+        if (plan === 'Anual') {
+            colMensualidad.style.display = 'none';
+            colAnualidad.style.display = 'block';
+            colDiaPago.style.display = 'none';
+            seccionFinanzas.style.display = 'block';
+        } else if (plan === 'Interna') {
+            colMensualidad.style.display = 'none';
+            colAnualidad.style.display = 'none';
+            colDiaPago.style.display = 'none';
+            seccionFinanzas.style.display = 'block';
         } else {
-            inp.type = 'password';
-            ico.className = 'fa-solid fa-eye fa-xs';
+            // Mensual
+            colMensualidad.style.display = 'block';
+            colAnualidad.style.display = 'none';
+            colDiaPago.style.display = 'block';
+            seccionFinanzas.style.display = 'block';
         }
+    }
+
+    // Ejecutar al cargar la vista
+    document.addEventListener('DOMContentLoaded', () => {
+        togglePlanFields();
     });
+
+    // Toggle contraseña visible
+    const btnToggle = document.getElementById('togglePass');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+            const inp = document.getElementById('bovedaPass');
+            const ico = document.querySelector('#togglePass i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                ico.className = 'fa-solid fa-eye-slash fa-xs';
+            } else {
+                inp.type = 'password';
+                ico.className = 'fa-solid fa-eye fa-xs';
+            }
+        });
+    }
 </script>
 {% endblock %}

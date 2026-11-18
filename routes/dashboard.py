@@ -37,15 +37,16 @@ def master():
     
     # 4. Locales (Clientes)
     locales = Local.query.all()
-    mrr = sum(float(l.mensualidad) for l in locales if l.estado_pago == "Activo")
+    locales_facturables = [l for l in locales if getattr(l, 'tipo_plan', 'Mensual') != 'Interna']
+    mrr = sum(float(l.mensualidad) for l in locales_facturables if l.estado_pago == "Activo")
     total_locales = len(locales)
     
     online_count = sum(1 for l in locales if getattr(l, 'is_online', False))
     
-    # Estados de clientes
-    al_dia = sum(1 for l in locales if l.semaforo == 'semaforo-verde')
-    por_vencer = sum(1 for l in locales if l.semaforo == 'semaforo-amarillo')
-    atrasado = sum(1 for l in locales if l.semaforo == 'semaforo-rojo')
+    # Estados de clientes facturables
+    al_dia = sum(1 for l in locales_facturables if l.semaforo == 'semaforo-verde')
+    por_vencer = sum(1 for l in locales_facturables if l.semaforo == 'semaforo-amarillo')
+    atrasado = sum(1 for l in locales_facturables if l.semaforo == 'semaforo-rojo')
     
     # 5. Operaciones
     total_personal = Personal.query.count()

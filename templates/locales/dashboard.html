@@ -186,11 +186,34 @@
                             Últ. Rev: {{ local.last_checked | fecha_corta if local.last_checked else 'Nunca' }}
                         </div>
                     </td>
-                    <td style="font-weight:700;color:var(--zenic-success)">{{ local.mensualidad | cop }}</td>
                     <td>
-                        <span style="font-size:0.9rem">Día {{ local.dia_pago }}</span>
+                        {% if local.tipo_plan == 'Interna' %}
+                        <span class="badge bg-secondary-subtle text-secondary border" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-gear me-1"></i>Operativa Interna
+                        </span>
+                        {% elif local.tipo_plan == 'Anual' %}
+                        <div style="font-weight:700;color:var(--zenic-primary)">{{ local.valor_anualidad | cop }}</div>
+                        <div style="font-size:0.68rem;color:var(--zenic-text-muted)">Anualidad (equiv. {{ local.mensualidad | cop }}/mes)</div>
+                        {% else %}
+                        <div style="font-weight:700;color:var(--zenic-success)">{{ local.mensualidad | cop }}</div>
+                        <div style="font-size:0.68rem;color:var(--zenic-text-muted)">Mensual</div>
+                        {% endif %}
                     </td>
                     <td>
+                        {% if local.tipo_plan == 'Interna' %}
+                        <span class="text-muted small">—</span>
+                        {% elif local.tipo_plan == 'Anual' %}
+                        <span class="badge bg-info-subtle text-info border" style="font-size:0.75rem;">
+                            <i class="fa-solid fa-calendar me-1"></i>{{ local.proxima_fecha_corte | fecha_corta if local.proxima_fecha_corte else '1 año' }}
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.9rem">Día {{ local.dia_pago }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if local.tipo_plan == 'Interna' %}
+                        <span class="text-muted small">Sin facturación</span>
+                        {% else %}
                         <!-- Cambio rápido de estado -->
                         <form method="POST"
                               action="{{ url_for('locales_bp.cambiar_estado', local_id=local.id) }}"
@@ -204,8 +227,14 @@
                                 <option value="Suspendido" {% if local.estado_pago=='Suspendido' %}selected{% endif %}>Suspendido</option>
                             </select>
                         </form>
+                        {% endif %}
                     </td>
                     <td>
+                        {% if local.tipo_plan == 'Interna' %}
+                        <span class="badge bg-light text-muted border">
+                            <i class="fa-solid fa-check-double me-1"></i>Excluida
+                        </span>
+                        {% else %}
                         <span class="badge-semaforo {{ local.semaforo }}">
                             <span class="dot dot-{{ local.semaforo | replace('semaforo-', '') }}"></span>
                             {{ local.semaforo_label }}
@@ -215,6 +244,7 @@
                             · {{ (local.dias_para_pago * -1) }}d vencido
                             {% endif %}
                         </span>
+                        {% endif %}
                     </td>
                     <td>
                         <span style="font-size:0.8rem;background:var(--zenic-surface-2);

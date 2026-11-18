@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+{% block title %}Métricas de Crecimiento & Redes Sociales{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-3">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-chart-line me-2" style="color: var(--zenic-primary)"></i>
+            Métricas de Crecimiento & Redes Sociales
+        </h1>
+        <p class="page-subtitle">Monitoreo de audiencias, engagement rate y conversión de canales oficiales</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn-zenic px-3 py-2 rounded-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNuevoCorte">
+            <i class="fa-solid fa-plus"></i> Registrar Corte de Métricas
+        </button>
+    </div>
+</div>
+
+<!-- Selector de Plataforma & Filtros -->
+<div class="card-zenic p-2 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <!-- Pestañas por Red Social -->
+        <ul class="nav nav-pills" style="gap: 6px;">
+            <li class="nav-item">
+                <a class="nav-link {{ 'active bg-primary' if red_filtro == 'Instagram' else 'text-light' }}" 
+                   href="{{ url_for('marketing_bp.metricas', red='Instagram', periodo=periodo_filtro) }}" style="font-size:0.85rem; border-radius: 6px;">
+                    <i class="fa-brands fa-instagram me-1" style="color: #e1306c;"></i> Instagram
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active bg-primary' if red_filtro == 'TikTok' else 'text-light' }}" 
+                   href="{{ url_for('marketing_bp.metricas', red='TikTok', periodo=periodo_filtro) }}" style="font-size:0.85rem; border-radius: 6px;">
+                    <i class="fa-brands fa-tiktok me-1" style="color: #00f2fe;"></i> TikTok
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active bg-primary' if red_filtro == 'LinkedIn' else 'text-light' }}" 
+                   href="{{ url_for('marketing_bp.metricas', red='LinkedIn', periodo=periodo_filtro) }}" style="font-size:0.85rem; border-radius: 6px;">
+                    <i class="fa-brands fa-linkedin me-1" style="color: #0a66c2;"></i> LinkedIn
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active bg-primary' if red_filtro == 'Facebook' else 'text-light' }}" 
+                   href="{{ url_for('marketing_bp.metricas', red='Facebook', periodo=periodo_filtro) }}" style="font-size:0.85rem; border-radius: 6px;">
+                    <i class="fa-brands fa-facebook me-1" style="color: #1877f2;"></i> Facebook
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active bg-primary' if red_filtro == 'Consolidado' else 'text-light' }}" 
+                   href="{{ url_for('marketing_bp.metricas', red='Consolidado', periodo=periodo_filtro) }}" style="font-size:0.85rem; border-radius: 6px;">
+                    <i class="fa-solid fa-layer-group me-1" style="color: #facc15;"></i> Vista Consolidada
+                </a>
+            </li>
+        </ul>
+
+        <!-- Filtro por Periodicidad -->
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-muted" style="font-size: 0.8rem;"><i class="fa-solid fa-filter me-1"></i>Periodo:</span>
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ url_for('marketing_bp.metricas', red=red_filtro, periodo='') }}" class="btn btn-outline-secondary {{ 'active' if not periodo_filtro else '' }}">Todos</a>
+                <a href="{{ url_for('marketing_bp.metricas', red=red_filtro, periodo='Semanal') }}" class="btn btn-outline-secondary {{ 'active' if periodo_filtro == 'Semanal' else '' }}">Semanal</a>
+                <a href="{{ url_for('marketing_bp.metricas', red=red_filtro, periodo='Quincenal') }}" class="btn btn-outline-secondary {{ 'active' if periodo_filtro == 'Quincenal' else '' }}">Quincenal</a>
+                <a href="{{ url_for('marketing_bp.metricas', red=red_filtro, periodo='Mensual') }}" class="btn btn-outline-secondary {{ 'active' if periodo_filtro == 'Mensual' else '' }}">Mensual</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if ultimo_corte %}
+<!-- Información del Último Corte -->
+<div class="alert alert-dark d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 p-2 px-3 border" style="background: rgba(30, 30, 45, 0.7); border-color: rgba(255,255,255,0.1) !important;">
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary px-2 py-1"><i class="fa-solid fa-clock-rotate-left me-1"></i>Último Corte</span>
+        <strong style="font-size: 0.95rem;">{{ ultimo_corte.etiqueta_periodo }}</strong>
+        <span class="text-muted" style="font-size: 0.82rem;">(Fecha de cierre: {{ ultimo_corte.fecha_corte.strftime('%d/%m/%Y') }})</span>
+    </div>
+    {% if ultimo_corte.notas_campana %}
+    <div class="text-warning" style="font-size: 0.85rem;">
+        <i class="fa-solid fa-bullhorn me-1"></i><strong>Campaña:</strong> {{ ultimo_corte.notas_campana }}
+    </div>
+    {% endif %}
+    {% if ultimo_corte.link_top_post %}
+    <a href="{{ ultimo_corte.link_top_post }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" style="font-size: 0.78rem;">
+        <i class="fa-solid fa-fire text-danger"></i> Ver Top Post del Periodo <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+    </a>
+    {% endif %}
+</div>
+
+<!-- Tarjetas KPI con Variación Porcentual (▲ +X% / ▼ -Y%) -->
+<div class="row g-3 mb-4">
+    <!-- Seguidores -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #6366f1;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">SEGUIDORES TOTALES</div>
+                <i class="fa-solid fa-users text-indigo" style="font-size: 1.2rem; color: #818cf8;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800;">{{ "{:,}".format(ultimo_corte.seguidores_totales) }}</span>
+                {% if variaciones.seguidores %}
+                <span class="badge {{ 'bg-success' if variaciones.seguidores.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.seguidores.sube else '▼' }} {{ variaciones.seguidores.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">vs. corte inmediatamente anterior</div>
+        </div>
+    </div>
+
+    <!-- Alcance -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #3b82f6;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">ALCANCE (CUENTAS ÚNICAS)</div>
+                <i class="fa-solid fa-bullseye" style="font-size: 1.2rem; color: #60a5fa;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800;">{{ "{:,}".format(ultimo_corte.alcance) }}</span>
+                {% if variaciones.alcance %}
+                <span class="badge {{ 'bg-success' if variaciones.alcance.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.alcance.sube else '▼' }} {{ variaciones.alcance.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">Audiencia alcanzada en el periodo</div>
+        </div>
+    </div>
+
+    <!-- Interacciones -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #ec4899;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">INTERACCIONES TOTALES</div>
+                <i class="fa-solid fa-heart" style="font-size: 1.2rem; color: #f472b6;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800;">{{ "{:,}".format(ultimo_corte.interacciones) }}</span>
+                {% if variaciones.interacciones %}
+                <span class="badge {{ 'bg-success' if variaciones.interacciones.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.interacciones.sube else '▼' }} {{ variaciones.interacciones.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">Likes, comentarios, guardados y shares</div>
+        </div>
+    </div>
+
+    <!-- Tasa de Interacción (Engagement Rate) -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #10b981;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">ENGAGEMENT RATE (AUTOMÁTICO)</div>
+                <i class="fa-solid fa-bolt" style="font-size: 1.2rem; color: #34d399;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800; color: #34d399;">{{ ultimo_corte.engagement_rate }}%</span>
+                {% if variaciones.engagement %}
+                <span class="badge {{ 'bg-success' if variaciones.engagement.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.engagement.sube else '▼' }} {{ variaciones.engagement.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">Fórmula: (Interacciones / Alcance) × 100</div>
+        </div>
+    </div>
+
+    <!-- Visualizaciones -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #f59e0b;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">VISUALIZACIONES TOTALES</div>
+                <i class="fa-solid fa-play" style="font-size: 1.2rem; color: #fbbf24;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800;">{{ "{:,}".format(ultimo_corte.visualizaciones) }}</span>
+                {% if variaciones.visualizaciones %}
+                <span class="badge {{ 'bg-success' if variaciones.visualizaciones.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.visualizaciones.sube else '▼' }} {{ variaciones.visualizaciones.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">Reproducciones acumuladas del periodo</div>
+        </div>
+    </div>
+
+    <!-- Leads / Mensajes Comerciales -->
+    <div class="col-12 col-sm-6 col-lg-4">
+        <div class="kpi-card p-3 rounded-3" style="background: var(--zenic-card-bg); border-left: 3px solid #06b6d4;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="kpi-label text-muted" style="font-size: 0.8rem; font-weight: 600;">LEADS GENERADOS (CONEXIÓN VENTAS)</div>
+                <i class="fa-solid fa-comment-dollar" style="font-size: 1.2rem; color: #22d3ee;"></i>
+            </div>
+            <div class="d-flex align-items-baseline gap-2 mt-2">
+                <span class="kpi-value" style="font-size: 1.7rem; font-weight: 800; color: #22d3ee;">{{ ultimo_corte.leads_generados }}</span>
+                {% if variaciones.leads %}
+                <span class="badge {{ 'bg-success' if variaciones.leads.sube else 'bg-danger' }}" style="font-size: 0.75rem;">
+                    {{ '▲' if variaciones.leads.sube else '▼' }} {{ variaciones.leads.label }}
+                </span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem;">Mensajes directos / WhatsApp generados</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfica de Evolución Temporal (Chart.js) -->
+<div class="card-zenic p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 style="font-size: 1.05rem; font-weight: 700; margin: 0;">
+                <i class="fa-solid fa-chart-area text-primary me-2"></i>Curva de Evolución & Crecimiento
+            </h2>
+            <p class="text-muted mb-0" style="font-size: 0.8rem;">Comparativa histórica: Alcance vs. Interacciones vs. Seguidores en {{ red_filtro }}</p>
+        </div>
+        <span class="badge bg-dark border text-muted">Últimos {{ chart_labels|length }} periodos</span>
+    </div>
+    <div style="position: relative; height: 320px; width: 100%;">
+        <canvas id="graficaEvolucionMarketing"></canvas>
+    </div>
+</div>
+{% else %}
+<div class="card-zenic p-5 text-center my-4">
+    <i class="fa-solid fa-chart-line text-muted mb-3" style="font-size: 3rem;"></i>
+    <h3 style="font-size: 1.1rem; font-weight: 700;">No hay cortes de métricas registrados para {{ red_filtro }}</h3>
+    <p class="text-muted" style="max-width: 500px; margin: 0 auto 1.5rem auto; font-size: 0.9rem;">
+        Comienza registrando el primer corte (semanal, quincenal o mensual) para que el sistema calcule automáticamente el crecimiento, engagement rate y variaciones porcentuales.
+    </p>
+    <button class="btn-zenic px-4 py-2 rounded-2 mx-auto" data-bs-toggle="modal" data-bs-target="#modalNuevoCorte">
+        <i class="fa-solid fa-plus me-1"></i> Registrar Primer Corte
+    </button>
+</div>
+{% endif %}
+
+<!-- Tabla Histórica de Cortes -->
+<div class="card-zenic mb-4">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <h2 style="font-size: 1rem; font-weight: 700; margin: 0;">Histórico de Cortes Registrados</h2>
+        <span class="badge bg-secondary">{{ cortes|length }} registros</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-zenic mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Periodo / Campaña</th>
+                    <th>Red</th>
+                    <th>Fecha Corte</th>
+                    <th>Seguidores</th>
+                    <th>Alcance</th>
+                    <th>Interacciones</th>
+                    <th>Engagement</th>
+                    <th>Leads</th>
+                    <th>Top Post</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cortes %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700;">{{ c.etiqueta_periodo }}</div>
+                        <small class="badge bg-dark border text-muted">{{ c.periodo_tipo }}</small>
+                        {% if c.notas_campana %}
+                        <div class="text-muted" style="font-size: 0.72rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ c.notas_campana }}">
+                            {{ c.notas_campana }}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.red_social == 'Instagram' %}
+                        <span class="badge" style="background: rgba(225, 48, 108, 0.2); color: #e1306c; border: 1px solid #e1306c;">
+                            <i class="fa-brands fa-instagram me-1"></i>Instagram
+                        </span>
+                        {% elif c.red_social == 'TikTok' %}
+                        <span class="badge" style="background: rgba(0, 242, 254, 0.15); color: #00f2fe; border: 1px solid #00f2fe;">
+                            <i class="fa-brands fa-tiktok me-1"></i>TikTok
+                        </span>
+                        {% elif c.red_social == 'LinkedIn' %}
+                        <span class="badge" style="background: rgba(10, 102, 194, 0.2); color: #60a5fa; border: 1px solid #0a66c2;">
+                            <i class="fa-brands fa-linkedin me-1"></i>LinkedIn
+                        </span>
+                        {% elif c.red_social == 'Facebook' %}
+                        <span class="badge" style="background: rgba(24, 119, 242, 0.2); color: #93c5fd; border: 1px solid #1877f2;">
+                            <i class="fa-brands fa-facebook me-1"></i>Facebook
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ c.red_social }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.85rem;">{{ c.fecha_corte.strftime('%d/%m/%Y') }}</td>
+                    <td style="font-weight: 600;">{{ "{:,}".format(c.seguidores_totales) }}</td>
+                    <td>{{ "{:,}".format(c.alcance) }}</td>
+                    <td>{{ "{:,}".format(c.interacciones) }}</td>
+                    <td>
+                        <span class="badge bg-success bg-opacity-25 text-success border border-success fw-bold">
+                            {{ c.engagement_rate }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.leads_generados > 0 %}
+                        <span class="badge" style="background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #06b6d4;">
+                            <i class="fa-solid fa-message me-1"></i>{{ c.leads_generados }} leads
+                        </span>
+                        {% else %}
+                        <span class="text-muted">0</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.link_top_post %}
+                        <a href="{{ c.link_top_post }}" target="_blank" class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem;" title="Ver publicación destacada">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Ver Post
+                        </a>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <form action="{{ url_for('marketing_bp.eliminar_metrica', id=c.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar este registro de corte?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="10" class="text-center py-4 text-muted">No hay cortes registrados en este filtro.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal Registro de Corte Rápido (Santiago) -->
+<div class="modal fade" id="modalNuevoCorte" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="{{ url_for('marketing_bp.metricas') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-chart-line text-primary me-2"></i>Registrar Corte Periódico de Redes Sociales
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size: 0.85rem;">
+                        Ingresa los datos del cierre de periodo para que el sistema calcule automáticamente variaciones porcentuales, Engagement Rate y trace las curvas de crecimiento.
+                    </p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-bold">Canal / Red Social</label>
+                            <select class="form-select" name="red_social" required>
+                                <option value="Instagram" {{ 'selected' if red_filtro == 'Instagram' else '' }}>Instagram Oficial</option>
+                                <option value="TikTok" {{ 'selected' if red_filtro == 'TikTok' else '' }}>TikTok</option>
+                                <option value="LinkedIn" {{ 'selected' if red_filtro == 'LinkedIn' else '' }}>LinkedIn</option>
+                                <option value="Facebook" {{ 'selected' if red_filtro == 'Facebook' else '' }}>Facebook</option>
+                                <option value="Consolidado" {{ 'selected' if red_filtro == 'Consolidado' else '' }}>Consolidado Multicanal</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-bold">Frecuencia del Periodo</label>
+                            <select class="form-select" name="periodo_tipo" required>
+                                <option value="Semanal" selected>Semanal (Recomendado)</option>
+                                <option value="Quincenal">Quincenal</option>
+                                <option value="Mensual">Mensual</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-bold">Fecha de Cierre del Corte</label>
+                            <input type="date" class="form-control" name="fecha_corte" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Etiqueta o Nombre del Periodo</label>
+                        <input type="text" class="form-control" name="etiqueta_periodo" placeholder="Ej: Semana 46 - #LaOtraCaraDelMostrador" required>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 text-primary mt-4 mb-3">Métricas Base del Periodo</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Seguidores Totales</label>
+                            <input type="number" class="form-control" name="seguidores_totales" placeholder="0" min="0" required>
+                            <div class="form-text" style="font-size:0.75rem;">Al cierre del corte.</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Visualizaciones Totales</label>
+                            <input type="number" class="form-control" name="visualizaciones" placeholder="0" min="0" required>
+                            <div class="form-text" style="font-size:0.75rem;">Reproducciones del periodo.</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Alcance (Cuentas Únicas)</label>
+                            <input type="number" class="form-control" name="alcance" placeholder="0" min="0" required>
+                            <div class="form-text" style="font-size:0.75rem;">Cuentas alcanzadas.</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Interacciones Totales</label>
+                            <input type="number" class="form-control" name="interacciones" placeholder="0" min="0" required>
+                            <div class="form-text" style="font-size:0.75rem;">Likes, comments, shares.</div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold border-bottom pb-1 text-info mt-4 mb-3">Conexión con Ventas & Publicación Destacada</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-md-8">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Link de la Publicación Destacada / Top Post</label>
+                            <input type="url" class="form-control" name="link_top_post" placeholder="https://instagram.com/reel/...">
+                            <div class="form-text" style="font-size:0.75rem;">Para que Marlon, Jhon y Miguel puedan abrir directamente el Reel/Post que más funcionó.</div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label fw-semibold" style="font-size:0.85rem;">Leads / Mensajes Generados</label>
+                            <input type="number" class="form-control" name="leads_generados" placeholder="0" min="0" value="0">
+                            <div class="form-text" style="font-size:0.75rem;">Mensajes directos o WhatsApp.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size:0.85rem;">Notas de Campaña / Observaciones</label>
+                        <textarea class="form-control" name="notas_campana" rows="2" placeholder="Ej: Impulso de la campaña #LaOtraCaraDelMostrador en formato Reel con audio en tendencia."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-3">Guardar Corte de Métricas</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if chart_labels %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const ctx = document.getElementById("graficaEvolucionMarketing");
+    if (!ctx) return;
+
+    const labels = {{ chart_labels | tojson }};
+    const dataAlcance = {{ chart_alcance | tojson }};
+    const dataInteracciones = {{ chart_interacciones | tojson }};
+    const dataSeguidores = {{ chart_seguidores | tojson }};
+    const dataLeads = {{ chart_leads | tojson }};
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Alcance (Cuentas)',
+                    data: dataAlcance,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Interacciones',
+                    data: dataInteracciones,
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Seguidores Totales',
+                    data: dataSeguidores,
+                    borderColor: '#818cf8',
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Leads (DM/WhatsApp)',
+                    data: dataLeads,
+                    borderColor: '#06b6d4',
+                    backgroundColor: '#06b6d4',
+                    type: 'bar',
+                    borderRadius: 4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 11, family: 'Inter, sans-serif' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#0f172a',
+                    titleColor: '#f8fafc',
+                    bodyColor: '#e2e8f0',
+                    borderColor: '#334155',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', font: { size: 11 } }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', font: { size: 11 } }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: '#06b6d4', font: { size: 11 } }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -109,6 +109,7 @@ def gastos():
         categoria = request.form.get("categoria", "General")
         tipo_costo = request.form.get("tipo_costo", "Gasto Administrativo")
         presupuesto_id = request.form.get("presupuesto_id")
+        cuenta_origen = request.form.get("cuenta_origen", "Nu").strip()
         
         if descripcion and monto and fecha_str:
             fecha_dt = datetime.strptime(fecha_str, "%Y-%m-%d").date()
@@ -119,7 +120,8 @@ def gastos():
                 fecha=fecha_dt, 
                 categoria=categoria,
                 tipo_costo=tipo_costo,
-                presupuesto_id=p_id
+                presupuesto_id=p_id,
+                cuenta_origen=cuenta_origen
             )  # type: ignore
             db.session.add(nuevo)
             db.session.commit()

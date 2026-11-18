@@ -55,9 +55,14 @@ class Local(db.Model):
     version_software = db.Column(db.String(20), nullable=False, default="1.0.0")
     fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
 
+    # Modalidad de Plan e Instancia
+    tipo_plan = db.Column(db.String(30), nullable=False, default="Mensual") # 'Mensual', 'Anual', 'Interna'
+    telefono_cobro = db.Column(db.String(50), nullable=True) # WhatsApp o teléfono de cobro
+
     # Finanzas
     inversion_inicial = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
     mensualidad = db.Column(db.Numeric(10, 2), nullable=False, default=0.00)
+    valor_anualidad = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
     dia_pago = db.Column(db.Integer, nullable=False, default=1)       # Día del mes (1–31)
 
     # Estado de Pago — Semáforo
@@ -79,40 +84,72 @@ class Local(db.Model):
     # ── Propiedades de utilidad ──────────────────────────────────────────────
 
     @property
+    def proxima_fecha_corte(self):
+        """Calcula la fecha exacta del próximo vencimiento/corte."""
+        hoy = obtener_hora_bogota().date()
+        import calendar
+        from datetime import date
+        from dateutil.relativedelta import relativedelta
+
+        if self.tipo_plan == "Interna":
+            return None
+
+        if self.tipo_plan == "Anual":
+            # 1 año exacto desde fecha de lanzamiento
+            proximo = self.fecha_lanzamiento + relativedelta(years=1)
+            while proximo < hoy:
+                proximo += relativedelta(years=1)
+            return proximo
+
+        # Plan Mensual
+        # Regla: Como la instalación cubre el primer mes de uso/pruebas,
+        # el primer cobro de mensualidad debe programarse automáticamente 1 mes después de lanzamiento.
+        fecha_min_primer_cobro = self.fecha_lanzamiento + relativedelta(months=1)
+
+        max_dia = calendar.monthrange(hoy.year, hoy.month)[1]
+        dia_efectivo = min(self.dia_pago, max_dia)
+        corte_mes_actual = date(hoy.year, hoy.month, dia_efectivo)
+
+        if corte_mes_actual < fecha_min_primer_cobro:
+            # Aún dentro del primer mes incluido de pruebas
+            ano_t = fecha_min_primer_cobro.year
+            mes_t = fecha_min_primer_cobro.month
+            max_dia_t = calendar.monthrange(ano_t, mes_t)[1]
+            return date(ano_t, mes_t, min(self.dia_pago, max_dia_t))
+
+        if corte_mes_actual < hoy:
+            # Ya pasó este mes y está activo, siguiente corte mes próximo
+            mes_sig = hoy.month + 1 if hoy.month < 12 else 1
+            ano_sig = hoy.year if hoy.month < 12 else hoy.year + 1
+            max_dia_sig = calendar.monthrange(ano_sig, mes_sig)[1]
+            return date(ano_sig, mes_sig, min(self.dia_pago, max_dia_sig))
+
+        return corte_mes_actual
+
+    @property
     def dias_para_pago(self):
         """
         Calcula cuántos días faltan para la próxima fecha de corte.
         """
+        if self.tipo_plan == "Interna":
+            return 999
         hoy = obtener_hora_bogota().date()
-        import calendar
-        from datetime import date
-        
-        max_dia = calendar.monthrange(hoy.year, hoy.month)[1]
-        dia_efectivo = min(self.dia_pago, max_dia)
-        fecha_corte = date(hoy.year, hoy.month, dia_efectivo)
-        
-        dias = (fecha_corte - hoy).days
-        
-        # Si ya pasó la fecha de corte este mes y el local está Activo,
-        # su próximo corte es el mes siguiente.
-        if dias < 0 and self.estado_pago == "Activo":
-            mes_sig = hoy.month + 1 if hoy.month < 12 else 1
-            ano_sig = hoy.year if hoy.month < 12 else hoy.year + 1
-            max_dia_sig = calendar.monthrange(ano_sig, mes_sig)[1]
-            dia_efectivo_sig = min(self.dia_pago, max_dia_sig)
-            fecha_corte_sig = date(ano_sig, mes_sig, dia_efectivo_sig)
-            dias = (fecha_corte_sig - hoy).days
-            
-        return dias
+        prox = self.proxima_fecha_corte
+        if not prox:
+            return 999
+        return (prox - hoy).days
 
     @property
     def semaforo(self):
         """
         Devuelve una clase CSS para colorear el semáforo de pago:
+          - 'semaforo-azul'   → Instancia interna propia (sin cobro)
           - 'semaforo-verde'  → Activo y más de 5 días para el corte
           - 'semaforo-amarillo' → Activo pero corte en ≤5 días
           - 'semaforo-rojo'   → Pendiente, Suspendido o ya vencido
         """
+        if self.tipo_plan == "Interna":
+            return "semaforo-azul"
         if self.estado_pago == "Suspendido":
             return "semaforo-rojo"
         if self.estado_pago == "Pendiente":
@@ -126,6 +163,8 @@ class Local(db.Model):
 
     @property
     def semaforo_label(self):
+        if self.tipo_plan == "Interna":
+            return "Interna"
         mapa = {
             "semaforo-verde": "Al día",
             "semaforo-amarillo": "Por vencer",
@@ -171,6 +210,7 @@ class Factura(db.Model):
     numero_factura = db.Column(db.String(50), unique=True, nullable=False)
     local_id = db.Column(db.Integer, db.ForeignKey('locales.id', ondelete='CASCADE'), nullable=False)
     monto = db.Column(db.Numeric(12, 2), nullable=False)
+    tipo_cobro = db.Column(db.String(30), nullable=False, default="Mensualidad") # 'Instalación', 'Mensualidad', 'Anualidad', 'Otro'
     fecha_emision = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
     fecha_vencimiento = db.Column(db.Date, nullable=False)
     fecha_pago = db.Column(db.Date, nullable=True)
@@ -179,10 +219,20 @@ class Factura(db.Model):
         nullable=False,
         default="Pendiente"
     )
+    cuenta_destino = db.Column(db.String(30), nullable=True) # 'Nu', 'Nequi', 'Bancolombia'
+    validado_por_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+
+    # Trazabilidad de recordatorios de mora
+    ultimo_recordatorio = db.Column(db.DateTime, nullable=True)
+    recordatorio_enviado_por_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    total_recordatorios = db.Column(db.Integer, nullable=False, default=0)
+
     observaciones = db.Column(db.Text, nullable=True)
 
-    # Relación bidireccional
+    # Relaciones
     local = db.relationship('Local', backref=db.backref('facturas_list', lazy=True, cascade="all, delete-orphan"))
+    validado_por = db.relationship('User', foreign_keys=[validado_por_id], backref=db.backref('facturas_validadas', lazy=True))
+    recordatorio_por = db.relationship('User', foreign_keys=[recordatorio_enviado_por_id], backref=db.backref('recordatorios_enviados', lazy=True))
 
     def __repr__(self):
         return f"<Factura {self.numero_factura} - {self.estado}>"
@@ -207,6 +257,7 @@ class Gasto(db.Model):
     fecha = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
     categoria = db.Column(db.String(100), nullable=True)
     tipo_costo = db.Column(db.String(50), nullable=False, default="Gasto Administrativo")
+    cuenta_origen = db.Column(db.String(30), nullable=True, default="Nu") # 'Nu', 'Nequi', 'Bancolombia', 'Caja Menor', 'Otra'
     presupuesto_id = db.Column(db.Integer, db.ForeignKey('presupuestos_area.id'), nullable=True)
     
     presupuesto = db.relationship('PresupuestoArea', backref=db.backref('gastos', lazy=True))
@@ -441,4 +492,44 @@ class Documento(db.Model):
             "manual": "Manual de Sistema"
         }
         return mapa.get(self.tipo, self.tipo.capitalize())
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELO: CorteMetricaSocial (Crecimiento y Métricas de Redes Sociales)
+# ─────────────────────────────────────────────────────────────────────────────
+class CorteMetricaSocial(db.Model):
+    """
+    Registro periódico de métricas de crecimiento en redes sociales oficiales
+    (Instagram, TikTok, LinkedIn, Facebook, Consolidado).
+    Permite calcular variaciones porcentuales, Engagement Rate y evolución temporal.
+    """
+    __tablename__ = "marketing_metricas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    red_social = db.Column(db.String(50), nullable=False, default="Instagram") # Instagram, TikTok, LinkedIn, Facebook, Consolidado
+    periodo_tipo = db.Column(db.String(30), nullable=False, default="Semanal") # Semanal, Quincenal, Mensual
+    etiqueta_periodo = db.Column(db.String(150), nullable=False) # Ej: "Semana 46 - #LaOtraCaraDelMostrador"
+    fecha_corte = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
+
+    # Métricas base
+    seguidores_totales = db.Column(db.Integer, nullable=False, default=0)
+    visualizaciones = db.Column(db.Integer, nullable=False, default=0)
+    alcance = db.Column(db.Integer, nullable=False, default=0)
+    interacciones = db.Column(db.Integer, nullable=False, default=0)
+
+    # Campos de valor comercial
+    link_top_post = db.Column(db.String(500), nullable=True)
+    leads_generados = db.Column(db.Integer, nullable=False, default=0)
+    notas_campana = db.Column(db.Text, nullable=True)
+
+    autor_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+
+    autor = db.relationship("User", backref=db.backref("metricas_sociales_creadas", lazy=True))
+
+    @property
+    def engagement_rate(self):
+        if self.alcance and self.alcance > 0:
+            return round((float(self.interacciones) / float(self.alcance)) * 100, 2)
+        return 0.0
 

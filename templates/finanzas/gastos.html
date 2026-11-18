@@ -54,6 +54,7 @@
                 <tr>
                     <th>Fecha</th>
                     <th>Concepto</th>
+                    <th>Cuenta Origen</th>
                     <th>Clasificación</th>
                     <th>Área / Presupuesto</th>
                     <th class="text-end">Monto</th>
@@ -67,6 +68,17 @@
                         {{ g.descripcion }}
                         {% if g.categoria %}
                         <span class="badge bg-secondary ms-1">{{ g.categoria }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if g.cuenta_origen == 'Nu' %}
+                        <span class="badge" style="background: #820ad1; color:#fff;">Cuenta Nu</span>
+                        {% elif g.cuenta_origen == 'Nequi' %}
+                        <span class="badge" style="background: #ff0055; color:#fff;">Cuenta Nequi</span>
+                        {% elif g.cuenta_origen %}
+                        <span class="badge bg-dark border text-muted">{{ g.cuenta_origen }}</span>
+                        {% else %}
+                        <span class="badge bg-dark border text-muted">Nu</span>
                         {% endif %}
                     </td>
                     <td>
@@ -121,6 +133,17 @@
                             <label class="form-label">Fecha</label>
                             <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cuenta de Origen (Descontar de)</label>
+                        <select class="form-select" name="cuenta_origen" required>
+                            <option value="Nu" selected>Cuenta Nu (Jhon)</option>
+                            <option value="Nequi">Cuenta Nequi (Jhon)</option>
+                            <option value="Bancolombia">Bancolombia Empresarial</option>
+                            <option value="Caja Menor">Caja Menor</option>
+                        </select>
+                        <div class="form-text">Si seleccionas Nu o Nequi, se descuenta en tiempo real de la billetera de control.</div>
                     </div>
                     
                     <div class="mb-3">

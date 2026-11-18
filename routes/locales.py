@@ -34,19 +34,23 @@ locales_bp = Blueprint("locales_bp", __name__)
 
 # ─── Utilidades ──────────────────────────────────────────────────────────────
 
+FECHA_CORTE_CAJA = date(2026, 11, 15)
+
 def _calcular_mrr(locales):
-    """Suma las mensualidades de todos los locales registrados."""
+    """Suma las mensualidades de todos los locales comerciales facturables."""
     return sum(
         float(l.mensualidad)
         for l in locales
+        if getattr(l, "tipo_plan", "Mensual") != "Interna" and l.estado_pago == "Activo"
     )
 
 
 def _stats_semaforo(locales):
-    """Devuelve conteo por color del semáforo."""
-    verde = sum(1 for l in locales if l.semaforo == "semaforo-verde")
-    amarillo = sum(1 for l in locales if l.semaforo == "semaforo-amarillo")
-    rojo = sum(1 for l in locales if l.semaforo == "semaforo-rojo")
+    """Devuelve conteo por color del semáforo para locales facturables."""
+    locales_fact = [l for l in locales if getattr(l, "tipo_plan", "Mensual") != "Interna"]
+    verde = sum(1 for l in locales_fact if l.semaforo == "semaforo-verde")
+    amarillo = sum(1 for l in locales_fact if l.semaforo == "semaforo-amarillo")
+    rojo = sum(1 for l in locales_fact if l.semaforo == "semaforo-rojo")
     return verde, amarillo, rojo
 
 
@@ -60,11 +64,13 @@ def dashboard():
 
     mrr = _calcular_mrr(locales)
     arr = mrr * 12
-    total_invertido = sum(float(l.inversion_inicial) for l in locales)
+    # Total invertido histórico
+    total_invertido = sum(float(l.inversion_inicial) for l in locales if getattr(l, "tipo_plan", "Mensual") != "Interna")
     verde, amarillo, rojo = _stats_semaforo(locales)
     
     online_count = sum(1 for l in locales if l.is_online)
     offline_count = sum(1 for l in locales if not l.is_online)
+    total_facturables = sum(1 for l in locales if getattr(l, "tipo_plan", "Mensual") != "Interna")
 
     # Últimas 5 notificaciones
     notifs_recientes = (
@@ -78,6 +84,7 @@ def dashboard():
         arr=arr,
         total_invertido=total_invertido,
         total_locales=len(locales),
+        total_facturables=total_facturables,
         verde=verde,
         amarillo=amarillo,
         rojo=rojo,
@@ -94,25 +101,67 @@ def dashboard():
 def nuevo_local():
     if request.method == "POST":
         try:
-            # Cifrar credenciales antes de guardar
             email_plain = request.form.get("boveda_email", "").strip()
             pass_plain = request.form.get("boveda_password", "").strip()
+
+            fecha_lanzamiento = datetime.strptime(
+                request.form["fecha_lanzamiento"], "%Y-%m-%d"
+            ).date()
+            tipo_plan = request.form.get("tipo_plan", "Mensual").strip()
+            inversion_inicial = float(request.form.get("inversion_inicial", 0))
+            valor_anualidad = float(request.form.get("valor_anualidad", 0))
+            
+            # Si es anual y no especifican mensualidad, se calcula la mensualidad equivalente
+            if tipo_plan == "Anual":
+                mensualidad_input = float(request.form.get("mensualidad", 0))
+                mensualidad = mensualidad_input if mensualidad_input > 0 else (valor_anualidad / 12)
+                dia_pago = fecha_lanzamiento.day
+            elif tipo_plan == "Interna":
+                mensualidad = 0.0
+                dia_pago = 1
+            else:
+                mensualidad = float(request.form.get("mensualidad", 0))
+                dia_pago = int(request.form.get("dia_pago", 1))
+
+            telefono_cobro = request.form.get("telefono_cobro", "").strip() or None
 
             local = Local(
                 nombre_marca=request.form["nombre_marca"].strip(),
                 url_instancia=request.form.get("url_instancia", "").strip() or None,
-                fecha_lanzamiento=datetime.strptime(
-                    request.form["fecha_lanzamiento"], "%Y-%m-%d"
-                ).date(),
+                fecha_lanzamiento=fecha_lanzamiento,
                 version_software=request.form.get("version_software", "1.0.0").strip(),
-                inversion_inicial=float(request.form.get("inversion_inicial", 0)),
-                mensualidad=float(request.form.get("mensualidad", 0)),
-                dia_pago=int(request.form.get("dia_pago", 1)),
+                tipo_plan=tipo_plan,
+                telefono_cobro=telefono_cobro,
+                inversion_inicial=inversion_inicial,
+                mensualidad=mensualidad,
+                valor_anualidad=valor_anualidad,
+                dia_pago=dia_pago,
                 estado_pago=request.form.get("estado_pago", "Activo"),
                 boveda_email=encrypt_password(email_plain) if email_plain else None,
                 boveda_password=encrypt_password(pass_plain) if pass_plain else None,
             )
             db.session.add(local)
+            db.session.flush() # Obtener local.id
+
+            # LÓGICA DE INSTALACIONES INICIALES Y CORTE DE CAJA (15/11/2026 = $0):
+            # Si fecha de lanzamiento >= 15/11/2026, crea automáticamente cobro de instalación en Facturas en estado Pendiente
+            if fecha_lanzamiento >= FECHA_CORTE_CAJA and inversion_inicial > 0 and tipo_plan != "Interna":
+                from datetime import timedelta
+                count_fac = Factura.query.count() + 1
+                hoy_dt = obtener_hora_bogota()
+                num_fac = f"INST-{hoy_dt.strftime('%y%m')}-{count_fac:04d}"
+                factura_instalacion = Factura(
+                    numero_factura=num_fac,
+                    local_id=local.id,
+                    monto=inversion_inicial,
+                    tipo_cobro="Instalación",
+                    fecha_emision=fecha_lanzamiento,
+                    fecha_vencimiento=fecha_lanzamiento + timedelta(days=5),
+                    estado="Pendiente",
+                    observaciones="Cobro de instalación y parametrización inicial (incluye 1er mes de servicio)"
+                )
+                db.session.add(factura_instalacion)
+
             db.session.commit()
             flash(f"✅ Local «{local.nombre_marca}» registrado exitosamente.", "success")
             return redirect(url_for("locales_bp.dashboard"))
@@ -136,9 +185,24 @@ def editar_local(local_id):
                 request.form["fecha_lanzamiento"], "%Y-%m-%d"
             ).date()
             local.version_software = request.form.get("version_software", "1.0.0").strip()
+            
+            tipo_plan = request.form.get("tipo_plan", "Mensual").strip()
+            local.tipo_plan = tipo_plan
             local.inversion_inicial = float(request.form.get("inversion_inicial", 0))
-            local.mensualidad = float(request.form.get("mensualidad", 0))
-            local.dia_pago = int(request.form.get("dia_pago", 1))
+            local.valor_anualidad = float(request.form.get("valor_anualidad", 0))
+
+            if tipo_plan == "Anual":
+                mensualidad_input = float(request.form.get("mensualidad", 0))
+                local.mensualidad = mensualidad_input if mensualidad_input > 0 else (local.valor_anualidad / 12)
+                local.dia_pago = local.fecha_lanzamiento.day
+            elif tipo_plan == "Interna":
+                local.mensualidad = 0.0
+                local.dia_pago = 1
+            else:
+                local.mensualidad = float(request.form.get("mensualidad", 0))
+                local.dia_pago = int(request.form.get("dia_pago", 1))
+
+            local.telefono_cobro = request.form.get("telefono_cobro", "").strip() or None
             local.estado_pago = request.form.get("estado_pago", "Activo")
 
             # Solo actualizar bóveda si se ingresó nuevo valor
