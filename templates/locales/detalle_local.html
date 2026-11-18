@@ -170,6 +170,76 @@
     </div>
 </div>
 
+<!-- Expediente Documental & Legal del Cliente -->
+<div class="card-zenic p-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+                   color:var(--zenic-text-muted);margin:0">
+            <i class="fa-solid fa-folder-closed me-2" style="color:var(--zenic-success)"></i> Expediente Documental & Legal del Cliente
+        </h2>
+        <a href="{{ url_for('documentos_bp.index', tipo='cliente', local_id=local.id) }}" class="btn-zenic btn-sm text-decoration-none px-3 py-1 rounded-2" style="font-size:0.78rem">
+            <i class="fa-solid fa-folder-open me-1"></i> Ver en Centro de Documentación
+        </a>
+    </div>
+
+    {% if local.documentos %}
+    <div class="table-responsive">
+        <table class="table table-zenic align-middle mb-0">
+            <thead>
+                <tr class="small text-muted text-uppercase">
+                    <th>Documento</th>
+                    <th>Categoría</th>
+                    <th>Versión</th>
+                    <th>Tamaño</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in local.documentos %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fa-solid {{ doc.icono_fa }} fs-5"></i>
+                            <div>
+                                <span class="fw-semibold text-dark">{{ doc.titulo }}</span>
+                                {% if doc.descripcion %}
+                                <div class="text-muted" style="font-size: 0.72rem;">{{ doc.descripcion }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-light text-muted border">{{ doc.categoria }}</span></td>
+                    <td><span class="badge bg-light text-dark border">v{{ doc.version }}</span></td>
+                    <td class="small text-muted">{{ doc.tamano_legible }}</td>
+                    <td class="small text-muted">{{ doc.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                    <td class="text-end">
+                        {% if doc.archivo_ruta %}
+                        <a href="{{ url_for('documentos_bp.ver_archivo', doc_id=doc.id) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Ver">
+                            <i class="fa-solid fa-eye fa-xs"></i>
+                        </a>
+                        <a href="{{ url_for('documentos_bp.descargar_documento', doc_id=doc.id) }}" class="btn btn-sm btn-primary py-0 px-2" title="Descargar">
+                            <i class="fa-solid fa-download fa-xs"></i>
+                        </a>
+                        {% elif doc.enlace_externo %}
+                        <a href="{{ doc.enlace_externo }}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="Abrir enlace">
+                            <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i>
+                        </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-4 text-muted small">
+        <i class="fa-solid fa-folder-open fs-3 opacity-25 d-block mb-2"></i>
+        No hay documentos legales o contratos asociados a este cliente aún.
+    </div>
+    {% endif %}
+</div>
+
 {% endblock %}
 
 {% block scripts %}

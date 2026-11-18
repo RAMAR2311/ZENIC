@@ -360,3 +360,85 @@ class SesionGrabacion(db.Model):
     )
     fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELO: Documento (Gestión Documental: Zenic, Legal Clientes, Manuales)
+# ─────────────────────────────────────────────────────────────────────────────
+class Documento(db.Model):
+    """
+    Gestor documental centralizado de Zenic:
+    - zenic: Documentación interna, procesos, arquitectura, actas
+    - cliente: Documentación legal de clientes (RUT, Cámara de Comercio, Contratos, etc.)
+    - manual: Manuales de usuario, instalación y guías de sistemas
+    """
+    __tablename__ = "documentos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
+    tipo = db.Column(
+        db.String(50),
+        nullable=False,
+        default="zenic" # zenic, cliente, manual
+    )
+    categoria = db.Column(db.String(100), nullable=False, default="General")
+    # Asociado a cliente si tipo == 'cliente' o manual específico
+    local_id = db.Column(db.Integer, db.ForeignKey("locales.id", ondelete="CASCADE"), nullable=True)
+    
+    # Archivo físico en disco
+    archivo_ruta = db.Column(db.String(255), nullable=True)
+    archivo_nombre_original = db.Column(db.String(255), nullable=True)
+    archivo_tamano = db.Column(db.Integer, nullable=True, default=0) # en bytes
+    archivo_extension = db.Column(db.String(20), nullable=True)
+    
+    # Enlace externo opcional (Drive, Notion, etc.)
+    enlace_externo = db.Column(db.String(500), nullable=True)
+    
+    version = db.Column(db.String(20), nullable=False, default="1.0")
+    autor_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+    fecha_actualizacion = db.Column(db.DateTime, default=obtener_hora_bogota, onupdate=obtener_hora_bogota)
+
+    local = db.relationship("Local", backref=db.backref("documentos", lazy=True, cascade="all, delete-orphan"))
+    autor = db.relationship("User", backref=db.backref("documentos_creados", lazy=True))
+
+    @property
+    def tamano_legible(self):
+        if not self.archivo_tamano:
+            return "—"
+        tam = self.archivo_tamano
+        if tam < 1024:
+            return f"{tam} B"
+        elif tam < 1024 * 1024:
+            return f"{tam / 1024:.1f} KB"
+        else:
+            return f"{tam / (1024 * 1024):.1f} MB"
+
+    @property
+    def icono_fa(self):
+        ext = (self.archivo_extension or "").lower()
+        if ext == "pdf":
+            return "fa-file-pdf text-danger"
+        elif ext in ["doc", "docx"]:
+            return "fa-file-word text-primary"
+        elif ext in ["xls", "xlsx", "csv"]:
+            return "fa-file-excel text-success"
+        elif ext in ["ppt", "pptx"]:
+            return "fa-file-powerpoint text-warning"
+        elif ext in ["zip", "rar", "7z", "tar", "gz"]:
+            return "fa-file-zipper text-secondary"
+        elif ext in ["png", "jpg", "jpeg", "webp", "svg"]:
+            return "fa-file-image text-info"
+        elif self.enlace_externo:
+            return "fa-link text-primary"
+        return "fa-file-lines text-muted"
+
+    @property
+    def tipo_label(self):
+        mapa = {
+            "zenic": "Zenic Corporativo",
+            "cliente": "Legal Cliente",
+            "manual": "Manual de Sistema"
+        }
+        return mapa.get(self.tipo, self.tipo.capitalize())
+

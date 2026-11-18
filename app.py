@@ -79,6 +79,7 @@ def create_app():
     from routes.dashboard import dashboard_bp
     from routes.ti import ti_bp
     from routes.marketing import marketing_bp
+    from routes.documentos import documentos_bp
 
     app.register_blueprint(auth_bp, url_prefix="/auth")
     app.register_blueprint(dashboard_bp, url_prefix="")
@@ -88,6 +89,7 @@ def create_app():
     app.register_blueprint(operaciones_bp, url_prefix="/operaciones")
     app.register_blueprint(ti_bp)
     app.register_blueprint(marketing_bp)
+    app.register_blueprint(documentos_bp)
 
     # -- Filtros de Plantilla -------------------------------------------------
     @app.template_filter("fromjson")
@@ -162,4 +164,5 @@ if __name__ == "__main__":
     # La inicializacion de BD se hace en reset_db.py (una sola vez)
     # Aqui solo levantamos el servidor
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5050))
+    app.run(host="0.0.0.0", port=port, debug=True)

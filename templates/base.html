@@ -898,6 +898,12 @@
                 Notificaciones
             </a>
             {% endif %}
+
+            <div class="sidebar-section-label">Conocimiento & Legal</div>
+            <a href="{{ url_for('documentos_bp.index') }}" class="sidebar-link">
+                <i class="fa-solid fa-folder-open" style="color:var(--zenic-purple-neural)"></i>
+                Documentación & Manuales
+            </a>
         </div>
 
         <a href="{{ url_for('auth_bp.logout') }}" class="sidebar-logout">

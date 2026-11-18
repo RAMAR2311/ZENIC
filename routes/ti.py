@@ -153,7 +153,7 @@ def tickets():
 
     tickets_list = query.all()
     locales = Local.query.order_by(Local.nombre_marca).all()
-    usuarios_ti = User.query.filter(User.rol.in_(["ti", "admin"])).all()
+    usuarios = User.query.order_by(User.nombre).all()
 
     # Métricas rápidas
     total_pendientes = TicketCambio.query.filter(TicketCambio.estado.in_(["Pendiente", "En Desarrollo"])).count()
@@ -164,7 +164,8 @@ def tickets():
         "ti/tickets.html",
         tickets=tickets_list,
         locales=locales,
-        usuarios_ti=usuarios_ti,
+        usuarios=usuarios,
+        usuarios_ti=usuarios,
         total_pendientes=total_pendientes,
         total_urgentes=total_urgentes,
         total_resueltos=total_resueltos,
@@ -181,6 +182,7 @@ def nuevo_ticket():
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     local_id = request.form.get("local_id")
+    asignado_id = request.form.get("asignado_id")
     categoria = request.form.get("categoria", "Soporte")
     prioridad = request.form.get("prioridad", "Media")
     archivos_adjuntos = request.files.getlist("adjunto")
@@ -219,6 +221,7 @@ def nuevo_ticket():
         titulo=titulo,
         descripcion=descripcion,
         local_id=int(local_id) if local_id else None,
+        asignado_id=int(asignado_id) if (asignado_id and asignado_id.strip()) else None,
         categoria=categoria,
         prioridad=prioridad,
         solicitante_id=current_user.id,
@@ -252,8 +255,8 @@ def actualizar_ticket(ticket_id):
         elif nuevo_estado != "Resuelto":
             ticket.fecha_cierre = None
 
-    if asignado_id:
-        ticket.asignado_id = int(asignado_id) if asignado_id != "" else None
+    if asignado_id is not None:
+        ticket.asignado_id = int(asignado_id) if (asignado_id and asignado_id.strip()) else None
 
     if notas is not None:
         ticket.notas_resolucion = notas.strip()

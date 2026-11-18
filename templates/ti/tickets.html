@@ -112,7 +112,7 @@
                     {{ t.descripcion }}
                 </p>
 
-                <div class="d-flex flex-wrap gap-1 align-items-center mb-3 small">
+                <div class="d-flex flex-wrap gap-1 align-items-center mb-2 small">
                     {% if t.local %}
                     <span class="badge bg-secondary-subtle text-secondary"><i class="fa-solid fa-store me-1"></i>{{ t.local.nombre_marca }}</span>
                     {% endif %}
@@ -127,6 +127,18 @@
                         <i class="fa-solid fa-paperclip me-1"></i>{{ t.adjuntos|length }} {{ 'adjunto' if t.adjuntos|length == 1 else 'adjuntos' }}
                     </span>
                     {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-2 px-1 small">
+                    <span class="text-muted"><i class="fa-solid fa-user-pen me-1"></i>Por: <strong>{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</strong></span>
+                    <span>
+                        <i class="fa-solid fa-user-gear me-1 text-primary"></i>
+                        {% if t.asignado %}
+                        <span class="badge bg-primary-subtle text-primary fw-semibold">{{ t.asignado.nombre.split()[0] }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-muted border">Sin asignar</span>
+                        {% endif %}
+                    </span>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center pt-2 border-top">
@@ -170,6 +182,7 @@
                         <th>Prioridad</th>
                         <th>Evidencia</th>
                         <th>Estado</th>
+                        <th>Asignado a</th>
                         <th>Solicitante</th>
                         <th>Fecha</th>
                         <th class="text-end">Acciones</th>
@@ -222,6 +235,17 @@
                             <span class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-clock me-1"></i>{{ t.estado }}</span>
                             {% endif %}
                         </td>
+                        <td>
+                            {% if t.asignado %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold" title="{{ t.asignado.nombre }} ({{ t.asignado.rol|capitalize }})">
+                                <i class="fa-solid fa-user-check me-1"></i>{{ t.asignado.nombre.split()[0] }} {{ t.asignado.nombre.split()[1] if t.asignado.nombre.split()|length > 1 else '' }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-muted border">
+                                <i class="fa-regular fa-user me-1"></i>Sin asignar
+                            </span>
+                            {% endif %}
+                        </td>
                         <td class="small">{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</td>
                         <td class="small text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                         <td class="text-end">
@@ -242,7 +266,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="10" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
+                        <td colspan="11" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -296,6 +320,17 @@
                             <option value="Urgente">Urgente (Bloqueante)</option>
                         </select>
                     </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold d-flex align-items-center gap-1">
+                        <i class="fa-solid fa-user-check text-primary"></i> Asignar a (Responsable)
+                    </label>
+                    <select name="asignado_id" class="form-select">
+                        <option value="">Sin Asignar (Pendiente de Asignación)</option>
+                        {% for u in usuarios %}
+                        <option value="{{ u.id }}">{{ u.nombre }} — [{{ u.rol|upper }}]</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -389,7 +424,8 @@
                         <div class="col-6"><strong>Solicitante:</strong><br><span class="text-muted">{{ t.solicitante.nombre if t.solicitante else 'N/A' }}</span></div>
                         <div class="col-6"><strong>Prioridad:</strong><br><span class="text-muted">{{ t.prioridad }}</span></div>
                         <div class="col-6"><strong>Categoría:</strong><br><span class="text-muted">{{ t.categoria }}</span></div>
-                        <div class="col-12"><strong>Fecha Creación:</strong><br><span class="text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span></div>
+                        <div class="col-6"><strong>Asignado a:</strong><br><span class="text-primary fw-semibold">{{ t.asignado.nombre if t.asignado else 'Sin Asignar' }}</span></div>
+                        <div class="col-6"><strong>Fecha Creación:</strong><br><span class="text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span></div>
                     </div>
                 </div>
 
@@ -407,11 +443,11 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small fw-bold">Asignado a (TI)</label>
+                        <label class="form-label small fw-bold">Asignar Responsable</label>
                         <select name="asignado_id" class="form-select form-select-sm">
                             <option value="">Sin Asignar</option>
-                            {% for u in usuarios_ti %}
-                            <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                            {% for u in usuarios %}
+                            <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }} — [{{ u.rol|upper }}]</option>
                             {% endfor %}
                         </select>
                     </div>
