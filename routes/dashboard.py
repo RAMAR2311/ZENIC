@@ -3,7 +3,6 @@ from flask_login import login_required
 from models import db, Local, Gasto, Ingreso, Factura, Tesoreria, ActivoFijo, Personal, Prestamo, obtener_hora_bogota
 from sqlalchemy import func
 import calendar
-from dateutil.relativedelta import relativedelta
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
 
@@ -58,14 +57,16 @@ def master():
     gastos_hist = []
     
     for i in range(5, -1, -1):
-        d = hoy - relativedelta(months=i)
-        meses_labels.append(f"{calendar.month_abbr[d.month]} {d.year}")
-        
-        gm = Gasto.query.filter(db.extract('month', Gasto.fecha) == d.month, db.extract('year', Gasto.fecha) == d.year).all()
+        total_m = (hoy.year * 12 + (hoy.month - 1)) - i
+        d_year = total_m // 12
+        d_month = (total_m % 12) + 1
+        meses_labels.append(f"{calendar.month_abbr[d_month]} {d_year}")
+
+        gm = Gasto.query.filter(db.extract('month', Gasto.fecha) == d_month, db.extract('year', Gasto.fecha) == d_year).all()
         gastos_hist.append(sum(float(g.monto) for g in gm))
-        
-        imm = Ingreso.query.filter(db.extract('month', Ingreso.fecha) == d.month, db.extract('year', Ingreso.fecha) == d.year).all()
-        fmm = Factura.query.filter(Factura.estado == 'Pagado', db.extract('month', Factura.fecha_pago) == d.month, db.extract('year', Factura.fecha_pago) == d.year).all()
+
+        imm = Ingreso.query.filter(db.extract('month', Ingreso.fecha) == d_month, db.extract('year', Ingreso.fecha) == d_year).all()
+        fmm = Factura.query.filter(Factura.estado == 'Pagado', db.extract('month', Factura.fecha_pago) == d_month, db.extract('year', Factura.fecha_pago) == d_year).all()
         ingresos_hist.append(sum(float(x.monto) for x in imm) + sum(float(y.monto) for y in fmm))
 
     return render_template(

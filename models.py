@@ -86,49 +86,51 @@ class Local(db.Model):
 
     @property
     def proxima_fecha_corte(self):
-        """Calcula la fecha exacta del próximo vencimiento/corte."""
+        """Calcula la fecha exacta del próximo vencimiento/corte sin depender de librerías externas."""
         hoy = obtener_hora_bogota().date()
         import calendar
         from datetime import date
-        from dateutil.relativedelta import relativedelta
 
-        if self.tipo_plan == "Interna":
+        def _add_months(d, months):
+            total_m = (d.year * 12 + (d.month - 1)) + months
+            ny = total_m // 12
+            nm = (total_m % 12) + 1
+            max_d = calendar.monthrange(ny, nm)[1]
+            return date(ny, nm, min(d.day, max_d))
+
+        if getattr(self, "tipo_plan", "Mensual") == "Interna":
             return None
 
-        if self.tipo_plan == "Anual":
-            # Si definieron una fecha específica de inicio de facturación futura o de renovación
+        base_lanz = self.fecha_lanzamiento.date() if hasattr(self.fecha_lanzamiento, "date") else (self.fecha_lanzamiento or hoy)
+
+        if getattr(self, "tipo_plan", "Mensual") == "Anual":
             if self.fecha_inicio_facturacion:
                 proximo = self.fecha_inicio_facturacion
                 while proximo < hoy:
-                    proximo += relativedelta(years=1)
+                    proximo = _add_months(proximo, 12)
                 return proximo
-            # 1 año exacto desde fecha de lanzamiento
-            proximo = self.fecha_lanzamiento + relativedelta(years=1)
+            proximo = _add_months(base_lanz, 12)
             while proximo < hoy:
-                proximo += relativedelta(years=1)
+                proximo = _add_months(proximo, 12)
             return proximo
 
         # Plan Mensual
-        # Si se configuró explícitamente la fecha desde que inicia la facturación,
-        # se toma como punto de partida mínimo; de lo contrario, 1 mes después del lanzamiento.
         if self.fecha_inicio_facturacion:
             fecha_min_primer_cobro = self.fecha_inicio_facturacion
         else:
-            fecha_min_primer_cobro = self.fecha_lanzamiento + relativedelta(months=1)
+            fecha_min_primer_cobro = _add_months(base_lanz, 1)
 
-        # Base de referencia para evaluar el corte vigente (el mayor entre hoy y el inicio de facturación)
         ref_date = max(hoy, fecha_min_primer_cobro)
         max_dia = calendar.monthrange(ref_date.year, ref_date.month)[1]
-        dia_efectivo = min(self.dia_pago, max_dia)
+        dia_pago_val = int(self.dia_pago or 1)
+        dia_efectivo = min(max(1, dia_pago_val), max_dia)
         corte_ref = date(ref_date.year, ref_date.month, dia_efectivo)
 
         if corte_ref < fecha_min_primer_cobro or corte_ref < hoy:
-            # Si el día de pago de ese mes es anterior al inicio de facturación o ya pasó hoy,
-            # el próximo corte pasa al mes siguiente de ref_date
             mes_sig = ref_date.month + 1 if ref_date.month < 12 else 1
             ano_sig = ref_date.year if ref_date.month < 12 else ref_date.year + 1
             max_dia_sig = calendar.monthrange(ano_sig, mes_sig)[1]
-            return date(ano_sig, mes_sig, min(self.dia_pago, max_dia_sig))
+            return date(ano_sig, mes_sig, min(max(1, dia_pago_val), max_dia_sig))
 
         return corte_ref
 

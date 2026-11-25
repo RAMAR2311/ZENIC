@@ -80,15 +80,24 @@ def dashboard_ingresos():
     hoy = obtener_hora_bogota().date()
 
     # 0. Sincronizar automáticamente facturas de ciclos próximos según fecha_inicio_facturacion y dia_pago
-    _sincronizar_facturas_ciclo(locales, hoy)
+    try:
+        _sincronizar_facturas_ciclo(locales, hoy)
+    except Exception:
+        db.session.rollback()
 
     facturas_all = Factura.query.all()
 
     # Auto-actualizar estado de vencimiento
-    for f in facturas_all:
-        if f.estado == "Pendiente" and f.fecha_vencimiento < hoy:
-            f.estado = "Vencido"
-    db.session.commit()
+    try:
+        cambios_venc = False
+        for f in facturas_all:
+            if f.estado == "Pendiente" and f.fecha_vencimiento and f.fecha_vencimiento < hoy:
+                f.estado = "Vencido"
+                cambios_venc = True
+        if cambios_venc:
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     # Ordenar priorizando las pendientes/vencidas más próximas a vencer primero, y luego las pagadas
     def _orden_cobro(f):

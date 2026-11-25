@@ -137,8 +137,11 @@ def nuevo_local():
             if fecha_inicio_str:
                 fecha_inicio_facturacion = datetime.strptime(fecha_inicio_str, "%Y-%m-%d").date()
             else:
-                from dateutil.relativedelta import relativedelta
-                fecha_inicio_facturacion = fecha_lanzamiento + relativedelta(months=1)
+                import calendar
+                from datetime import date as _date
+                tm = fecha_lanzamiento.year * 12 + fecha_lanzamiento.month
+                ny, nm = tm // 12, (tm % 12) + 1
+                fecha_inicio_facturacion = _date(ny, nm, min(fecha_lanzamiento.day, calendar.monthrange(ny, nm)[1]))
 
             tipo_plan = request.form.get("tipo_plan", "Mensual").strip()
             inversion_inicial = _limpiar_moneda(request.form.get("inversion_inicial", 0))
@@ -245,8 +248,11 @@ def editar_local(local_id):
             if fecha_inicio_str:
                 local.fecha_inicio_facturacion = datetime.strptime(fecha_inicio_str, "%Y-%m-%d").date()
             else:
-                from dateutil.relativedelta import relativedelta
-                local.fecha_inicio_facturacion = local.fecha_lanzamiento + relativedelta(months=1)
+                import calendar
+                from datetime import date as _date
+                tm = local.fecha_lanzamiento.year * 12 + local.fecha_lanzamiento.month
+                ny, nm = tm // 12, (tm % 12) + 1
+                local.fecha_inicio_facturacion = _date(ny, nm, min(local.fecha_lanzamiento.day, calendar.monthrange(ny, nm)[1]))
 
             local.version_software = request.form.get("version_software", "1.0.0").strip()
             

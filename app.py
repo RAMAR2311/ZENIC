@@ -193,10 +193,29 @@ def create_app():
                         except Exception:
                             db.session.rollback()
 
+            # 1. Columnas nuevas en 'locales'
             _safe_add_column("locales", "fecha_inicio_facturacion", "DATE")
+            _safe_add_column("locales", "tipo_plan", "VARCHAR(30) DEFAULT 'Mensual' NOT NULL")
+            _safe_add_column("locales", "telefono_cobro", "VARCHAR(50)")
+            _safe_add_column("locales", "valor_anualidad", "NUMERIC(12, 2) DEFAULT 0.00 NOT NULL")
+
+            # 2. Columnas nuevas en 'facturas'
+            _safe_add_column("facturas", "tipo_cobro", "VARCHAR(30) DEFAULT 'Mensualidad' NOT NULL")
+            _safe_add_column("facturas", "cuenta_destino", "VARCHAR(30)")
+            _safe_add_column("facturas", "validado_por_id", "INTEGER")
+            _safe_add_column("facturas", "ultimo_recordatorio", "DATETIME")
+            _safe_add_column("facturas", "recordatorio_enviado_por_id", "INTEGER")
+            _safe_add_column("facturas", "total_recordatorios", "INTEGER DEFAULT 0 NOT NULL")
+
+            # 3. Columnas nuevas en 'gastos'
+            _safe_add_column("gastos", "cuenta_origen", "VARCHAR(30) DEFAULT 'Nu'")
             _safe_add_column("gastos", "comprobante_ruta", "VARCHAR(255)")
+
+            # 4. Columnas nuevas en 'tickets_cambio'
             _safe_add_column("tickets_cambio", "notas_validacion", "TEXT")
             _safe_add_column("tickets_cambio", "validado_por_solicitante", "BOOLEAN DEFAULT 0 NOT NULL")
+            _safe_add_column("tickets_cambio", "adjunto_ruta", "TEXT")
+            _safe_add_column("tickets_cambio", "adjunto_tipo", "VARCHAR(50)")
         except Exception:
             db.session.rollback()
 
