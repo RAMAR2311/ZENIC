@@ -110,16 +110,21 @@ class Local(db.Model):
             if inicio >= hoy:
                 return inicio
 
-            # Si la fecha de inicio ya pasó, se proyecta desde esa fecha en adelante según el día de pago
+            # Si la fecha de inicio ya pasó, debemos ver si este ciclo que ya empezó fue pagado o no:
+            # Si NO está pagado (estado_pago != 'Activo' o tiene factura pendiente de ese corte),
+            # el corte activo vigente que debe es la fecha de inicio / corte que no ha pagado
+            if self.estado_pago in ("Pendiente", "Suspendido"):
+                return inicio
+
+            # Si ya está Al Día / Pagado, el corte avanza al siguiente ciclo mensual
             proximo = inicio
             if getattr(self, "tipo_plan", "Mensual") == "Anual":
-                while proximo < hoy:
+                while proximo <= hoy:
                     proximo = _add_months(proximo, 12)
                 return proximo
             else:
-                # Plan Mensual: avanzar mes a mes desde fecha_inicio_facturacion respetando dia_pago
                 dia_pago_val = int(self.dia_pago or proximo.day or 1)
-                while proximo < hoy:
+                while proximo <= hoy:
                     proximo = _add_months(proximo, 1)
                 max_d = calendar.monthrange(proximo.year, proximo.month)[1]
                 return date(proximo.year, proximo.month, min(max(1, dia_pago_val), max_d))
