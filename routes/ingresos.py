@@ -19,9 +19,8 @@ MESES_ES = {
 def _sincronizar_facturas_ciclo(locales, hoy):
     """
     Revisa cada local activo/pendiente con fecha_inicio_facturacion y dia_pago.
-    Si su próxima fecha de corte está próxima (dentro de los próximos 15 días o ya venció)
-    y aún no existe factura emitida para ese mes/año y local, la genera automáticamente
-    para que aparezca lista en 'Próximas a Vencer' para enviar recordatorio de WhatsApp y validar pago.
+    Si su próxima fecha de corte está dentro de los próximos 3 días (o ya venció)
+    y aún no existe factura emitida para ese mes/año y local, la genera automáticamente.
     """
     creadas = 0
     for loc in locales:
@@ -35,8 +34,8 @@ def _sincronizar_facturas_ciclo(locales, hoy):
             continue
 
         dias_restantes = (prox_corte - hoy).days
-        # Si faltan 15 días o menos para el corte (o ya está en fecha), verificar si tiene factura de ese periodo
-        if dias_restantes <= 15:
+        # Solo sincronizar si faltan 3 días o menos para el corte o ya se pasó
+        if dias_restantes <= 3:
             tipo_cobro = "Anualidad" if loc.tipo_plan == "Anual" else "Mensualidad"
             monto = float(loc.valor_anualidad) if (loc.tipo_plan == "Anual" and float(loc.valor_anualidad) > 0) else float(loc.mensualidad)
             if monto <= 0:
@@ -58,6 +57,19 @@ def _sincronizar_facturas_ciclo(locales, hoy):
                 if Factura.query.filter_by(numero_factura=num_base).first():
                     continue
                 nueva_fac = Factura(
+                    numero_factura=num_base,
+                    local_id=loc.id,
+                    monto=monto,
+                    tipo_cobro=tipo_cobro,
+                    fecha_emision=hoy,
+                    fecha_vencimiento=prox_corte,
+                    estado="Vencido" if prox_corte < hoy else "Pendiente",
+                    observaciones=f"Período {mes_nombre} {prox_corte.year} (Corte día {loc.dia_pago})"
+                )
+                db.session.add(nueva_fac)
+                creadas += 1
+    if creadas > 0:
+        db.session.commit()
                     numero_factura=num_base,
                     local_id=loc.id,
                     monto=monto,

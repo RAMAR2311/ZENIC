@@ -656,16 +656,16 @@
                 </div>
             </div>
 
-            <!-- Píldoras de filtro por estado (Por defecto muestra Próximas a Vencer / En Mora) -->
+            <!-- Píldoras de filtro por estado (Por defecto muestra Próximas a Vencer ≤ 3 días / En Mora) -->
             <div class="d-flex flex-wrap gap-1 ms-md-2">
                 <button type="button" class="inv-filter-pill active" data-est="por_cobrar" onclick="filterInvoices('por_cobrar', this)">
-                    ⚡ Próximas a Vencer & En Mora ({{ por_cobrar_count }})
+                    ⚡ Próximas a Vencer & En Mora (<span id="countPillPorCobrar">{{ por_cobrar_count }}</span>)
                 </button>
                 <button type="button" class="inv-filter-pill" data-est="Pendiente" onclick="filterInvoices('Pendiente', this)">
                     🟡 Próximas / Pendientes
                 </button>
                 <button type="button" class="inv-filter-pill" data-est="Vencido" onclick="filterInvoices('Vencido', this)">
-                    🔴 Vencidas
+                    🔴 Vencidas (En Mora)
                 </button>
                 <button type="button" class="inv-filter-pill" data-est="Pagado" onclick="filterInvoices('Pagado', this)">
                     🟢 Pagadas ({{ pagadas_count }})
@@ -702,7 +702,8 @@
             </thead>
             <tbody>
                 {% for f in facturas %}
-                <tr class="inv-row-{{ f.estado }}" data-estado="{{ f.estado }}">
+                {% set dias_v = (f.fecha_vencimiento - hoy).days if f.fecha_vencimiento else 999 %}
+                <tr class="inv-row-{{ f.estado }}" data-estado="{{ f.estado }}" data-dias-venc="{{ dias_v }}">
                     <td>
                         <div class="font-mono fw-bold" style="color: #0F172A; font-size: 0.9rem;">{{ f.numero_factura }}</div>
                         <div style="font-size:0.74rem; color:#64748B;">Emisión: {{ f.fecha_emision | fecha_corta }}</div>
@@ -1044,7 +1045,9 @@
             if (currentInvFilter === 'todos') {
                 matchEst = true;
             } else if (currentInvFilter === 'por_cobrar') {
-                matchEst = (est === 'Pendiente' || est === 'Vencido');
+                const diasVenc = parseInt(tr.getAttribute('data-dias-venc') || '999', 10);
+                // Próximas a vencer (faltan 3 días o menos) o vencidas (en mora)
+                matchEst = (est === 'Vencido') || (est === 'Pendiente' && diasVenc <= 3);
             } else {
                 matchEst = (est === currentInvFilter);
             }
