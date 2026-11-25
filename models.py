@@ -86,7 +86,7 @@ class Local(db.Model):
 
     @property
     def proxima_fecha_corte(self):
-        """Calcula la fecha exacta del próximo vencimiento/corte sin depender de librerías externas."""
+        """Calcula la fecha exacta del próximo vencimiento/corte respetando estrictamente fecha_inicio_facturacion."""
         hoy = obtener_hora_bogota().date()
         import calendar
         from datetime import date
@@ -103,23 +103,36 @@ class Local(db.Model):
 
         base_lanz = self.fecha_lanzamiento.date() if hasattr(self.fecha_lanzamiento, "date") else (self.fecha_lanzamiento or hoy)
 
-        if getattr(self, "tipo_plan", "Mensual") == "Anual":
-            if self.fecha_inicio_facturacion:
-                proximo = self.fecha_inicio_facturacion
+        # Si tiene fecha de inicio de facturación configurada explícitamente:
+        if self.fecha_inicio_facturacion:
+            inicio = self.fecha_inicio_facturacion
+            # Si la fecha de inicio es HOY o en el FUTURO, el próximo corte es ESA fecha exacta
+            if inicio >= hoy:
+                return inicio
+
+            # Si la fecha de inicio ya pasó, se proyecta desde esa fecha en adelante según el día de pago
+            proximo = inicio
+            if getattr(self, "tipo_plan", "Mensual") == "Anual":
                 while proximo < hoy:
                     proximo = _add_months(proximo, 12)
                 return proximo
+            else:
+                # Plan Mensual: avanzar mes a mes desde fecha_inicio_facturacion respetando dia_pago
+                dia_pago_val = int(self.dia_pago or proximo.day or 1)
+                while proximo < hoy:
+                    proximo = _add_months(proximo, 1)
+                max_d = calendar.monthrange(proximo.year, proximo.month)[1]
+                return date(proximo.year, proximo.month, min(max(1, dia_pago_val), max_d))
+
+        # Si NO tiene fecha_inicio_facturacion explícita, se calcula 1 mes / 1 año desde lanzamiento
+        if getattr(self, "tipo_plan", "Mensual") == "Anual":
             proximo = _add_months(base_lanz, 12)
             while proximo < hoy:
                 proximo = _add_months(proximo, 12)
             return proximo
 
-        # Plan Mensual
-        if self.fecha_inicio_facturacion:
-            fecha_min_primer_cobro = self.fecha_inicio_facturacion
-        else:
-            fecha_min_primer_cobro = _add_months(base_lanz, 1)
-
+        # Plan Mensual por defecto (1 mes después de lanzamiento)
+        fecha_min_primer_cobro = _add_months(base_lanz, 1)
         ref_date = max(hoy, fecha_min_primer_cobro)
         max_dia = calendar.monthrange(ref_date.year, ref_date.month)[1]
         dia_pago_val = int(self.dia_pago or 1)
@@ -151,17 +164,24 @@ class Local(db.Model):
     def semaforo(self):
         """
         Devuelve una clase CSS para colorear el semáforo de pago:
-          - 'semaforo-azul'   → Instancia interna propia (sin cobro)
-          - 'semaforo-verde'  → Activo y más de 5 días para el corte
-          - 'semaforo-amarillo' → Activo pero corte en ≤5 días
-          - 'semaforo-rojo'   → Pendiente, Suspendido o ya vencido
+          - 'semaforo-azul'   → Instancia interna propia (sin cobro) o cliente con inicio de facturación a futuro
+          - 'semaforo-verde'  → Al día (más de 5 días para el corte)
+          - 'semaforo-amarillo' → Próximo a vencer (corte en ≤5 días)
+          - 'semaforo-rojo'   → Vencido o suspendido
         """
         if self.tipo_plan == "Interna":
             return "semaforo-azul"
         if self.estado_pago == "Suspendido":
             return "semaforo-rojo"
+
+        hoy = obtener_hora_bogota().date()
+        # Si la facturación inicia en el futuro, no debe estar en alerta roja
+        if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
+            return "semaforo-verde"
+
         if self.estado_pago == "Pendiente":
             return "semaforo-rojo"
+
         dias = self.dias_para_pago
         if dias < 0:
             return "semaforo-rojo"
@@ -173,6 +193,9 @@ class Local(db.Model):
     def semaforo_label(self):
         if self.tipo_plan == "Interna":
             return "Interna"
+        hoy = obtener_hora_bogota().date()
+        if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
+            return "Inicia pronto"
         mapa = {
             "semaforo-verde": "Al día",
             "semaforo-amarillo": "Por vencer",
