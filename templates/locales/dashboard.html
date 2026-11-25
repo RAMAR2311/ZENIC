@@ -568,7 +568,7 @@
                         Clientes Al Día
                     </div>
                     <div style="font-size: 0.8rem; color: #047857;">
-                        Corte a más de 5 días
+                        Corte a más de 3 días
                     </div>
                 </div>
             </div>
@@ -579,17 +579,17 @@
     </div>
 
     <div class="col-12 col-md-4">
-        <div class="semaforo-stat-card sem-card-amarillo" onclick="filterBySemaforo('amarillo', this)" title="Clic para filtrar clientes por vencer">
+        <div class="semaforo-stat-card sem-card-amarillo" onclick="filterBySemaforo('amarillo', this)" title="Clic para filtrar clientes pendientes de cobro">
             <div class="d-flex align-items-center gap-3">
                 <div class="sem-icon-circle">
                     <i class="fa-solid fa-clock"></i>
                 </div>
                 <div>
                     <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #92400E;">
-                        Próximos a Vencer
+                        Pendientes de Cobro
                     </div>
                     <div style="font-size: 0.8rem; color: #B45309;">
-                        Corte en 5 días o menos
+                        Corte en 3 días o menos
                     </div>
                 </div>
             </div>
@@ -600,17 +600,17 @@
     </div>
 
     <div class="col-12 col-md-4">
-        <div class="semaforo-stat-card sem-card-rojo" onclick="filterBySemaforo('rojo', this)" title="Clic para filtrar clientes que requieren atención">
+        <div class="semaforo-stat-card sem-card-rojo" onclick="filterBySemaforo('rojo', this)" title="Clic para filtrar clientes en mora">
             <div class="d-flex align-items-center gap-3">
                 <div class="sem-icon-circle">
                     <i class="fa-solid fa-bell"></i>
                 </div>
                 <div>
                     <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #991B1B;">
-                        Atención / Cobro
+                        Clientes En Mora
                     </div>
                     <div style="font-size: 0.8rem; color: #B91C1C;">
-                        Pendientes, vencidos o suspendidos
+                        Pasaron fecha de corte o suspendidos
                     </div>
                 </div>
             </div>
@@ -648,10 +648,10 @@
                     🟢 Al día ({{ verde }})
                 </button>
                 <button type="button" class="filter-pill-btn" data-sem="amarillo" onclick="filterBySemaforo('amarillo', this)">
-                    🟡 Por vencer ({{ amarillo }})
+                    🟡 Pendiente ({{ amarillo }})
                 </button>
                 <button type="button" class="filter-pill-btn" data-sem="rojo" onclick="filterBySemaforo('rojo', this)">
-                    🔴 Atención ({{ rojo }})
+                    🔴 En Mora ({{ rojo }})
                 </button>
             </div>
         </div>

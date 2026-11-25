@@ -164,44 +164,69 @@ class Local(db.Model):
     def semaforo(self):
         """
         Devuelve una clase CSS para colorear el semáforo de pago:
-          - 'semaforo-azul'   → Instancia interna propia (sin cobro) o cliente con inicio de facturación a futuro
-          - 'semaforo-verde'  → Al día (más de 5 días para el corte)
-          - 'semaforo-amarillo' → Próximo a vencer (corte en ≤5 días)
-          - 'semaforo-rojo'   → Vencido o suspendido
+          - 'semaforo-azul'   → Instancia interna propia (sin cobro)
+          - 'semaforo-verde'  → Al día (más de 3 días para la fecha de pago)
+          - 'semaforo-amarillo' → Pendiente (faltan 3 días o menos para la fecha)
+          - 'semaforo-rojo'   → En Mora (si ya se pasó de la fecha de pago y no está al día) o Suspendido
         """
-        if self.tipo_plan == "Interna":
+        if getattr(self, "tipo_plan", "Mensual") == "Interna":
             return "semaforo-azul"
         if self.estado_pago == "Suspendido":
             return "semaforo-rojo"
 
+        # 1. Si tiene alguna factura pendiente cuya fecha de vencimiento ya pasó, está En Mora
         hoy = obtener_hora_bogota().date()
-        # Si la facturación inicia en el futuro, no debe estar en alerta roja
+        facturas_vencidas = [
+            f for f in getattr(self, "facturas_list", [])
+            if f.estado in ("Vencido", "Pendiente") and f.fecha_vencimiento and f.fecha_vencimiento < hoy
+        ]
+        if facturas_vencidas or self.estado_pago == "Pendiente":
+            # Si tiene facturas que ya pasaron de fecha o está marcado en mora
+            if facturas_vencidas:
+                return "semaforo-rojo"
+
+        # 2. Si su fecha de inicio de facturación está a futuro
         if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
+            dias_inicio = (self.fecha_inicio_facturacion - hoy).days
+            if dias_inicio <= 3:
+                return "semaforo-amarillo"
             return "semaforo-verde"
 
-        if self.estado_pago == "Pendiente":
-            return "semaforo-rojo"
-
+        # 3. Días restantes para el próximo ciclo
         dias = self.dias_para_pago
         if dias < 0:
             return "semaforo-rojo"
-        if dias <= 5:
+        if dias <= 3:
             return "semaforo-amarillo"
         return "semaforo-verde"
 
     @property
     def semaforo_label(self):
-        if self.tipo_plan == "Interna":
+        if getattr(self, "tipo_plan", "Mensual") == "Interna":
             return "Interna"
+        if self.estado_pago == "Suspendido":
+            return "Suspendido"
+
         hoy = obtener_hora_bogota().date()
+        facturas_vencidas = [
+            f for f in getattr(self, "facturas_list", [])
+            if f.estado in ("Vencido", "Pendiente") and f.fecha_vencimiento and f.fecha_vencimiento < hoy
+        ]
+        if facturas_vencidas:
+            return "En Mora"
+
         if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
+            dias_inicio = (self.fecha_inicio_facturacion - hoy).days
+            if dias_inicio <= 3:
+                return "Pendiente"
             return "Inicia pronto"
-        mapa = {
-            "semaforo-verde": "Al día",
-            "semaforo-amarillo": "Por vencer",
-            "semaforo-rojo": "Atención",
-        }
-        return mapa.get(self.semaforo, "—")
+
+        dias = self.dias_para_pago
+        if dias < 0 or self.estado_pago == "Pendiente":
+            return "En Mora"
+        if dias <= 3:
+            return "Pendiente"
+        return "Al día"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
