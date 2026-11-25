@@ -70,19 +70,6 @@ def _sincronizar_facturas_ciclo(locales, hoy):
                 creadas += 1
     if creadas > 0:
         db.session.commit()
-                    numero_factura=num_base,
-                    local_id=loc.id,
-                    monto=monto,
-                    tipo_cobro=tipo_cobro,
-                    fecha_emision=hoy,
-                    fecha_vencimiento=prox_corte,
-                    estado="Vencido" if prox_corte < hoy else "Pendiente",
-                    observaciones=f"Período {mes_nombre} {prox_corte.year} (Corte día {loc.dia_pago})"
-                )
-                db.session.add(nueva_fac)
-                creadas += 1
-    if creadas > 0:
-        db.session.commit()
 
 
 @ingresos_bp.route("/ingresos")
