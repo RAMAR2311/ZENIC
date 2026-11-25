@@ -175,49 +175,52 @@ def create_app():
             return redirect(url_for("auth_bp.login"))
         return redirect(url_for("dashboard_bp.master"))
 
-    # Auto-migración segura de columnas y tablas nuevas si la BD ya existía (SQLite / PostgreSQL en Hostinger)
+    # Auto-migración segura e independiente por tabla y por columna (SQLite / PostgreSQL en Hostinger)
     with app.app_context():
-        try:
-            from sqlalchemy import text, inspect
-            db.create_all()
-            inspector = inspect(db.engine)
-            table_names = inspector.get_table_names()
+        from sqlalchemy import text, inspect
 
-            def _safe_add_column(table_name, col_name, col_def):
-                if table_name in table_names:
+        # Paso 1: Crear cada tabla nueva de manera individual para que ningún Enum existente aborte el resto
+        for tbl in db.metadata.sorted_tables:
+            try:
+                tbl.create(db.engine, checkfirst=True)
+            except Exception:
+                db.session.rollback()
+
+        # Paso 2: Agregar cada columna nueva en su propia transacción aislada
+        def _safe_add_column(table_name, col_name, col_def):
+            try:
+                inspector = inspect(db.engine)
+                if table_name in inspector.get_table_names():
                     cols = [c["name"] for c in inspector.get_columns(table_name)]
                     if col_name not in cols:
-                        try:
-                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"))
-                            db.session.commit()
-                        except Exception:
-                            db.session.rollback()
+                        db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"))
+                        db.session.commit()
+            except Exception:
+                db.session.rollback()
 
-            # 1. Columnas nuevas en 'locales'
-            _safe_add_column("locales", "fecha_inicio_facturacion", "DATE")
-            _safe_add_column("locales", "tipo_plan", "VARCHAR(30) DEFAULT 'Mensual' NOT NULL")
-            _safe_add_column("locales", "telefono_cobro", "VARCHAR(50)")
-            _safe_add_column("locales", "valor_anualidad", "NUMERIC(12, 2) DEFAULT 0.00 NOT NULL")
+        # 1. Columnas nuevas en 'locales'
+        _safe_add_column("locales", "fecha_inicio_facturacion", "DATE")
+        _safe_add_column("locales", "tipo_plan", "VARCHAR(30) DEFAULT 'Mensual' NOT NULL")
+        _safe_add_column("locales", "telefono_cobro", "VARCHAR(50)")
+        _safe_add_column("locales", "valor_anualidad", "NUMERIC(12, 2) DEFAULT 0.00 NOT NULL")
 
-            # 2. Columnas nuevas en 'facturas' (TIMESTAMP es compatible con PostgreSQL y SQLite)
-            _safe_add_column("facturas", "tipo_cobro", "VARCHAR(30) DEFAULT 'Mensualidad' NOT NULL")
-            _safe_add_column("facturas", "cuenta_destino", "VARCHAR(30)")
-            _safe_add_column("facturas", "validado_por_id", "INTEGER")
-            _safe_add_column("facturas", "ultimo_recordatorio", "TIMESTAMP")
-            _safe_add_column("facturas", "recordatorio_enviado_por_id", "INTEGER")
-            _safe_add_column("facturas", "total_recordatorios", "INTEGER DEFAULT 0 NOT NULL")
+        # 2. Columnas nuevas en 'facturas' (TIMESTAMP es compatible con PostgreSQL y SQLite)
+        _safe_add_column("facturas", "tipo_cobro", "VARCHAR(30) DEFAULT 'Mensualidad' NOT NULL")
+        _safe_add_column("facturas", "cuenta_destino", "VARCHAR(30)")
+        _safe_add_column("facturas", "validado_por_id", "INTEGER")
+        _safe_add_column("facturas", "ultimo_recordatorio", "TIMESTAMP")
+        _safe_add_column("facturas", "recordatorio_enviado_por_id", "INTEGER")
+        _safe_add_column("facturas", "total_recordatorios", "INTEGER DEFAULT 0 NOT NULL")
 
-            # 3. Columnas nuevas en 'gastos'
-            _safe_add_column("gastos", "cuenta_origen", "VARCHAR(30) DEFAULT 'Nu'")
-            _safe_add_column("gastos", "comprobante_ruta", "VARCHAR(255)")
+        # 3. Columnas nuevas en 'gastos'
+        _safe_add_column("gastos", "cuenta_origen", "VARCHAR(30) DEFAULT 'Nu'")
+        _safe_add_column("gastos", "comprobante_ruta", "VARCHAR(255)")
 
-            # 4. Columnas nuevas en 'tickets_cambio' (DEFAULT FALSE es compatible con PostgreSQL y SQLite)
-            _safe_add_column("tickets_cambio", "notas_validacion", "TEXT")
-            _safe_add_column("tickets_cambio", "validado_por_solicitante", "BOOLEAN DEFAULT FALSE NOT NULL")
-            _safe_add_column("tickets_cambio", "adjunto_ruta", "TEXT")
-            _safe_add_column("tickets_cambio", "adjunto_tipo", "VARCHAR(50)")
-        except Exception:
-            db.session.rollback()
+        # 4. Columnas nuevas en 'tickets_cambio' (DEFAULT FALSE es compatible con PostgreSQL y SQLite)
+        _safe_add_column("tickets_cambio", "notas_validacion", "TEXT")
+        _safe_add_column("tickets_cambio", "validado_por_solicitante", "BOOLEAN DEFAULT FALSE NOT NULL")
+        _safe_add_column("tickets_cambio", "adjunto_ruta", "TEXT")
+        _safe_add_column("tickets_cambio", "adjunto_tipo", "VARCHAR(50)")
 
     @app.context_processor
     def inject_ticket_notifications():
