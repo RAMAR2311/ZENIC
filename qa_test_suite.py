@@ -302,18 +302,27 @@ class ZenicQATestCase(unittest.TestCase):
         rutas_a_probar = [
             ("/", "Dashboard General"),
             ("/dashboard", "Dashboard MRR"),
+            ("/clientes", "Perfiles 360 de Clientes"),
             ("/ingresos", "Módulo Facturas & Cobros"),
             ("/finanzas/ingresos", "Finanzas - Ingresos & Tesorería"),
+            ("/finanzas/prestamos", "Finanzas - Préstamos a Favor"),
             ("/finanzas/gastos", "Finanzas - Costos & Gastos"),
+            ("/finanzas/trazabilidad", "Finanzas - Reporte de Trazabilidad PDF"),
+            ("/finanzas/trazabilidad?formato=csv", "Finanzas - Reporte de Trazabilidad CSV"),
             ("/finanzas/presupuestos", "Finanzas - Presupuestos"),
             ("/ti/tickets", "Soporte TI - Tickets"),
+            ("/ti/api/notificaciones", "API Notificaciones Tickets en Vivo"),
             ("/ti/conexiones", "Soporte TI - Conexiones"),
             ("/documentos/", "Documentación & Manuales"),
             ("/marketing/", "Portal Marketing"),
             ("/marketing/contenidos", "Calendario Redes"),
             ("/marketing/grabaciones", "Agenda Grabaciones"),
             ("/marketing/social-hub", "Social Hub & Brand"),
-            ("/marketing/metricas", "Métricas & Crecimiento")
+            ("/marketing/metricas", "Métricas & Crecimiento"),
+            ("/manifest.json", "PWA Manifest"),
+            ("/sw.js", "PWA Service Worker"),
+            ("/offline", "PWA Offline Page"),
+            ("/favicon.ico", "Favicon Oficial")
         ]
 
         for ruta, nombre in rutas_a_probar:
@@ -323,6 +332,45 @@ class ZenicQATestCase(unittest.TestCase):
                     resp.status_code, 200,
                     f"Fallo en ruta {ruta} ({nombre}): HTTP {resp.status_code}"
                 )
+
+    def test_11_flujo_tickets_inline_validacion_y_pwa_responsive(self):
+        """QA 3.2: Verificar cambio de estado inline en tickets, devolución a Requiere Ajustes y diseño responsive/PWA."""
+        self.login_as(self.admin_jhon)
+        ticket = TicketCambio.query.first()
+        self.assertIsNotNone(ticket)
+        estado_original = ticket.estado
+
+        # 1. Cambio de estado directo inline vía AJAX a 'En Desarrollo'
+        r_inline = self.client.post(
+            f"/ti/tickets/{ticket.id}/actualizar",
+            data={"estado": "En Desarrollo"},
+            headers={"X-Requested-With": "XMLHttpRequest"}
+        )
+        self.assertEqual(r_inline.status_code, 200)
+        self.assertEqual(r_inline.get_json()["estado"], "En Desarrollo")
+
+        # 2. Devolver ticket para revisión ('Requiere Ajustes') y verificar notificación
+        r_rev = self.client.post(
+            f"/ti/tickets/{ticket.id}/validar",
+            data={"decision": "revisar", "notas_validacion": "Revisar ajuste visual en móvil"},
+            follow_redirects=True
+        )
+        self.assertEqual(r_rev.status_code, 200)
+        db.session.refresh(ticket)
+        self.assertEqual(ticket.estado, "Requiere Ajustes")
+        self.assertIn("Revisar ajuste visual", ticket.notas_validacion)
+
+        # Restaurar estado original
+        ticket.estado = estado_original
+        db.session.commit()
+
+        # 3. Verificar meta tags responsive (celular/tablet/PC) y barra móvil PWA
+        r_page = self.client.get("/ti/tickets")
+        html = r_page.data.decode("utf-8")
+        self.assertIn('name="viewport" content="width=device-width, initial-scale=1.0"', html)
+        self.assertIn('rel="manifest" href="/manifest.json"', html)
+        self.assertIn('class="mobile-bottom-nav', html)
+        self.assertIn('handleInlineTicketStatus(this)', html)
 
 
 if __name__ == "__main__":

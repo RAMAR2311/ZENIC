@@ -30,7 +30,8 @@ with app.app_context():
     usuarios_data = [
         {"nombre": "Carlos Medina (TI Lead)", "email": "carlos.ti@zenic.co", "rol": "ti", "pass": "Zenic2026!"},
         {"nombre": "Laura Gomez (Marketing)", "email": "laura.mkt@zenic.co", "rol": "marketing", "pass": "Zenic2026!"},
-        {"nombre": "Andres Rios (Operaciones)", "email": "andres.ops@zenic.co", "rol": "operaciones", "pass": "Zenic2026!"},
+        {"nombre": "Andres Rios (Operaciones)", "email": "andres.ops@zenic.co", "rol": "operaciones_finanzas", "pass": "Zenic2026!"},
+        {"nombre": "Jhon (Operaciones & Finanzas)", "email": "operaciones@zenic.co", "rol": "operaciones_finanzas", "pass": "Zenic2026!"},
     ]
     users_map = {}
     master_admin = User.query.filter_by(email="admin@zenic.co").first()
@@ -149,10 +150,12 @@ with app.app_context():
                 nombre_marca=l_data["nombre_marca"],
                 url_instancia=l_data["url_instancia"],
                 fecha_lanzamiento=l_data["fecha_lanzamiento"],
+                fecha_inicio_facturacion=date(2026, 11, 15),
                 version_software=l_data["version_software"],
                 inversion_inicial=l_data["inversion_inicial"],
                 mensualidad=l_data["mensualidad"],
                 dia_pago=l_data["dia_pago"],
+                telefono_cobro="3105551234",
                 estado_pago=l_data["estado_pago"],
                 boveda_email=encrypt_password(l_data["email_raw"]),
                 boveda_password=encrypt_password(l_data["pass_raw"]),

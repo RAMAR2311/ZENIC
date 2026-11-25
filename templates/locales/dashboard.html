@@ -1,34 +1,436 @@
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard MRR{% endblock %}
 
 {% block head %}
 <style>
-    /* Gráfica de dona inline */
-    .donut-ring { transition: stroke-dashoffset 0.6s ease; }
+    /* ═══════════════════════════════════════════════════════════════════
+       DASHBOARD MRR — Rediseño Ejecutivo Zenic v3.5
+       Aprovecha la paleta oficial: Púrpura Neural (#7A3EB0), Azul Acero (#4A7BB0),
+       Cyan Neón (#38BDF8), Esmeralda (#10B981) y Obsidian (#0F172A).
+    ═══════════════════════════════════════════════════════════════════ */
 
-    /* Tabla semáforo filas resaltadas */
-    tr.row-rojo td { border-left: 3px solid var(--zenic-danger) !important; }
-    tr.row-amarillo td { border-left: 3px solid var(--zenic-warning) !important; }
-    tr.row-verde td { border-left: 3px solid var(--zenic-success) !important; }
-
-    /* Animación de entrada */
-    .fade-up {
-        opacity: 0;
-        transform: translateY(16px);
-        animation: fadeUp 0.4s ease forwards;
+    /* Banner Hero Ejecutivo */
+    .mrr-hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 52%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.75rem 2.25rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.28);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    @keyframes fadeUp {
-        to { opacity: 1; transform: translateY(0); }
+    .mrr-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -5%;
+        width: 380px;
+        height: 380px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
     }
-    .fade-up:nth-child(1) { animation-delay: 0.05s; }
-    .fade-up:nth-child(2) { animation-delay: 0.10s; }
-    .fade-up:nth-child(3) { animation-delay: 0.15s; }
-    .fade-up:nth-child(4) { animation-delay: 0.20s; }
+    .mrr-hero-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -60%;
+        left: 25%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .hero-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.28rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.15);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        color: #38BDF8;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+    .btn-hero-new {
+        background: linear-gradient(135deg, #8A45D1 0%, #5C8AC8 100%);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        padding: 0.7rem 1.4rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 20px rgba(122, 62, 176, 0.45);
+        transition: all 0.25s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        position: relative;
+        z-index: 2;
+    }
+    .btn-hero-new:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px rgba(138, 69, 209, 0.6);
+        background: linear-gradient(135deg, #9B51E0 0%, #4A7BB0 100%);
+    }
 
-    /* Buscador de tabla */
-    #searchLocales::placeholder { color: var(--zenic-text-muted); }
+    /* ── Tarjetas KPI Superiores con Profundidad y Color ── */
+    .zenic-kpi-box {
+        border-radius: 18px;
+        padding: 1.45rem 1.5rem;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .zenic-kpi-box:hover {
+        transform: translateY(-4px);
+    }
 
-    /* Punto de color por tipo de notificación (reemplaza background condicional Jinja2) */
+    /* KPI 1: MRR Activo (Destacado en Gradiente Púrpura Neural) */
+    .kpi-variant-purple {
+        background: linear-gradient(135deg, #6B21A8 0%, #7A3EB0 50%, #4A7BB0 100%);
+        color: #FFFFFF;
+        border: none;
+        box-shadow: 0 12px 26px -6px rgba(122, 62, 176, 0.42);
+    }
+    .kpi-variant-purple .zenic-kpi-title { color: rgba(255, 255, 255, 0.82); }
+    .kpi-variant-purple .zenic-kpi-amount { color: #FFFFFF; }
+    .kpi-variant-purple .zenic-kpi-foot { color: rgba(255, 255, 255, 0.78); border-top-color: rgba(255, 255, 255, 0.15); }
+    .kpi-variant-purple .zenic-kpi-icon-badge {
+        background: rgba(255, 255, 255, 0.18);
+        color: #FFFFFF;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+    }
+
+    /* KPI 2: Instalaciones Iniciales (Ámbar / Dorado Financiero) */
+    .kpi-variant-amber {
+        background: linear-gradient(160deg, #FFFFFF 0%, #FFFBEB 100%);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        box-shadow: 0 8px 22px -6px rgba(245, 158, 11, 0.14);
+    }
+    .kpi-variant-amber::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%);
+    }
+    .kpi-variant-amber .zenic-kpi-amount { color: #B45309; }
+    .kpi-variant-amber .zenic-kpi-icon-badge {
+        background: rgba(245, 158, 11, 0.14);
+        color: #D97706;
+        border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    /* KPI 3: ARR Proyectado (Azul Eléctrico / Cyan) */
+    .kpi-variant-blue {
+        background: linear-gradient(160deg, #FFFFFF 0%, #F0F9FF 100%);
+        border: 1px solid rgba(74, 123, 176, 0.32);
+        box-shadow: 0 8px 22px -6px rgba(74, 123, 176, 0.15);
+    }
+    .kpi-variant-blue::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4A7BB0 0%, #38BDF8 100%);
+    }
+    .kpi-variant-blue .zenic-kpi-amount { color: #1E40AF; }
+    .kpi-variant-blue .zenic-kpi-icon-badge {
+        background: rgba(56, 189, 248, 0.14);
+        color: #0284C7;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* KPI 4: Instancias & Uptime (Esmeralda / Slate) */
+    .kpi-variant-emerald {
+        background: linear-gradient(160deg, #FFFFFF 0%, #ECFDF5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.32);
+        box-shadow: 0 8px 22px -6px rgba(16, 185, 129, 0.14);
+    }
+    .kpi-variant-emerald::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #10B981 0%, #34D399 100%);
+    }
+    .kpi-variant-emerald .zenic-kpi-amount { color: #065F46; }
+    .kpi-variant-emerald .zenic-kpi-icon-badge {
+        background: rgba(16, 185, 129, 0.14);
+        color: #059669;
+        border: 1px solid rgba(16, 185, 129, 0.28);
+    }
+
+    .zenic-kpi-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #64748B;
+        margin-bottom: 0.35rem;
+    }
+    .zenic-kpi-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.85rem;
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.15;
+    }
+    .zenic-kpi-icon-badge {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .zenic-kpi-foot {
+        margin-top: 0.9rem;
+        padding-top: 0.65rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.3);
+        font-size: 0.76rem;
+        color: #64748B;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* ── Tarjetas de Semáforo (Al día / Por vencer / Atención) ── */
+    .semaforo-stat-card {
+        border-radius: 16px;
+        padding: 1.15rem 1.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.22s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .semaforo-stat-card:hover {
+        transform: translateY(-2px);
+    }
+    .semaforo-stat-card.active-filter {
+        box-shadow: 0 0 0 3px rgba(122, 62, 176, 0.35);
+    }
+    .sem-card-verde {
+        background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .sem-card-amarillo {
+        background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+        border: 1px solid rgba(245, 158, 11, 0.38);
+    }
+    .sem-card-rojo {
+        background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .sem-icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+    .sem-card-verde .sem-icon-circle { background: #10B981; color: #FFFFFF; box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35); }
+    .sem-card-amarillo .sem-icon-circle { background: #F59E0B; color: #FFFFFF; box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35); }
+    .sem-card-rojo .sem-icon-circle { background: #EF4444; color: #FFFFFF; box-shadow: 0 6px 14px rgba(239, 68, 68, 0.35); }
+
+    /* ── Tabla de Clientes Rediseñada ── */
+    .clients-panel-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+    }
+    .clients-panel-header {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .filter-pill-btn {
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #475569;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.38rem 0.85rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+    .filter-pill-btn:hover {
+        border-color: var(--zenic-purple-neural);
+        color: var(--zenic-purple-neural);
+    }
+    .filter-pill-btn.active {
+        background: var(--zenic-gradient-neural);
+        color: #FFFFFF;
+        border-color: transparent;
+        box-shadow: 0 4px 10px rgba(122, 62, 176, 0.25);
+    }
+
+    /* Encabezado oscuro elegante para la tabla */
+    .table-zenic-modern {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+    }
+    .table-zenic-modern thead th {
+        background: #0F172A !important;
+        color: #CBD5E1 !important;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.95rem 1.15rem;
+        border: none !important;
+        white-space: nowrap;
+    }
+    .table-zenic-modern tbody tr {
+        transition: all 0.18s ease;
+    }
+    .table-zenic-modern tbody tr:hover td {
+        background-color: #F8FAFC !important;
+    }
+    .table-zenic-modern tbody td {
+        padding: 1rem 1.15rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9 !important;
+        color: #0F172A;
+        font-size: 0.88rem;
+    }
+    /* Solo la primera celda lleva el borde lateral de color del semáforo */
+    .table-zenic-modern tbody tr.row-verde td:first-child {
+        border-left: 4px solid #10B981 !important;
+    }
+    .table-zenic-modern tbody tr.row-amarillo td:first-child {
+        border-left: 4px solid #F59E0B !important;
+    }
+    .table-zenic-modern tbody tr.row-rojo td:first-child {
+        border-left: 4px solid #EF4444 !important;
+    }
+    .table-zenic-modern tbody tr.row-azul td:first-child {
+        border-left: 4px solid #5C8AC8 !important;
+    }
+
+    /* Avatar de Marca */
+    .brand-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.92rem;
+        color: #FFFFFF;
+        flex-shrink: 0;
+        position: relative;
+        box-shadow: 0 4px 10px rgba(122, 62, 176, 0.2);
+    }
+    .avatar-purple { background: linear-gradient(135deg, #7A3EB0 0%, #5C8AC8 100%); }
+    .avatar-blue   { background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%); }
+    .avatar-slate  { background: linear-gradient(135deg, #334155 0%, #64748B 100%); }
+
+    .uptime-dot-badge {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #FFFFFF;
+    }
+    .uptime-online  { background: #10B981; }
+    .uptime-offline { background: #EF4444; }
+
+    /* Chip de Día de Corte */
+    .corte-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 8px;
+        background: #F1F5F9;
+        color: #334155;
+        font-weight: 700;
+        font-size: 0.78rem;
+        border: 1px solid #E2E8F0;
+    }
+
+    /* Selector de Estado Estilizado */
+    .select-estado-pill {
+        border-radius: 999px !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        padding: 0.28rem 1.8rem 0.28rem 0.75rem !important;
+        cursor: pointer;
+        width: auto !important;
+    }
+    .select-estado-Activo {
+        background-color: #ECFDF5 !important;
+        color: #047857 !important;
+        border-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    .select-estado-Pendiente {
+        background-color: #FFFBEB !important;
+        color: #B45309 !important;
+        border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+    .select-estado-Suspendido {
+        background-color: #FEF2F2 !important;
+        color: #B91C1C !important;
+        border-color: rgba(239, 68, 68, 0.35) !important;
+    }
+
+    /* Botones de Acción de Tabla */
+    .action-icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.18s ease;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #475569;
+    }
+    .action-icon-btn.btn-view:hover {
+        background: rgba(92, 138, 200, 0.12);
+        color: #2563EB;
+        border-color: rgba(92, 138, 200, 0.4);
+    }
+    .action-icon-btn.btn-edit:hover {
+        background: rgba(122, 62, 176, 0.12);
+        color: var(--zenic-purple-neural);
+        border-color: rgba(122, 62, 176, 0.4);
+    }
+    .action-icon-btn.btn-del:hover {
+        background: rgba(239, 68, 68, 0.12);
+        color: #DC2626;
+        border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Punto de color por tipo de notificación */
     .notif-dot {
         width: 8px; height: 8px;
         border-radius: 50%;
@@ -43,200 +445,361 @@
 {% endblock %}
 
 {% block content %}
-<!-- ═══ HEADER ══════════════════════════════════════════════════════════ -->
-<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
-    <div>
-        <h1 class="page-title">
-            <i class="fa-solid fa-chart-line me-2" style="color: var(--zenic-primary)"></i>
-            Dashboard MRR
+<!-- ═══ BANNER HERO EJECUTIVO ═══════════════════════════════════════════ -->
+<div class="mrr-hero-banner d-flex align-items-center justify-content-between flex-wrap gap-3 mt-1">
+    <div style="position: relative; z-index: 2;">
+        <div class="hero-badge-pill">
+            <i class="fa-solid fa-bolt"></i> Operaciones & Finanzas · Zenic Cloud
+        </div>
+        <h1 style="font-size: 1.65rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #FFFFFF;">
+            Dashboard MRR & Control de Clientes
         </h1>
-        <p class="page-subtitle">Panel maestro de ingresos recurrentes y estado de instancias</p>
+        <p style="font-size: 0.88rem; color: rgba(255, 255, 255, 0.74); margin: 4px 0 0;">
+            Monitoreo en tiempo real de ingresos recurrentes, fechas de facturación y salud de instancias
+        </p>
     </div>
-    <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2">
-        <i class="fa-solid fa-plus"></i> Nuevo Local
-    </a>
+    <div class="d-flex align-items-center gap-2" style="position: relative; z-index: 2;">
+        <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}"
+           class="btn btn-sm px-3 py-2 rounded-3 text-decoration-none fw-semibold"
+           style="background: rgba(255,255,255,0.08); color: #E2E8F0; border: 1px solid rgba(255,255,255,0.16);">
+            <i class="fa-solid fa-file-invoice-dollar me-1 text-warning"></i> Ver Facturas
+        </a>
+        <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-hero-new">
+            <i class="fa-solid fa-plus-circle"></i> Nuevo Cliente / Local
+        </a>
+    </div>
 </div>
 
-<!-- ═══ KPIs ════════════════════════════════════════════════════════════ -->
+<!-- ═══ TARJETAS KPI PRINCIPALES ════════════════════════════════════════ -->
 <div class="row g-3 mb-4">
-    <!-- MRR Activo -->
-    <div class="col-6 col-lg-3 fade-up">
-        <div class="kpi-card kpi-blue">
-            <i class="fa-solid fa-coins kpi-icon"></i>
-            <div class="kpi-label">MRR Activo</div>
-            <div class="kpi-value" style="color: var(--zenic-primary)">{{ mrr | cop }}</div>
-            <div class="kpi-sub">Ingreso mensual recurrente</div>
-        </div>
-    </div>
-    
-    <!-- Instalaciones Iniciales (Antes Capital Invertido) -->
-    <div class="col-6 col-lg-3 fade-up">
-        <div class="kpi-card kpi-gold">
-            <i class="fa-solid fa-sack-dollar kpi-icon"></i>
-            <div class="kpi-label">Instalaciones Iniciales</div>
-            <div class="kpi-value" style="color: var(--zenic-gold)">{{ total_invertido | cop }}</div>
-            <div class="kpi-sub">Suma inversiones iniciales</div>
-        </div>
-    </div>
-
-    <!-- ARR Proyectado -->
-    <div class="col-6 col-lg-3 fade-up">
-        <div class="kpi-card kpi-cyan">
-            <i class="fa-solid fa-calendar-check kpi-icon"></i>
-            <div class="kpi-label">ARR Proyectado</div>
-            <div class="kpi-value" style="color: var(--zenic-accent)">{{ arr | cop }}</div>
-            <div class="kpi-sub">Anualización del MRR</div>
-        </div>
-    </div>
-
-    <!-- Instancias -->
-    <div class="col-6 col-lg-3 fade-up">
-        <div class="kpi-card kpi-green">
-            <i class="fa-solid fa-server kpi-icon"></i>
-            <div class="kpi-label">Instancias</div>
-            <div class="kpi-value {% if offline_count > 0 %}text-danger{% else %}text-success{% endif %}">
-                {{ total_locales }}
+    <!-- 1. MRR Activo (Tarjeta Principal Púrpura Neural) -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="zenic-kpi-box kpi-variant-purple">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="zenic-kpi-title">MRR Activo</div>
+                    <div class="zenic-kpi-amount">{{ mrr | cop }}</div>
+                </div>
+                <div class="zenic-kpi-icon-badge">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
             </div>
-            <div class="kpi-sub">
+            <div class="zenic-kpi-foot">
+                <span><i class="fa-solid fa-repeat me-1"></i>Ingreso mensual recurrente</span>
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: #FFF;">{{ total_facturables }} clientes</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Instalaciones Iniciales -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="zenic-kpi-box kpi-variant-amber">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="zenic-kpi-title">Instalaciones Iniciales</div>
+                    <div class="zenic-kpi-amount">{{ total_invertido | cop }}</div>
+                </div>
+                <div class="zenic-kpi-icon-badge">
+                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                </div>
+            </div>
+            <div class="zenic-kpi-foot">
+                <span>Capital histórico implementado</span>
+                <span class="fw-bold" style="color: #D97706;">Implementación</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ARR Proyectado -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="zenic-kpi-box kpi-variant-blue">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="zenic-kpi-title">ARR Proyectado</div>
+                    <div class="zenic-kpi-amount">{{ arr | cop }}</div>
+                </div>
+                <div class="zenic-kpi-icon-badge">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="zenic-kpi-foot">
+                <span>Proyección anualizada (MRR × 12)</span>
+                <span class="fw-bold" style="color: #0284C7;">12 Meses</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Instancias & Salud -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="zenic-kpi-box kpi-variant-emerald">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="zenic-kpi-title">Instancias Desplegadas</div>
+                    <div class="zenic-kpi-amount">{{ total_locales }}</div>
+                </div>
+                <div class="zenic-kpi-icon-badge">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+            </div>
+            <div class="zenic-kpi-foot">
+                <span class="text-success fw-bold"><i class="fa-solid fa-circle-check me-1"></i>{{ online_count }} Online</span>
                 {% if offline_count > 0 %}
-                <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ offline_count }} Offline</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ offline_count }} Offline
+                </span>
                 {% else %}
-                <span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>Todas Online</span>
+                <span class="badge bg-success-subtle text-success">100% Operativo</span>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- ═══ SEMÁFORO RESUMEN ════════════════════════════════════════════════ -->
+<!-- ═══ TARJETAS DE SEMÁFORO INTERACTIVAS ═══════════════════════════════ -->
 <div class="row g-3 mb-4">
     <div class="col-12 col-md-4">
-        <div class="card-zenic p-4 text-center">
-            <div class="dot dot-verde d-block mx-auto mb-2" style="width:14px;height:14px"></div>
-            <div style="font-size:2rem;font-weight:800;color:#10B981">{{ verde }}</div>
-            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Al día</div>
+        <div class="semaforo-stat-card sem-card-verde" onclick="filterBySemaforo('verde', this)" title="Clic para filtrar clientes al día">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sem-icon-circle">
+                    <i class="fa-solid fa-shield-check fa-check"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #065F46;">
+                        Clientes Al Día
+                    </div>
+                    <div style="font-size: 0.8rem; color: #047857;">
+                        Corte a más de 5 días
+                    </div>
+                </div>
+            </div>
+            <div class="font-mono" style="font-size: 2.1rem; font-weight: 800; color: #065F46;">
+                {{ verde }}
+            </div>
         </div>
     </div>
+
     <div class="col-12 col-md-4">
-        <div class="card-zenic p-4 text-center">
-            <div class="dot dot-amarillo d-block mx-auto mb-2" style="width:14px;height:14px"></div>
-            <div style="font-size:2rem;font-weight:800;color:#F59E0B">{{ amarillo }}</div>
-            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Por vencer</div>
+        <div class="semaforo-stat-card sem-card-amarillo" onclick="filterBySemaforo('amarillo', this)" title="Clic para filtrar clientes por vencer">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sem-icon-circle">
+                    <i class="fa-solid fa-clock"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #92400E;">
+                        Próximos a Vencer
+                    </div>
+                    <div style="font-size: 0.8rem; color: #B45309;">
+                        Corte en 5 días o menos
+                    </div>
+                </div>
+            </div>
+            <div class="font-mono" style="font-size: 2.1rem; font-weight: 800; color: #B45309;">
+                {{ amarillo }}
+            </div>
         </div>
     </div>
+
     <div class="col-12 col-md-4">
-        <div class="card-zenic p-4 text-center">
-            <div class="dot dot-rojo d-block mx-auto mb-2" style="width:14px;height:14px"></div>
-            <div style="font-size:2rem;font-weight:800;color:#EF4444">{{ rojo }}</div>
-            <div style="font-size:0.78rem;color:var(--zenic-text-muted);margin-top:2px">Atención requerida</div>
+        <div class="semaforo-stat-card sem-card-rojo" onclick="filterBySemaforo('rojo', this)" title="Clic para filtrar clientes que requieren atención">
+            <div class="d-flex align-items-center gap-3">
+                <div class="sem-icon-circle">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: #991B1B;">
+                        Atención / Cobro
+                    </div>
+                    <div style="font-size: 0.8rem; color: #B91C1C;">
+                        Pendientes, vencidos o suspendidos
+                    </div>
+                </div>
+            </div>
+            <div class="font-mono" style="font-size: 2.1rem; font-weight: 800; color: #B91C1C;">
+                {{ rojo }}
+            </div>
         </div>
     </div>
 </div>
 
-<!-- ═══ TABLA DE LOCALES ════════════════════════════════════════════════ -->
-<div class="card-zenic" id="locales">
-    <div class="p-3 p-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2"
-         style="border-bottom: 1px solid var(--zenic-border)">
-        <h2 style="font-size:1rem;font-weight:700;margin:0;color:var(--zenic-text)">
-            <i class="fa-solid fa-server me-2" style="color:var(--zenic-accent)"></i>
-            Instancias Activas
-        </h2>
-        <div class="d-flex gap-2 align-items-center">
-            <input type="text" id="searchLocales" class="form-control form-control-sm"
-                   placeholder="Buscar local..." style="width:200px">
+<!-- ═══ TABLA EJECUTIVA DE CLIENTES / LOCALES ═══════════════════════════ -->
+<div class="clients-panel-card" id="locales">
+    <div class="clients-panel-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <span style="width: 34px; height: 34px; border-radius: 10px; background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-building-shield"></i>
+                </span>
+                <div>
+                    <h2 style="font-size: 1.05rem; font-weight: 800; margin: 0; color: #0F172A;">
+                        Directorio de Clientes & Instancias
+                    </h2>
+                    <div style="font-size: 0.75rem; color: #64748B;">
+                        Mostrando <strong id="countVisibles">{{ locales|length }}</strong> de {{ locales|length }} instancias registradas
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros rápidos por estado -->
+            <div class="d-flex flex-wrap gap-1 ms-md-2">
+                <button type="button" class="filter-pill-btn active" data-sem="todos" onclick="filterBySemaforo('todos', this)">
+                    Todos ({{ locales|length }})
+                </button>
+                <button type="button" class="filter-pill-btn" data-sem="verde" onclick="filterBySemaforo('verde', this)">
+                    🟢 Al día ({{ verde }})
+                </button>
+                <button type="button" class="filter-pill-btn" data-sem="amarillo" onclick="filterBySemaforo('amarillo', this)">
+                    🟡 Por vencer ({{ amarillo }})
+                </button>
+                <button type="button" class="filter-pill-btn" data-sem="rojo" onclick="filterBySemaforo('rojo', this)">
+                    🔴 Atención ({{ rojo }})
+                </button>
+            </div>
+        </div>
+
+        <!-- Buscador estilizado -->
+        <div class="position-relative" style="min-width: 250px;">
+            <i class="fa-solid fa-magnifying-glass position-absolute"
+               style="left: 13px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.85rem;"></i>
+            <input type="text" id="searchLocales" class="form-control form-control-sm ps-5"
+                   placeholder="Buscar marca, URL o plan..."
+                   style="border-radius: 999px !important; padding-top: 0.48rem; padding-bottom: 0.48rem;">
         </div>
     </div>
 
     {% if locales %}
     <div class="table-responsive">
-        <table class="table table-zenic mb-0" id="tablaLocales">
+        <table class="table-zenic-modern" id="tablaLocales">
             <thead>
                 <tr>
-                    <th>Local</th>
-                    <th>Mensualidad</th>
-                    <th>Día Corte</th>
-                    <th>Estado Pago</th>
+                    <th>Cliente / Instancia</th>
+                    <th>Plan & Suscripción</th>
+                    <th>Corte / Ciclo</th>
+                    <th>Estado de Pago</th>
                     <th>Semáforo</th>
-                    <th>Versión</th>
-                    <th>Lanzamiento</th>
+                    <th>Fechas (Inicio / Cobro)</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for local in locales %}
-                <tr class="row-{{ local.semaforo | replace('semaforo-', '') }}">
+                {% set sem_clean = local.semaforo | replace('semaforo-', '') %}
+                <tr class="row-{{ sem_clean }}" data-semaforo="{{ sem_clean }}">
+                    <!-- 1. Cliente / Marca con Avatar -->
                     <td>
-                        <div style="font-weight:600">
-                            {% if local.is_online %}
-                            <i class="fa-solid fa-circle fa-2xs me-1" style="color:var(--zenic-success)" title="Online"></i>
-                            {% else %}
-                            <i class="fa-solid fa-circle fa-2xs me-1" style="color:var(--zenic-danger)" title="Offline"></i>
-                            {% endif %}
-                            {{ local.nombre_marca }}
-                        </div>
-                        {% if local.url_instancia %}
-                        <a href="{{ local.url_instancia }}" target="_blank"
-                           style="font-size:0.75rem;color:var(--zenic-primary);text-decoration:none">
-                            <i class="fa-solid fa-external-link fa-xs me-1"></i>{{ local.url_instancia | truncate(35) }}
-                        </a>
-                        {% else %}
-                        <span style="font-size:0.75rem;color:var(--zenic-text-muted)">Sin URL</span>
-                        {% endif %}
-                        <div style="font-size:0.65rem;color:var(--zenic-text-muted);margin-top:2px;">
-                            Últ. Rev: {{ local.last_checked | fecha_corta if local.last_checked else 'Nunca' }}
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="brand-avatar {% if local.tipo_plan == 'Interna' %}avatar-slate{% elif local.tipo_plan == 'Anual' %}avatar-blue{% else %}avatar-purple{% endif %}">
+                                {{ local.nombre_marca[:2] | upper }}
+                                <span class="uptime-dot-badge {{ 'uptime-online' if local.is_online else 'uptime-offline' }}"
+                                      title="{{ 'Servidor Online' if local.is_online else 'Servidor Offline' }}"></span>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <a href="{{ url_for('locales_bp.ver_local', local_id=local.id) }}"
+                                       class="fw-bold text-decoration-none"
+                                       style="color: #0F172A; font-size: 0.94rem;">
+                                        {{ local.nombre_marca }}
+                                    </a>
+                                    <span class="badge bg-light text-secondary border" style="font-size: 0.65rem; font-weight: 700;">
+                                        v{{ local.version_software }}
+                                    </span>
+                                </div>
+                                {% if local.url_instancia %}
+                                <a href="{{ local.url_instancia }}" target="_blank"
+                                   style="font-size: 0.76rem; color: var(--zenic-blue-electric); text-decoration: none; font-weight: 500;">
+                                    <i class="fa-solid fa-arrow-up-right-from-square fa-2xs me-1"></i>{{ local.url_instancia | replace('https://', '') | truncate(32) }}
+                                </a>
+                                {% else %}
+                                <span style="font-size: 0.75rem; color: #94A3B8;">Sin URL asignada</span>
+                                {% endif %}
+                                {% if local.telefono_cobro %}
+                                <div style="font-size: 0.7rem; color: #64748B; margin-top: 1px;">
+                                    <i class="fa-brands fa-whatsapp text-success me-1"></i>{{ local.telefono_cobro }}
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </td>
+
+                    <!-- 2. Plan & Valor -->
                     <td>
                         {% if local.tipo_plan == 'Interna' %}
-                        <span class="badge bg-secondary-subtle text-secondary border" style="font-size: 0.75rem;">
-                            <i class="fa-solid fa-gear me-1"></i>Operativa Interna
+                        <span class="badge rounded-pill px-3 py-1"
+                              style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; font-size: 0.74rem;">
+                            <i class="fa-solid fa-gears me-1"></i>Operativa Interna
                         </span>
                         {% elif local.tipo_plan == 'Anual' %}
-                        <div style="font-weight:700;color:var(--zenic-primary)">{{ local.valor_anualidad | cop }}</div>
-                        <div style="font-size:0.68rem;color:var(--zenic-text-muted)">Anualidad (equiv. {{ local.mensualidad | cop }}/mes)</div>
+                        <div class="font-mono fw-bolder" style="color: #1D4ED8; font-size: 0.98rem;">
+                            {{ local.valor_anualidad | cop }}
+                        </div>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <span class="badge" style="background: rgba(37, 99, 235, 0.1); color: #1D4ED8; font-size: 0.66rem;">
+                                🏆 Plan Anual
+                            </span>
+                            <span style="font-size: 0.7rem; color: #64748B;">({{ local.mensualidad | cop }}/mes)</span>
+                        </div>
                         {% else %}
-                        <div style="font-weight:700;color:var(--zenic-success)">{{ local.mensualidad | cop }}</div>
-                        <div style="font-size:0.68rem;color:var(--zenic-text-muted)">Mensual</div>
+                        <div class="font-mono fw-bolder" style="color: #059669; font-size: 0.98rem;">
+                            {{ local.mensualidad | cop }}
+                        </div>
+                        <div class="d-flex align-items-center gap-1 mt-1">
+                            <span class="badge" style="background: rgba(122, 62, 176, 0.1); color: var(--zenic-purple-neural); font-size: 0.66rem;">
+                                📅 Mensual
+                            </span>
+                            {% if local.inversion_inicial and local.inversion_inicial > 0 %}
+                            <span style="font-size: 0.68rem; color: #64748B;" title="Inversión inicial histórica">
+                                · Inst: {{ local.inversion_inicial | cop }}
+                            </span>
+                            {% endif %}
+                        </div>
                         {% endif %}
                     </td>
+
+                    <!-- 3. Día de Corte -->
                     <td>
                         {% if local.tipo_plan == 'Interna' %}
                         <span class="text-muted small">—</span>
                         {% elif local.tipo_plan == 'Anual' %}
-                        <span class="badge bg-info-subtle text-info border" style="font-size:0.75rem;">
-                            <i class="fa-solid fa-calendar me-1"></i>{{ local.proxima_fecha_corte | fecha_corta if local.proxima_fecha_corte else '1 año' }}
+                        <span class="corte-chip" style="background: #EFF6FF; color: #1E40AF; border-color: #BFDBFE;">
+                            <i class="fa-regular fa-calendar-check"></i>
+                            {{ local.proxima_fecha_corte | fecha_corta if local.proxima_fecha_corte else 'Anual' }}
                         </span>
                         {% else %}
-                        <span style="font-size:0.9rem">Día {{ local.dia_pago }}</span>
+                        <span class="corte-chip">
+                            <i class="fa-regular fa-calendar" style="color: var(--zenic-purple-neural);"></i>
+                            Día {{ local.dia_pago }}
+                        </span>
                         {% endif %}
                     </td>
+
+                    <!-- 4. Estado de Pago -->
                     <td>
                         {% if local.tipo_plan == 'Interna' %}
-                        <span class="text-muted small">Sin facturación</span>
+                        <span class="text-muted small">Excluida de cobro</span>
                         {% else %}
-                        <!-- Cambio rápido de estado -->
                         <form method="POST"
                               action="{{ url_for('locales_bp.cambiar_estado', local_id=local.id) }}"
-                              class="d-flex gap-1 align-items-center">
+                              class="d-inline-block">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <select name="estado_pago" class="form-select form-select-sm"
-                                    style="width:auto;font-size:0.75rem;padding:0.2rem 0.5rem"
+                            <select name="estado_pago"
+                                    class="form-select form-select-sm select-estado-pill select-estado-{{ local.estado_pago }}"
                                     onchange="this.form.submit()">
-                                <option value="Activo"     {% if local.estado_pago=='Activo'     %}selected{% endif %}>Activo</option>
-                                <option value="Pendiente"  {% if local.estado_pago=='Pendiente'  %}selected{% endif %}>Pendiente</option>
-                                <option value="Suspendido" {% if local.estado_pago=='Suspendido' %}selected{% endif %}>Suspendido</option>
+                                <option value="Activo"     {% if local.estado_pago=='Activo'     %}selected{% endif %}>● Activo</option>
+                                <option value="Pendiente"  {% if local.estado_pago=='Pendiente'  %}selected{% endif %}>● Pendiente</option>
+                                <option value="Suspendido" {% if local.estado_pago=='Suspendido' %}selected{% endif %}>● Suspendido</option>
                             </select>
                         </form>
                         {% endif %}
                     </td>
+
+                    <!-- 5. Semáforo -->
                     <td>
                         {% if local.tipo_plan == 'Interna' %}
-                        <span class="badge bg-light text-muted border">
-                            <i class="fa-solid fa-check-double me-1"></i>Excluida
+                        <span class="badge rounded-pill bg-light text-muted border px-3 py-1">
+                            <i class="fa-solid fa-check-double me-1"></i>Interna
                         </span>
                         {% else %}
                         <span class="badge-semaforo {{ local.semaforo }}">
-                            <span class="dot dot-{{ local.semaforo | replace('semaforo-', '') }}"></span>
+                            <span class="dot dot-{{ sem_clean }}"></span>
                             {{ local.semaforo_label }}
                             {% if local.dias_para_pago >= 0 %}
                             · {{ local.dias_para_pago }}d
@@ -246,31 +809,39 @@
                         </span>
                         {% endif %}
                     </td>
+
+                    <!-- 6. Fechas (Inicio vs Inicio Cobro) -->
                     <td>
-                        <span style="font-size:0.8rem;background:var(--zenic-surface-2);
-                                     padding:0.2rem 0.5rem;border-radius:4px;
-                                     color:var(--zenic-text-muted)">
-                            v{{ local.version_software }}
-                        </span>
+                        <div class="d-flex flex-column gap-1" style="font-size: 0.78rem;">
+                            <div class="text-muted">
+                                <i class="fa-solid fa-rocket fa-xs me-1 text-secondary"></i>Lanzamiento:
+                                <strong class="text-dark">{{ local.fecha_lanzamiento | fecha_corta }}</strong>
+                            </div>
+                            {% if local.tipo_plan != 'Interna' %}
+                            <div style="color: var(--zenic-purple-neural); font-weight: 700;">
+                                <i class="fa-solid fa-file-invoice-dollar fa-xs me-1"></i>Facturación:
+                                <span>{{ (local.fecha_inicio_facturacion or local.proxima_fecha_corte) | fecha_corta }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
                     </td>
-                    <td style="color:var(--zenic-text-muted);font-size:0.85rem">
-                        {{ local.fecha_lanzamiento | fecha_corta }}
-                    </td>
+
+                    <!-- 7. Acciones -->
                     <td class="text-center">
-                        <div class="d-flex gap-1 justify-content-center flex-wrap">
+                        <div class="d-flex gap-1 justify-content-center">
                             <a href="{{ url_for('locales_bp.ver_local', local_id=local.id) }}"
-                               class="btn btn-sm btn-zenic-outline px-2 py-1" title="Ver detalle">
-                                <i class="fa-solid fa-eye fa-xs"></i>
+                               class="action-icon-btn btn-view" title="Ver expediente y credenciales">
+                                <i class="fa-solid fa-eye fa-sm"></i>
                             </a>
                             <a href="{{ url_for('locales_bp.editar_local', local_id=local.id) }}"
-                               class="btn btn-sm btn-zenic px-2 py-1" title="Editar">
-                                <i class="fa-solid fa-pen fa-xs"></i>
+                               class="action-icon-btn btn-edit" title="Editar cliente y facturación">
+                                <i class="fa-solid fa-pen fa-sm"></i>
                             </a>
-                            <button class="btn btn-sm btn-danger-soft px-2 py-1"
+                            <button type="button" class="action-icon-btn btn-del"
                                     data-bs-toggle="modal"
                                     data-bs-target="#modalEliminar{{ local.id }}"
-                                    title="Eliminar">
-                                <i class="fa-solid fa-trash fa-xs"></i>
+                                    title="Eliminar cliente">
+                                <i class="fa-solid fa-trash-can fa-sm"></i>
                             </button>
                         </div>
                     </td>
@@ -282,9 +853,9 @@
     {% else %}
     <div class="text-center py-5" style="color:var(--zenic-text-muted)">
         <i class="fa-solid fa-server fa-3x mb-3" style="opacity:0.2"></i>
-        <p style="margin:0;font-weight:500">No hay instancias registradas todavía.</p>
+        <p style="margin:0;font-weight:600">No hay clientes registrados todavía.</p>
         <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2 mt-3">
-            <i class="fa-solid fa-plus"></i> Registrar primer local
+            <i class="fa-solid fa-plus"></i> Registrar primer cliente
         </a>
     </div>
     {% endif %}
@@ -296,12 +867,12 @@
     <div class="p-3 p-md-4" style="border-bottom: 1px solid var(--zenic-border)">
         <div class="d-flex align-items-center justify-content-between">
             <h2 style="font-size:1rem;font-weight:700;margin:0">
-                <i class="fa-solid fa-bell me-2" style="color:var(--zenic-gold)"></i>
-                Notificaciones Recientes
+                <i class="fa-solid fa-bell me-2" style="color:var(--zenic-purple-neural)"></i>
+                Notificaciones Recientes a Instancias
             </h2>
             <a href="{{ url_for('locales_bp.notificaciones') }}"
-               style="font-size:0.8rem;color:var(--zenic-primary);text-decoration:none">
-                Ver todas →
+               style="font-size:0.8rem;color:var(--zenic-purple-neural);text-decoration:none;font-weight:600">
+                Ver historial completo →
             </a>
         </div>
     </div>
@@ -311,12 +882,12 @@
              {% if not loop.last %}style="border-bottom:1px solid var(--zenic-border)"{% endif %}>
             <div class="notif-dot notif-dot-{{ n.tipo }}"></div>
             <div class="flex-grow-1">
-                <div style="font-weight:600;font-size:0.875rem">{{ n.titulo }}</div>
-                <div style="font-size:0.78rem;color:var(--zenic-text-muted)">
-                    {{ n.mensaje | truncate(80) }}
+                <div style="font-weight:700;font-size:0.88rem">{{ n.titulo }}</div>
+                <div style="font-size:0.8rem;color:var(--zenic-text-muted)">
+                    {{ n.mensaje | truncate(95) }}
                 </div>
             </div>
-            <div style="font-size:0.72rem;color:var(--zenic-text-muted);white-space:nowrap">
+            <div style="font-size:0.74rem;color:var(--zenic-text-muted);white-space:nowrap">
                 {{ n.fecha_envio | fecha_corta }}
             </div>
         </div>
@@ -342,15 +913,15 @@
             </div>
             <div class="modal-body text-start">
                 <p style="color:var(--zenic-text-muted)">
-                    ¿Estás seguro de eliminar el local
+                    ¿Estás seguro de eliminar el cliente
                     <strong style="color:var(--zenic-danger)">{{ local.nombre_marca }}</strong>?
                 </p>
-                <p style="font-size:0.8rem;color:var(--zenic-text-muted)">
-                    Esta acción no se puede deshacer.
+                <p style="font-size:0.8rem;color:var(--zenic-text-muted);margin-bottom:0">
+                    Esta acción eliminará la instancia y sus registros asociados.
                 </p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-sm btn-zenic-outline" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-zenic-outline" data-bs-dismiss="modal">Cancelar</button>
                 <form method="POST"
                       action="{{ url_for('locales_bp.eliminar_local', local_id=local.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -367,12 +938,48 @@
 
 {% block scripts %}
 <script>
-    // Buscador de tabla de locales
-    document.getElementById('searchLocales').addEventListener('input', function () {
-        const q = this.value.toLowerCase();
+    let currentSemaforoFilter = 'todos';
+
+    function applyTableFilters() {
+        const q = (document.getElementById('searchLocales').value || '').toLowerCase();
+        let visibles = 0;
         document.querySelectorAll('#tablaLocales tbody tr').forEach(tr => {
-            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            const matchText = tr.textContent.toLowerCase().includes(q);
+            const rowSem = tr.getAttribute('data-semaforo');
+            const matchSem = (currentSemaforoFilter === 'todos') || (rowSem === currentSemaforoFilter);
+            if (matchText && matchSem) {
+                tr.style.display = '';
+                visibles++;
+            } else {
+                tr.style.display = 'none';
+            }
         });
-    });
+        const countEl = document.getElementById('countVisibles');
+        if (countEl) countEl.textContent = visibles;
+    }
+
+    function filterBySemaforo(sem, btnEl) {
+        if (currentSemaforoFilter === sem && sem !== 'todos' && btnEl && btnEl.classList.contains('semaforo-stat-card')) {
+            currentSemaforoFilter = 'todos';
+        } else {
+            currentSemaforoFilter = sem;
+        }
+        document.querySelectorAll('.filter-pill-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-sem') === currentSemaforoFilter);
+        });
+        document.querySelectorAll('.semaforo-stat-card').forEach(c => {
+            c.classList.remove('active-filter');
+        });
+        if (currentSemaforoFilter !== 'todos') {
+            const cardMatch = document.querySelector(`.sem-card-${currentSemaforoFilter}`);
+            if (cardMatch) cardMatch.classList.add('active-filter');
+        }
+        applyTableFilters();
+    }
+
+    const searchInp = document.getElementById('searchLocales');
+    if (searchInp) {
+        searchInp.addEventListener('input', applyTableFilters);
+    }
 </script>
 {% endblock %}

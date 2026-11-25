@@ -37,7 +37,7 @@
         <div class="card-zenic h-100 position-relative p-4 border-top border-3 border-{{ p.estado_color }}">
             <div class="d-flex justify-content-between align-items-start mb-3">
                 <h3 class="fw-bold m-0" style="font-size: 1.2rem;">{{ p.nombre_area }}</h3>
-                <button class="btn btn-sm text-muted p-0" data-bs-toggle="modal" data-bs-target="#modalPresupuesto" onclick="prefillModal('{{ p.nombre_area }}', '{{ p.limite_gastos }}')">
+                <button class="btn btn-sm text-muted p-0" data-bs-toggle="modal" data-bs-target="#modalPresupuesto" data-area="{{ p.nombre_area }}" data-limite="{{ p.limite_gastos }}" onclick="prefillModal(this.dataset.area, this.dataset.limite)">
                     <i class="fa-solid fa-pen"></i> Editar
                 </button>
             </div>

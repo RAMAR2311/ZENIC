@@ -1,104 +1,505 @@
 {% extends "base.html" %}
-{% block title %}Tesorería{% endblock %}
+{% block title %}Tesorería & Patrimonio{% endblock %}
+
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       MÓDULO DE TESORERÍA & PATRIMONIO — Rediseño Ejecutivo Zenic v3.5
+       Bóveda de Liquidez, Patrimonio Neto, Cuentas y Movimientos.
+    ═══════════════════════════════════════════════════════════════════ */
+
+    /* Banner Hero Superior */
+    .treasury-hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 52%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.7rem 2.2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.28);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .treasury-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -5%;
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* ── 2 Tarjetas Maestras Superiores (Patrimonio Neto & Liquidez Total) ── */
+    .master-vault-card {
+        border-radius: 20px;
+        padding: 1.75rem 2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .master-vault-card:hover {
+        transform: translateY(-4px);
+    }
+    .master-vault-card::before {
+        content: '';
+        position: absolute;
+        top: -35%;
+        right: -10%;
+        width: 260px;
+        height: 260px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* Tarjeta 1: Patrimonio Neto Total (Púrpura Neural & Indigo Profundo) */
+    .vault-card-patrimonio {
+        background: linear-gradient(135deg, #2E1065 0%, #5B21B6 48%, #4338CA 100%);
+        box-shadow: 0 14px 30px -8px rgba(91, 33, 182, 0.45);
+        border: 1px solid rgba(196, 181, 253, 0.28);
+    }
+
+    /* Tarjeta 2: Liquidez Total (Esmeralda & Teal Financiero) */
+    .vault-card-liquidez {
+        background: linear-gradient(135deg, #064E3B 0%, #047857 50%, #0D9488 100%);
+        box-shadow: 0 14px 30px -8px rgba(4, 120, 87, 0.42);
+        border: 1px solid rgba(110, 231, 183, 0.28);
+    }
+
+    .vault-card-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #FFFFFF;
+    }
+    .vault-card-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #FFFFFF;
+        flex-shrink: 0;
+    }
+    .vault-card-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.45rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        letter-spacing: -1.2px;
+        line-height: 1.15;
+        margin: 0.65rem 0;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+    }
+    .vault-card-breakdown {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* ── 4 Tarjetas de Cuentas y Activos ── */
+    .asset-kpi-card {
+        border-radius: 18px;
+        padding: 1.4rem 1.45rem;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        transition: all 0.22s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .asset-kpi-card:hover {
+        transform: translateY(-4px);
+    }
+    .asset-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+    }
+
+    /* 1. Cuenta de Banco (Azul Acero / Indigo) */
+    .akpi-bank {
+        background: linear-gradient(160deg, #FFFFFF 0%, #EFF6FF 100%);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        box-shadow: 0 10px 24px -8px rgba(59, 130, 246, 0.16);
+        cursor: pointer;
+    }
+    .akpi-bank::before { background: linear-gradient(90deg, #1D4ED8 0%, #3B82F6 100%); }
+    .akpi-bank .akpi-amount { color: #1E3A8A; }
+    .akpi-bank .akpi-icon { background: #2563EB; color: #FFFFFF; box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3); }
+
+    /* 2. Caja Menor (Verde Esmeralda) */
+    .akpi-cash {
+        background: linear-gradient(160deg, #FFFFFF 0%, #ECFDF5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.38);
+        box-shadow: 0 10px 24px -8px rgba(16, 185, 129, 0.16);
+        cursor: pointer;
+    }
+    .akpi-cash::before { background: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+    .akpi-cash .akpi-amount { color: #065F46; }
+    .akpi-cash .akpi-icon { background: #10B981; color: #FFFFFF; box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3); }
+
+    /* 3. Valor de Equipos (Púrpura Neural) */
+    .akpi-equip {
+        background: linear-gradient(160deg, #FFFFFF 0%, #FAF5FF 100%);
+        border: 1px solid rgba(122, 62, 176, 0.35);
+        box-shadow: 0 10px 24px -8px rgba(122, 62, 176, 0.16);
+    }
+    .akpi-equip::before { background: linear-gradient(90deg, #7A3EB0 0%, #9333EA 100%); }
+    .akpi-equip .akpi-amount { color: #581C87; }
+    .akpi-equip .akpi-icon { background: #7A3EB0; color: #FFFFFF; box-shadow: 0 6px 14px rgba(122, 62, 176, 0.3); }
+
+    /* 4. Ingresos de Locales (Ámbar / Dorado) */
+    .akpi-locales {
+        background: linear-gradient(160deg, #FFFFFF 0%, #FFFBEB 100%);
+        border: 1px solid rgba(245, 158, 11, 0.38);
+        box-shadow: 0 10px 24px -8px rgba(245, 158, 11, 0.16);
+    }
+    .akpi-locales::before { background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+    .akpi-locales .akpi-amount { color: #B45309; }
+    .akpi-locales .akpi-icon { background: #F59E0B; color: #FFFFFF; box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3); }
+
+    .akpi-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        margin-bottom: 0.3rem;
+    }
+    .akpi-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.15;
+    }
+    .akpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .akpi-foot {
+        margin-top: 0.85rem;
+        padding-top: 0.6rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.35);
+        font-size: 0.75rem;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* ── Tablas Inferiores Ejecutivas ── */
+    .treasury-table-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 10px 28px -10px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+        height: 100%;
+    }
+    .treasury-table-header {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        padding: 1.15rem 1.4rem;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .table-treasury-modern {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+    }
+    .table-treasury-modern thead th {
+        background: #0F172A !important;
+        color: #CBD5E1 !important;
+        font-size: 0.69rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.85rem 1.15rem;
+        border: none !important;
+    }
+    .table-treasury-modern tbody td {
+        padding: 0.9rem 1.15rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9 !important;
+        font-size: 0.86rem;
+        color: #0F172A;
+    }
+    .table-treasury-modern tbody tr:hover td {
+        background-color: #F8FAFC !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
-    <div>
-        <h1 class="page-title">
-            <i class="fa-solid fa-vault me-2" style="color: var(--zenic-success)"></i>
-            Tesorería
+<!-- ═══ BANNER HERO SUPERIOR ════════════════════════════════════════════ -->
+<div class="treasury-hero-banner d-flex align-items-center justify-content-between flex-wrap gap-3 mt-1">
+    <div style="position: relative; z-index: 2;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+             style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38BDF8; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+            <i class="fa-solid fa-vault"></i> Bóveda Financiera · Zenic S.A.S.
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #FFFFFF;">
+            Tesorería, Liquidez & Patrimonio Neto
         </h1>
-        <p class="page-subtitle">Control de liquidez, cuentas y patrimonio neto</p>
+        <p style="font-size: 0.86rem; color: rgba(255, 255, 255, 0.75); margin: 4px 0 0;">
+            Consolidado de cuentas bancarias, caja menor, activos fijos y flujo de ingresos adicionales
+        </p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn-zenic btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalTransferencia" style="background-color: var(--zenic-accent); border-color: var(--zenic-accent);">
-            <i class="fa-solid fa-exchange-alt"></i> Transferencia
+    <div class="d-flex align-items-center gap-2 flex-wrap" style="position: relative; z-index: 2;">
+        <a href="{{ url_for('finanzas_bp.prestamos') }}"
+           class="btn btn-sm px-3 py-2 rounded-3 fw-semibold text-decoration-none"
+           style="background: rgba(56, 189, 248, 0.18); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.38);">
+            <i class="fa-solid fa-hand-holding-dollar me-1"></i> Préstamos a Favor ({{ total_cartera_prestamos | cop }})
+        </a>
+        <button type="button" class="btn btn-sm px-3 py-2 rounded-3 fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#modalIngreso"
+                style="background: rgba(16, 185, 129, 0.18); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.38);">
+            <i class="fa-solid fa-plus-circle me-1"></i> Registrar Ingreso Extra
+        </button>
+        <button type="button" class="btn-zenic px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalTransferencia">
+            <i class="fa-solid fa-right-left"></i> Transferencia Interna
         </button>
     </div>
 </div>
 
-<!-- TOP CARDS (Patrimonio Neto y Liquidez Mensual) -->
-<div class="row mb-4">
-    <div class="col-12 col-md-6 mb-3 mb-md-0 fade-up" style="animation-delay: 0.1s;">
-        <div class="card-zenic p-4 text-center" style="border-left: 4px solid var(--zenic-gold);">
-            <h5 class="text-muted text-uppercase" style="font-size:0.85rem; letter-spacing:1px; font-weight:700;">Patrimonio Neto Total</h5>
-            <h2 class="my-2 fw-bold" style="font-size:2.5rem; color: var(--zenic-gold);">{{ patrimonio_neto | cop }}</h2>
-            <div class="text-muted" style="font-size:0.9rem;">(Banco + Caja Menor + Equipos)</div>
-        </div>
-    </div>
-    <div class="col-12 col-md-6 fade-up" style="animation-delay: 0.2s;">
-        <div class="card-zenic p-4 text-center" style="border-left: 4px solid var(--zenic-success);">
-            <h5 class="text-muted text-uppercase" style="font-size:0.85rem; letter-spacing:1px; font-weight:700;">Liquidez Total (Caja + Ingresos Mes)</h5>
-            <h2 class="my-2 fw-bold" style="font-size:2.5rem; color: var(--zenic-success);">{{ total_mensual_liquidez | cop }}</h2>
-            <div class="text-muted" style="font-size:0.9rem;">Disponible en caja + Cobros a locales del mes</div>
-        </div>
-    </div>
-</div>
-
-<!-- TESORERIA CARDS -->
-<h4 class="mb-3 fw-bold" style="font-size: 1.1rem;"><i class="fa-solid fa-piggy-bank me-2 text-muted"></i>Cuentas y Activos</h4>
-<div class="row g-3 mb-5">
-    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.3s;">
-        <div class="kpi-card kpi-gold" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalBanco">
-            <i class="fa-solid fa-building-columns kpi-icon"></i>
-            <div class="kpi-label">Cuenta de Banco <i class="fa-solid fa-pen ms-1 small"></i></div>
-            <div class="kpi-value text-dark">{{ tesoreria.saldo_banco | cop }}</div>
-            <div class="kpi-sub">Saldo en entidades bancarias</div>
-        </div>
-    </div>
-    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.4s;">
-        <div class="kpi-card kpi-green" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalCaja">
-            <i class="fa-solid fa-wallet kpi-icon"></i>
-            <div class="kpi-label">Caja Menor <i class="fa-solid fa-pen ms-1 small"></i></div>
-            <div class="kpi-value text-success">{{ tesoreria.caja_menor | cop }}</div>
-            <div class="kpi-sub">Dinero físico disponible</div>
-        </div>
-    </div>
-    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.5s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent)">
-            <i class="fa-solid fa-laptop kpi-icon text-accent"></i>
-            <div class="kpi-label">Valor de Equipos</div>
-            <div class="kpi-value" style="color:var(--zenic-accent)">{{ total_equipos | cop }}</div>
-            <div class="kpi-sub">Inventario de activos fijos</div>
-        </div>
-    </div>
-    <div class="col-12 col-md-3 fade-up" style="animation-delay: 0.6s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-success)">
-            <i class="fa-solid fa-file-invoice-dollar kpi-icon text-success"></i>
-            <div class="kpi-label">Ingresos de Locales</div>
-            <div class="kpi-value text-success">+{{ total_locales | cop }}</div>
-            <div class="kpi-sub">Facturas pagadas este mes</div>
-        </div>
-    </div>
-</div>
-
-<!-- LISTADOS: ACTIVOS E INGRESOS EXTRA -->
-<div class="row g-4">
-    <!-- Tabla de Comprobantes de Pago (Gastos) -->
+<!-- ═══ 2 TARJETAS MAESTRAS (PATRIMONIO NETO & LIQUIDEZ TOTAL) ══════════ -->
+<div class="row g-3 mb-4">
+    <!-- 1. Patrimonio Neto Total -->
     <div class="col-12 col-lg-6">
-        <div class="card-zenic h-100">
-            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                <h2 style="font-size:1rem;font-weight:700;margin:0">Comprobantes de Pago (Gastos Recientes)</h2>
-                <a href="{{ url_for('finanzas_bp.gastos') }}" class="btn btn-sm btn-outline-danger py-1"><i class="fa-solid fa-arrow-right"></i> Ver todos</a>
+        <div class="master-vault-card vault-card-patrimonio">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <span class="vault-card-badge">
+                        <i class="fa-solid fa-gem"></i> Patrimonio Neto Total
+                    </span>
+                    <div class="vault-card-amount">{{ patrimonio_neto | cop }}</div>
+                </div>
+                <div class="vault-card-icon">
+                    <i class="fa-solid fa-landmark"></i>
+                </div>
+            </div>
+            <div class="vault-card-breakdown">
+                <span><i class="fa-solid fa-layer-group me-1 text-info"></i>Banco + Caja + Equipos + Préstamos a Favor ({{ total_cartera_prestamos | cop }})</span>
+                <a href="{{ url_for('finanzas_bp.prestamos') }}" class="text-white text-decoration-none font-mono fw-bold">
+                    Ver Préstamos →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Liquidez Total (Caja + Ingresos Mes) -->
+    <div class="col-12 col-lg-6">
+        <div class="master-vault-card vault-card-liquidez">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <span class="vault-card-badge">
+                        <i class="fa-solid fa-coins"></i> Liquidez Total (Caja + Ingresos Mes)
+                    </span>
+                    <div class="vault-card-amount">{{ total_mensual_liquidez | cop }}</div>
+                </div>
+                <div class="vault-card-icon">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+            <div class="vault-card-breakdown">
+                <span><i class="fa-solid fa-bolt me-1 text-warning"></i>Disponible en Caja + Cobros a Locales + Extras</span>
+                <span class="font-mono fw-bold">Flujo Operativo</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ 4 TARJETAS DE CUENTAS Y ACTIVOS ═════════════════════════════════ -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 style="font-size: 1rem; font-weight: 800; margin: 0; color: #0F172A;">
+        <i class="fa-solid fa-piggy-bank me-2" style="color: var(--zenic-purple-neural);"></i>
+        Desglose de Cuentas y Activos Corporativos
+    </h2>
+    <span class="text-muted small">Haz clic en Banco o Caja Menor para ajustar su saldo</span>
+</div>
+
+<div class="row g-3 mb-4">
+    <!-- 1. Cuenta de Banco -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="asset-kpi-card akpi-bank" data-bs-toggle="modal" data-bs-target="#modalBanco" title="Clic para editar saldo en banco">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="akpi-title">Cuenta de Banco</div>
+                    <div class="akpi-amount">{{ tesoreria.saldo_banco | cop }}</div>
+                </div>
+                <div class="akpi-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+            </div>
+            <div class="akpi-foot">
+                <span>Saldo en entidades bancarias</span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="fa-solid fa-pen fa-2xs me-1"></i>Editar
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Caja Menor -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="asset-kpi-card akpi-cash" data-bs-toggle="modal" data-bs-target="#modalCaja" title="Clic para editar saldo de caja menor">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="akpi-title">Caja Menor</div>
+                    <div class="akpi-amount">{{ tesoreria.caja_menor | cop }}</div>
+                </div>
+                <div class="akpi-icon">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+            </div>
+            <div class="akpi-foot">
+                <span>Efectivo / liquidez inmediata</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="fa-solid fa-pen fa-2xs me-1"></i>Editar
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Valor de Equipos -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="asset-kpi-card akpi-equip">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="akpi-title">Valor de Equipos</div>
+                    <div class="akpi-amount">{{ total_equipos | cop }}</div>
+                </div>
+                <div class="akpi-icon">
+                    <i class="fa-solid fa-laptop"></i>
+                </div>
+            </div>
+            <div class="akpi-foot">
+                <span>Inventario de activos fijos</span>
+                <a href="{{ url_for('operaciones_bp.equipos') }}" class="text-decoration-none fw-bold" style="color: var(--zenic-purple-neural); font-size: 0.74rem;">
+                    Ver Equipos →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Ingresos de Locales -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="asset-kpi-card akpi-locales">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="akpi-title">Ingresos de Locales</div>
+                    <div class="akpi-amount">+{{ total_locales | cop }}</div>
+                </div>
+                <div class="akpi-icon">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+            </div>
+            <div class="akpi-foot">
+                <span>Facturas pagadas este mes</span>
+                <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="text-decoration-none fw-bold" style="color: #D97706; font-size: 0.74rem;">
+                    Ver Cobros →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TABLAS DE MOVIMIENTOS: GASTOS RECIENTES E INGRESOS EXTRA ════════ -->
+<div class="row g-4">
+    <!-- Columna Izquierda: Comprobantes de Pago (Gastos Recientes) -->
+    <div class="col-12 col-lg-6">
+        <div class="treasury-table-card">
+            <div class="treasury-table-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 34px; height: 34px; border-radius: 9px; background: rgba(239, 68, 68, 0.12); color: #DC2626; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-arrow-trend-down"></i>
+                    </span>
+                    <div>
+                        <h3 style="font-size: 0.98rem; font-weight: 800; margin: 0; color: #0F172A;">
+                            Comprobantes de Pago (Gastos Recientes)
+                        </h3>
+                        <div style="font-size: 0.74rem; color: #64748B;">Últimos egresos operativos registrados</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('finanzas_bp.gastos') }}" class="btn btn-sm btn-danger-soft rounded-pill px-3">
+                    Ver Todos <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
             </div>
             <div class="table-responsive">
-                <table class="table table-zenic mb-0">
+                <table class="table-treasury-modern">
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Descripción</th>
+                            <th>Descripción & Cuenta</th>
                             <th class="text-end">Valor</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for g in gastos %}
                         <tr>
-                            <td>{{ g.fecha | fecha_corta }}</td>
-                            <td style="font-weight:600">{{ g.descripcion }}</td>
-                            <td class="text-end text-danger fw-bold">-{{ g.monto | cop }}</td>
+                            <td class="text-muted" style="font-size: 0.8rem; white-space: nowrap;">
+                                {{ g.fecha | fecha_corta }}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ g.descripcion }}</div>
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    {% if g.categoria %}
+                                    <span class="badge bg-light text-secondary border" style="font-size: 0.66rem;">{{ g.categoria }}</span>
+                                    {% endif %}
+                                    {% if g.cuenta_origen %}
+                                    <span class="badge" style="background: {{ '#6D09A8' if g.cuenta_origen == 'Nu' else ('#1D4ED8' if g.cuenta_origen == 'Nequi' else '#475569') }}; color: #fff; font-size: 0.65rem;">
+                                        {{ g.cuenta_origen }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="text-end font-mono fw-bolder text-danger" style="white-space: nowrap;">
+                                -{{ g.monto | cop }}
+                            </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="3" class="text-center py-4 text-muted">No hay comprobantes recientes.</td></tr>
+                        <tr><td colspan="3" class="text-center py-5 text-muted">No hay comprobantes recientes.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -106,31 +507,53 @@
         </div>
     </div>
 
-    <!-- Tabla de Ingresos Extraordinarios -->
+    <!-- Columna Derecha: Otros Ingresos -->
     <div class="col-12 col-lg-6">
-        <div class="card-zenic h-100">
-            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                <h2 style="font-size:1rem;font-weight:700;margin:0">Otros Ingresos ({{ hoy.strftime('%B %Y') }})</h2>
-                <button class="btn btn-sm btn-outline-success py-1" data-bs-toggle="modal" data-bs-target="#modalIngreso"><i class="fa-solid fa-plus"></i> Ingreso Extra</button>
+        <div class="treasury-table-card">
+            <div class="treasury-table-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="width: 34px; height: 34px; border-radius: 9px; background: rgba(16, 185, 129, 0.12); color: #059669; display: inline-flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-arrow-trend-up"></i>
+                    </span>
+                    <div>
+                        <h3 style="font-size: 0.98rem; font-weight: 800; margin: 0; color: #0F172A;">
+                            Otros Ingresos & Servicios Extra
+                        </h3>
+                        <div style="font-size: 0.74rem; color: #64748B;">Implementaciones, desarrollos y consultorías</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-success text-white rounded-pill px-3 fw-bold"
+                        data-bs-toggle="modal" data-bs-target="#modalIngreso" style="font-size: 0.76rem;">
+                    <i class="fa-solid fa-plus me-1"></i> Ingreso Extra
+                </button>
             </div>
             <div class="table-responsive">
-                <table class="table table-zenic mb-0">
+                <table class="table-treasury-modern">
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Concepto</th>
+                            <th>Concepto & Categoría</th>
                             <th class="text-end">Monto</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for i in ingresos %}
                         <tr>
-                            <td>{{ i.fecha | fecha_corta }}</td>
-                            <td style="font-weight:600">{{ i.descripcion }} <span class="badge bg-secondary ms-1">{{ i.categoria }}</span></td>
-                            <td class="text-end text-success fw-bold">{{ i.monto | cop }}</td>
+                            <td class="text-muted" style="font-size: 0.8rem; white-space: nowrap;">
+                                {{ i.fecha | fecha_corta }}
+                            </td>
+                            <td>
+                                <div class="fw-bold">{{ i.descripcion }}</div>
+                                <span class="badge rounded-pill mt-1" style="background: rgba(122, 62, 176, 0.1); color: var(--zenic-purple-neural); font-size: 0.68rem;">
+                                    {{ i.categoria }}
+                                </span>
+                            </td>
+                            <td class="text-end font-mono fw-bolder text-success" style="white-space: nowrap;">
+                                +{{ i.monto | cop }}
+                            </td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="3" class="text-center py-4 text-muted">No hay ingresos adicionales registrados.</td></tr>
+                        <tr><td colspan="3" class="text-center py-5 text-muted">No hay ingresos adicionales registrados.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -143,21 +566,26 @@
 {% block modals %}
 <!-- Modal Actualizar Banco -->
 <div class="modal fade" id="modalBanco" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="actualizar_banco">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-building-columns me-2"></i>Saldo Banco</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-building-columns text-primary me-2"></i>Saldo en Banco</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label">Saldo Actual</label>
-                    <input type="number" step="0.01" class="form-control text-end fw-bold" name="saldo_banco" value="{{ tesoreria.saldo_banco }}" required>
+                    <label class="form-label fw-bold">Saldo Actual (COP)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" class="form-control text-end font-mono fw-bold mask-miles"
+                               name="saldo_banco" inputmode="numeric" autocomplete="off"
+                               value="{{ tesoreria.saldo_banco | miles }}" required>
+                    </div>
                 </div>
                 <div class="modal-footer p-2">
-                    <button type="submit" class="btn btn-zenic btn-sm w-100">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-zenic btn-sm w-100">Guardar Saldo</button>
                 </div>
             </form>
         </div>
@@ -166,7 +594,7 @@
 
 <!-- Modal Actualizar Caja -->
 <div class="modal fade" id="modalCaja" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
             <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -176,46 +604,53 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label">Saldo Actual</label>
-                    <input type="number" step="0.01" class="form-control text-end fw-bold text-success" name="caja_menor" value="{{ tesoreria.caja_menor }}" required>
+                    <label class="form-label fw-bold">Saldo Actual (COP)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" class="form-control text-end font-mono fw-bold text-success mask-miles"
+                               name="caja_menor" inputmode="numeric" autocomplete="off"
+                               value="{{ tesoreria.caja_menor | miles }}" required>
+                    </div>
                 </div>
                 <div class="modal-footer p-2">
-                    <button type="submit" class="btn btn-success btn-sm w-100">Guardar Cambios</button>
+                    <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">Guardar Saldo</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-
-
 <!-- Modal Transferencia -->
 <div class="modal fade" id="modalTransferencia" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="transferir">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-exchange-alt text-accent me-2"></i>Transferencia Interna</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-right-left me-2" style="color: var(--zenic-purple-neural);"></i>Transferencia Interna</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Tipo de Movimiento</label>
+                        <label class="form-label fw-bold">Tipo de Movimiento</label>
                         <select class="form-select" name="origen" required>
-                            <option value="banco_a_caja">Retirar del Banco hacia Caja Menor</option>
-                            <option value="caja_a_banco">Consignar de Caja Menor hacia Banco</option>
+                            <option value="banco_a_caja">🏦 → 💵 Retirar del Banco hacia Caja Menor</option>
+                            <option value="caja_a_banco">💵 → 🏦 Consignar de Caja Menor hacia Banco</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Monto a Transferir</label>
-                        <input type="number" step="0.01" class="form-control" name="monto" required>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Monto a Transferir (COP)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control font-mono fw-bold mask-miles"
+                                   name="monto" inputmode="numeric" autocomplete="off" placeholder="0" required>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-zenic btn-sm">Ejecutar</button>
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">Ejecutar Transferencia</button>
                 </div>
             </form>
         </div>
@@ -224,44 +659,63 @@
 
 <!-- Modal Ingreso Extra -->
 <div class="modal fade" id="modalIngreso" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ url_for('finanzas_bp.ingresos') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="action" value="registrar_ingreso">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-plus text-success me-2"></i>Registrar Ingreso Extra</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-plus-circle text-success me-2"></i>Registrar Ingreso Extra</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Concepto</label>
-                        <input type="text" class="form-control" name="descripcion" required>
+                        <label class="form-label fw-bold">Concepto / Descripción</label>
+                        <input type="text" class="form-control" name="descripcion" placeholder="Ej: Desarrollo módulo a la medida / Consultoría" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Monto</label>
-                        <input type="number" step="0.01" class="form-control" name="monto" required>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Monto (COP)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" class="form-control font-mono fw-bold mask-miles"
+                                       name="monto" inputmode="numeric" autocomplete="off" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Fecha</label>
+                            <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Categoría</label>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Categoría</label>
                         <select class="form-select" name="categoria">
+                            <option value="Implementación">Implementación</option>
+                            <option value="Desarrollo">Desarrollo a la Medida</option>
+                            <option value="Servicios">Servicios Adicionales / Capacitación</option>
+                            <option value="Consultoría">Consultoría</option>
                             <option value="General">General</option>
-                            <option value="Servicios">Servicios Adicionales</option>
-                            <option value="Ventas">Ventas Directas</option>
-                            <option value="Otros">Otros</option>
                         </select>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success btn-sm">Guardar Ingreso</button>
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm fw-bold px-4">Guardar Ingreso</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Formateo automático con puntos de miles en todos los modales de Tesorería
+    document.querySelectorAll('.mask-miles').forEach(inp => {
+        inp.addEventListener('input', function () {
+            const digits = this.value.replace(/\D/g, '');
+            this.value = digits ? parseInt(digits, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        });
+    });
+</script>
 {% endblock %}

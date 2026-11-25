@@ -1,415 +1,774 @@
 {% extends "base.html" %}
+{% block title %}Tickets, Asignaciones & Validación{% endblock %}
 
-{% block title %}Tickets de Soporte & Cambios — TI{% endblock %}
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       MÓDULO DE TICKETS, ASIGNACIONES & VALIDACIÓN — Diseño Zenic v3.6
+       Flujo bilateral:
+       1. Cualquier perfil recibe tickets asignados en "Mis Tickets Pendientes"
+       2. El asignado cambia estado y deja comentario de solución -> "Por Validar"
+       3. Quien lo asignó valida si quedó bien ("Resuelto") o pide ajustes ("Requiere Ajustes")
+    ═══════════════════════════════════════════════════════════════════ */
+
+    /* 4 Tarjetas KPI Estilizadas */
+    .tk-kpi-card {
+        border-radius: 16px;
+        padding: 1.3rem 1.45rem;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .tk-kpi-card:hover {
+        transform: translateY(-3px);
+    }
+    .tk-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+    }
+
+    /* 1. Mis Tickets Pendientes (Púrpura Neural) */
+    .tkpi-purple {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FAF5FF 100%);
+        border: 1px solid rgba(122, 62, 176, 0.32);
+        box-shadow: 0 8px 20px -6px rgba(122, 62, 176, 0.15);
+    }
+    .tkpi-purple::before { background: linear-gradient(90deg, #7A3EB0 0%, #5C8AC8 100%); }
+    .tkpi-purple .tk-val { color: #581C87; }
+    .tkpi-purple .tk-icon {
+        background: linear-gradient(135deg, #7A3EB0 0%, #5C8AC8 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(122, 62, 176, 0.3);
+    }
+
+    /* 2. Listos Por Validar (Azul / Cyan) */
+    .tkpi-blue {
+        background: linear-gradient(155deg, #FFFFFF 0%, #EFF6FF 100%);
+        border: 1px solid rgba(37, 99, 235, 0.28);
+        box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.14);
+    }
+    .tkpi-blue::before { background: linear-gradient(90deg, #2563EB 0%, #38BDF8 100%); }
+    .tkpi-blue .tk-val { color: #1E3A8A; }
+    .tkpi-blue .tk-icon {
+        background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    /* 3. En Cola / Prioridad Urgente (Ámbar / Coral) */
+    .tkpi-amber {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FFFBEB 100%);
+        border: 1px solid rgba(245, 158, 11, 0.32);
+        box-shadow: 0 8px 20px -6px rgba(245, 158, 11, 0.14);
+    }
+    .tkpi-amber::before { background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+    .tkpi-amber .tk-val { color: #B45309; }
+    .tkpi-amber .tk-icon {
+        background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
+    }
+
+    /* 4. Resueltos & Validados (Esmeralda) */
+    .tkpi-emerald {
+        background: linear-gradient(155deg, #FFFFFF 0%, #ECFDF5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.32);
+        box-shadow: 0 8px 20px -6px rgba(16, 185, 129, 0.14);
+    }
+    .tkpi-emerald::before { background: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+    .tkpi-emerald .tk-val { color: #065F46; }
+    .tkpi-emerald .tk-icon {
+        background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
+    }
+
+    .tk-lbl {
+        font-size: 0.71rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        margin-bottom: 0.25rem;
+    }
+    .tk-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.9rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+    .tk-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .tk-sub {
+        margin-top: 0.75rem;
+        padding-top: 0.55rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.35);
+        font-size: 0.74rem;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Panel Principal con Pestañas Segmentadas */
+    .tickets-main-panel {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 6px 24px -6px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+    }
+    .tickets-toolbar {
+        padding: 1.1rem 1.5rem;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .zenic-seg-tabs {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 0.3rem;
+        border-radius: 12px;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    .zenic-tab-btn {
+        border: none;
+        background: transparent;
+        color: #64748B;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 0.48rem 1.05rem;
+        border-radius: 9px;
+        transition: all 0.18s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+    .zenic-tab-btn:hover { color: #0F172A; }
+    .zenic-tab-btn.active {
+        background: #FFFFFF;
+        color: var(--zenic-purple-neural);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Tabla Limpia de Tickets */
+    .table-tickets-clean {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+    .table-tickets-clean thead th {
+        background: #F8FAFC !important;
+        color: #64748B !important;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid #E2E8F0 !important;
+        white-space: nowrap;
+    }
+    .table-tickets-clean tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9 !important;
+        font-size: 0.87rem;
+        color: #0F172A;
+    }
+    .table-tickets-clean tbody tr:hover td {
+        background-color: #FAF8FF !important;
+    }
+
+    /* Cabecera de Modal Estética */
+    .modal-zenic-header {
+        background: linear-gradient(135deg, #FAF8FF 0%, #F1F5F9 100%) !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding: 1.25rem 1.5rem !important;
+        position: relative;
+    }
+    .modal-zenic-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: var(--zenic-gradient-neural);
+    }
+    .modal-zenic-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        background: var(--zenic-gradient-neural);
+        color: #FFFFFF;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        box-shadow: 0 4px 12px rgba(122, 62, 176, 0.3);
+        flex-shrink: 0;
+    }
+
+    /* Bloques de Conversación Solución vs Validación dentro del Modal */
+    .comment-bubble-solution {
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        border-left: 4px solid #2563EB;
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+    }
+    .comment-bubble-validation-ok {
+        background: #ECFDF5;
+        border: 1px solid #A7F3D0;
+        border-left: 4px solid #059669;
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+    }
+    .comment-bubble-validation-fix {
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        border-left: 4px solid #DC2626;
+        border-radius: 12px;
+        padding: 0.9rem 1.1rem;
+    }
+
+    /* Selector de Estado Rápido en Línea desde la Tabla */
+    .inline-status-select {
+        appearance: none;
+        -webkit-appearance: none;
+        border-radius: 999px !important;
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        padding: 0.32rem 1.75rem 0.32rem 0.75rem !important;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        background-repeat: no-repeat !important;
+        background-position: right 0.55rem center !important;
+        background-size: 9px 9px !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    }
+    .inline-status-select:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+    }
+    .status-pill-pendiente {
+        background-color: #FFFBEB !important;
+        color: #B45309 !important;
+        border: 1px solid #FDE68A !important;
+    }
+    .status-pill-desarrollo {
+        background-color: #FAF5FF !important;
+        color: #6B21A8 !important;
+        border: 1px solid #D8B4FE !important;
+    }
+    .status-pill-validar {
+        background-color: #EFF6FF !important;
+        color: #1D4ED8 !important;
+        border: 1px solid #93C5FD !important;
+    }
+    .status-pill-ajustes {
+        background-color: #FEF2F2 !important;
+        color: #B91C1C !important;
+        border: 1px solid #FCA5A5 !important;
+    }
+    .status-pill-resuelto {
+        background-color: #ECFDF5 !important;
+        color: #047857 !important;
+        border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-3 px-md-4 py-3">
+<!-- ═══ CABECERA LIMPIA ═════════════════════════════════════════════════ -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-2 mb-4">
+    <div>
+        <h1 class="page-title" style="font-size: 1.5rem;">
+            <span style="width: 38px; height: 38px; border-radius: 10px; background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-right: 0.65rem;">
+                <i class="fa-solid fa-ticket"></i>
+            </span>
+            Tickets, Asignaciones & Validación
+        </h1>
+        <p class="page-subtitle">
+            Asigna tareas o solicitudes a cualquier perfil, reporta la solución y valida que todo haya quedado bien
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn-zenic px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalNuevoTicket">
+            <i class="fa-solid fa-plus-circle"></i> Crear & Asignar Ticket
+        </button>
+    </div>
+</div>
 
-    <!-- Header & Acciones -->
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+<!-- ═══ BANNER DE ALERTA SI EL USUARIO TIENE TICKETS ASIGNADOS O POR VALIDAR ═══ -->
+{% if mis_asignados or por_validar_mios %}
+<div class="p-3 rounded-4 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3"
+     style="background: linear-gradient(135deg, #FAF5FF 0%, #EFF6FF 100%); border: 1px solid rgba(122, 62, 176, 0.28);">
+    <div class="d-flex align-items-center gap-3">
+        <span style="width: 40px; height: 40px; border-radius: 11px; background: var(--zenic-gradient-neural); color: #FFF; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem;">
+            <i class="fa-solid fa-bell"></i>
+        </span>
         <div>
-            <h1 class="h3 fw-bold mb-1" style="color: var(--zenic-blue-steel);">
-                <i class="fa-solid fa-ticket-simple me-2"></i>Tickets de Soporte & Solicitudes de Clientes
-            </h1>
-            <p class="text-muted small mb-0">Gestión de cambios y soporte técnico coordinado entre Operaciones y TI con evidencia visual.</p>
+            <div style="font-weight: 800; color: #0F172A; font-size: 0.92rem;">
+                ¡Hola {{ current_user.nombre.split()[0] }}! Tienes actividad pendiente en tus tickets:
+            </div>
+            <div style="font-size: 0.82rem; color: #475569;">
+                {% if mis_asignados %}
+                <span class="me-3">🛠️ <strong>{{ mis_asignados|length }} ticket(s) asignados a ti</strong> pendientes por solucionar.</span>
+                {% endif %}
+                {% if por_validar_mios %}
+                <span>✅ <strong>{{ por_validar_mios|length }} ticket(s) solucionados</strong> esperando tu validación y visto bueno.</span>
+                {% endif %}
+            </div>
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevoTicket" style="background: linear-gradient(135deg, var(--zenic-purple-neural), var(--zenic-blue-electric)); border: none;">
-                <i class="fa-solid fa-plus"></i> Nuevo Ticket
+    </div>
+    <div class="d-flex gap-2">
+        {% if mis_asignados %}
+        <button type="button" class="btn btn-sm btn-zenic rounded-pill px-3" onclick="switchTicketView('mis_asignados')">
+            Ver Mis Asignados ({{ mis_asignados|length }})
+        </button>
+        {% endif %}
+        {% if por_validar_mios %}
+        <button type="button" class="btn btn-sm btn-success text-white rounded-pill px-3 fw-bold" onclick="switchTicketView('por_validar')">
+            Validar Soluciones ({{ por_validar_mios|length }})
+        </button>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ═══ 4 TARJETAS KPI ESTILIZADAS ══════════════════════════════════════ -->
+<div class="row g-3 mb-4">
+    <!-- 1. Mis Tickets Pendientes -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="tk-kpi-card tkpi-purple" onclick="switchTicketView('mis_asignados')">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="tk-lbl">Mis Tickets Pendientes</div>
+                    <div class="tk-val">{{ mis_asignados|length }}</div>
+                </div>
+                <div class="tk-icon">
+                    <i class="fa-solid fa-user-clock"></i>
+                </div>
+            </div>
+            <div class="tk-sub">
+                <span>Asignados a {{ current_user.nombre.split()[0] }}</span>
+                <span class="badge" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural);">Mis Tareas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Listos Por Validar -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="tk-kpi-card tkpi-blue" onclick="switchTicketView('por_validar')">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="tk-lbl">Listos Por Validar</div>
+                    <div class="tk-val">{{ total_por_validar }}</div>
+                </div>
+                <div class="tk-icon">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+            </div>
+            <div class="tk-sub">
+                <span>Solucionados esperando revisión</span>
+                <span class="badge bg-primary-subtle text-primary">Por Validar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tickets en Cola General -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="tk-kpi-card tkpi-amber" onclick="switchTicketView('todos')">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="tk-lbl">En Cola / En Proceso</div>
+                    <div class="tk-val">{{ total_pendientes }}</div>
+                </div>
+                <div class="tk-icon">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+            </div>
+            <div class="tk-sub">
+                <span>Pendientes o con ajustes</span>
+                {% if total_urgentes > 0 %}
+                <span class="badge bg-danger-subtle text-danger">{{ total_urgentes }} Urgente(s)</span>
+                {% else %}
+                <span class="badge bg-warning-subtle text-warning-emphasis">Activos</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Resueltos & Validados -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="tk-kpi-card tkpi-emerald" onclick="switchTicketView('todos')">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="tk-lbl">Resueltos & Validados</div>
+                    <div class="tk-val">{{ total_resueltos }}</div>
+                </div>
+                <div class="tk-icon">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="tk-sub">
+                <span>Aprobados con visto bueno</span>
+                <span class="badge bg-success-subtle text-success">Cerrados</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ PANEL PRINCIPAL DE TICKETS CON PESTAÑAS ═════════════════════════ -->
+<div class="tickets-main-panel">
+    <div class="tickets-toolbar">
+        <!-- Pestañas: Mis Tickets Pendientes / Por Validar / Todos -->
+        <div class="zenic-seg-tabs" role="tablist">
+            <button type="button" class="zenic-tab-btn {% if vista_activa == 'mis_asignados' %}active{% endif %}"
+                    id="tabBtnMisAsignados" onclick="switchTicketView('mis_asignados')">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+                Mis Tickets Pendientes
+                <span class="badge rounded-pill {% if mis_asignados|length > 0 %}bg-danger{% else %}bg-light text-secondary border{% endif %}">
+                    {{ mis_asignados|length }}
+                </span>
             </button>
-            {% if current_user.rol in ['ti', 'admin'] %}
-            <a href="{{ url_for('ti_bp.conexiones') }}" class="btn btn-outline-secondary d-flex align-items-center gap-2">
-                <i class="fa-solid fa-server"></i> Panel de Conexiones
-            </a>
-            {% endif %}
-        </div>
-    </div>
 
-    <!-- Métricas Rápidas -->
-    <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-warning) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Tickets en Cola</div>
-                        <div class="fs-3 fw-bold" style="color: var(--zenic-warning);">{{ total_pendientes }}</div>
-                    </div>
-                    <i class="fa-solid fa-clock-rotate-left fs-2 opacity-25" style="color: var(--zenic-warning);"></i>
-                </div>
-            </div>
+            <button type="button" class="zenic-tab-btn {% if vista_activa == 'por_validar' %}active{% endif %}"
+                    id="tabBtnPorValidar" onclick="switchTicketView('por_validar')">
+                <i class="fa-solid fa-check-double"></i>
+                Por Validar (Mi Visto Bueno)
+                <span class="badge rounded-pill {% if por_validar_mios|length > 0 %}bg-warning text-dark{% else %}bg-light text-secondary border{% endif %}">
+                    {{ por_validar_mios|length }}
+                </span>
+            </button>
+
+            <button type="button" class="zenic-tab-btn {% if vista_activa == 'todos' %}active{% endif %}"
+                    id="tabBtnTodos" onclick="switchTicketView('todos')">
+                <i class="fa-solid fa-layer-group"></i>
+                Todos los Tickets
+                <span class="badge rounded-pill bg-light text-secondary border">{{ tickets|length }}</span>
+            </button>
         </div>
-        <div class="col-12 col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-danger) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Prioridad Urgente</div>
-                        <div class="fs-3 fw-bold text-danger">{{ total_urgentes }}</div>
-                    </div>
-                    <i class="fa-solid fa-triangle-exclamation fs-2 opacity-25 text-danger"></i>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-xl-4">
-            <div class="card border-0 shadow-sm p-3 rounded-4" style="background: var(--zenic-surface); border-left: 4px solid var(--zenic-success) !important;">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold text-uppercase">Tickets Resueltos</div>
-                        <div class="fs-3 fw-bold" style="color: var(--zenic-success);">{{ total_resueltos }}</div>
-                    </div>
-                    <i class="fa-solid fa-circle-check fs-2 opacity-25" style="color: var(--zenic-success);"></i>
-                </div>
+
+        <!-- Filtros rápidos y buscador -->
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <select id="filterClienteTicket" class="form-select form-select-sm" style="width: auto; border-radius: 999px !important;" onchange="applyTicketSearch()">
+                <option value="">Todos los Clientes</option>
+                {% for l in locales %}
+                <option value="{{ l.nombre_marca | lower }}">{{ l.nombre_marca }}</option>
+                {% endfor %}
+            </select>
+            <div class="position-relative" style="min-width: 220px;">
+                <i class="fa-solid fa-magnifying-glass position-absolute"
+                   style="left: 13px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.82rem;"></i>
+                <input type="text" id="searchTicketsInput" class="form-control form-control-sm ps-5"
+                       placeholder="Buscar ticket o persona..."
+                       style="border-radius: 999px !important;" oninput="applyTicketSearch()">
             </div>
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 mb-4" style="background: var(--zenic-surface);">
-        <form method="GET" class="row g-2 align-items-center">
-            <div class="col-12 col-md-4">
-                <select name="estado" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Todos los Estados</option>
-                    <option value="Pendiente" {% if estado_filtro == 'Pendiente' %}selected{% endif %}>Pendiente</option>
-                    <option value="En Desarrollo" {% if estado_filtro == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
-                    <option value="En Pruebas" {% if estado_filtro == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
-                    <option value="Resuelto" {% if estado_filtro == 'Resuelto' %}selected{% endif %}>Resuelto</option>
-                </select>
-            </div>
-            <div class="col-12 col-md-5">
-                <select name="local_id" class="form-select form-select-sm" onchange="this.form.submit()">
-                    <option value="">Todos los Clientes / Locales</option>
-                    {% for l in locales %}
-                    <option value="{{ l.id }}" {% if local_filtro == l.id|string %}selected{% endif %}>{{ l.nombre_marca }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-md-3 text-end">
-                <a href="{{ url_for('ti_bp.tickets') }}" class="btn btn-sm btn-outline-secondary w-100">Limpiar Filtros</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- Listado de Tickets -->
-    <!-- Vista Móvil: Tarjetas táctiles optimizadas para PWA (visible solo en pantallas < 768px) -->
-    <div class="d-block d-md-none mb-4">
-        {% for t in tickets %}
-        <div class="card border-0 shadow-sm rounded-4 mb-3 overflow-hidden border-start border-4 {% if t.prioridad == 'Urgente' %}border-danger{% elif t.prioridad == 'Alta' %}border-warning{% else %}border-primary{% endif %}" style="background: var(--zenic-surface);">
-            <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <span class="badge bg-light text-dark border fw-bold">#{{ t.id }}</span>
-                    <div>
-                        {% if t.estado == 'Resuelto' %}
-                        <span class="badge bg-success-subtle text-success"><i class="fa-solid fa-check me-1"></i>Resuelto</span>
-                        {% elif t.estado == 'En Desarrollo' %}
-                        <span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-code me-1"></i>En Desarrollo</span>
+    <div class="table-responsive">
+        <table class="table-tickets-clean" id="tablaTicketsPrincipal">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente / Local</th>
+                    <th>Solicitud & Comentarios</th>
+                    <th>Prioridad</th>
+                    <th>Estado</th>
+                    <th>Asignado a</th>
+                    <th>Asignado por</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tickets %}
+                {% set es_mio_pendiente = (t.asignado_id == current_user.id and t.estado in ['Pendiente', 'En Desarrollo', 'Requiere Ajustes']) %}
+                {% set es_mio_por_validar = ((t.solicitante_id == current_user.id or current_user.rol == 'admin') and t.estado == 'Por Validar') %}
+                <tr class="ticket-row"
+                    data-es-mio="{{ '1' if es_mio_pendiente else '0' }}"
+                    data-por-validar="{{ '1' if es_mio_por_validar else '0' }}"
+                    data-cliente="{{ (t.local.nombre_marca if t.local else 'interno') | lower }}">
+                    <td class="font-mono fw-bold text-secondary">#{{ t.id }}</td>
+                    <td>
+                        {% if t.local %}
+                        <a href="{{ url_for('locales_bp.ver_local', local_id=t.local.id) }}" class="text-decoration-none fw-bold text-dark">
+                            <span class="badge bg-light text-dark border px-2 py-1">
+                                <i class="fa-solid fa-store me-1 text-secondary"></i>{{ t.local.nombre_marca }}
+                            </span>
+                        </a>
                         {% else %}
-                        <span class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-clock me-1"></i>{{ t.estado }}</span>
+                        <span class="badge bg-light text-muted border">Interno Zenic</span>
                         {% endif %}
-                    </div>
-                </div>
-
-                <h6 class="fw-bold mb-1 text-truncate" style="color: var(--zenic-text-main);">{{ t.titulo }}</h6>
-                <p class="small text-muted mb-2 text-truncate-2" style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                    {{ t.descripcion }}
-                </p>
-
-                <div class="d-flex flex-wrap gap-1 align-items-center mb-2 small">
-                    {% if t.local %}
-                    <span class="badge bg-secondary-subtle text-secondary"><i class="fa-solid fa-store me-1"></i>{{ t.local.nombre_marca }}</span>
-                    {% endif %}
-                    <span class="badge bg-secondary-subtle text-secondary">{{ t.categoria }}</span>
-                    {% if t.prioridad == 'Urgente' %}
-                    <span class="badge bg-danger">Urgente</span>
-                    {% elif t.prioridad == 'Alta' %}
-                    <span class="badge bg-warning text-dark">Alta</span>
-                    {% endif %}
-                    {% if t.adjuntos %}
-                    <span class="badge bg-info-subtle text-info">
-                        <i class="fa-solid fa-paperclip me-1"></i>{{ t.adjuntos|length }} {{ 'adjunto' if t.adjuntos|length == 1 else 'adjuntos' }}
-                    </span>
-                    {% endif %}
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mb-2 px-1 small">
-                    <span class="text-muted"><i class="fa-solid fa-user-pen me-1"></i>Por: <strong>{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</strong></span>
-                    <span>
-                        <i class="fa-solid fa-user-gear me-1 text-primary"></i>
-                        {% if t.asignado %}
-                        <span class="badge bg-primary-subtle text-primary fw-semibold">{{ t.asignado.nombre.split()[0] }}</span>
-                        {% else %}
-                        <span class="badge bg-light text-muted border">Sin asignar</span>
-                        {% endif %}
-                    </span>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                    <span class="small text-muted">
-                        <i class="fa-regular fa-calendar me-1"></i>{{ t.fecha_creacion.strftime('%d/%m/%Y') }}
-                    </span>
-                    <div class="d-flex gap-2">
-                        {% if current_user.rol == 'admin' %}
-                        <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar permanentemente el Ticket #{{ t.id }}?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-2" title="Eliminar Ticket">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </form>
-                        {% endif %}
-                        <button type="button" class="btn btn-sm btn-primary px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}" style="border-radius: 8px;">
-                            <i class="fa-solid fa-eye"></i> Ver Detalle
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="card border-0 shadow-sm rounded-4 p-4 text-center text-muted" style="background: var(--zenic-surface);">
-            <i class="fa-solid fa-inbox fs-2 mb-2 opacity-50"></i>
-            <p class="mb-0">No se encontraron tickets con los filtros seleccionados.</p>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- Vista de Escritorio / Tablet: Tabla Completa (visible solo en pantallas >= 768px) -->
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden d-none d-md-block" style="background: var(--zenic-surface);">
-        <div class="table-responsive">
-            <table class="table align-middle mb-0">
-                <thead class="table-light">
-                    <tr class="small text-uppercase text-muted">
-                        <th>ID</th>
-                        <th>Cliente / Local</th>
-                        <th>Solicitud</th>
-                        <th>Categoría</th>
-                        <th>Prioridad</th>
-                        <th>Evidencia</th>
-                        <th>Estado</th>
-                        <th>Asignado a</th>
-                        <th>Solicitante</th>
-                        <th>Fecha</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in tickets %}
-                    <tr>
-                        <td class="fw-bold">#{{ t.id }}</td>
-                        <td>
-                            {% if t.local %}
-                            <span class="badge bg-light text-dark border">{{ t.local.nombre_marca }}</span>
-                            {% else %}
-                            <span class="text-muted small">General</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="fw-semibold text-truncate" style="max-width: 250px;" title="{{ t.titulo }}">{{ t.titulo }}</div>
-                            <div class="small text-muted text-truncate" style="max-width: 250px;" title="{{ t.descripcion }}">{{ t.descripcion }}</div>
-                        </td>
-                        <td><span class="badge bg-secondary-subtle text-secondary">{{ t.categoria }}</span></td>
-                        <td>
-                            {% if t.prioridad == 'Urgente' %}
-                            <span class="badge bg-danger">Urgente</span>
-                            {% elif t.prioridad == 'Alta' %}
-                            <span class="badge bg-warning text-dark">Alta</span>
-                            {% else %}
-                            <span class="badge bg-info-subtle text-info">{{ t.prioridad }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
+                    </td>
+                    <td style="max-width: 340px;">
+                        <div class="fw-bold text-dark">{{ t.titulo }}</div>
+                        <div class="text-muted text-truncate" style="font-size: 0.78rem;">{{ t.descripcion }}</div>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            <span class="badge bg-light text-secondary border" style="font-size: 0.66rem;">{{ t.categoria }}</span>
                             {% if t.adjuntos %}
-                                <div class="d-flex flex-wrap gap-1">
-                                    {% for adj in t.adjuntos %}
-                                    <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank" class="badge rounded-pill {% if adj.tipo == 'imagen' %}bg-primary-subtle text-primary{% else %}bg-danger-subtle text-danger{% endif %} text-decoration-none">
-                                        <i class="fa-solid {% if adj.tipo == 'imagen' %}fa-image{% else %}fa-video{% endif %} me-1"></i>{{ 'Foto' if adj.tipo == 'imagen' else 'Video' }}
-                                    </a>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                            <span class="text-muted small">—</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if t.estado == 'Resuelto' %}
-                            <span class="badge bg-success-subtle text-success"><i class="fa-solid fa-check me-1"></i>Resuelto</span>
-                            {% elif t.estado == 'En Desarrollo' %}
-                            <span class="badge bg-primary-subtle text-primary"><i class="fa-solid fa-code me-1"></i>En Desarrollo</span>
-                            {% else %}
-                            <span class="badge bg-warning-subtle text-warning"><i class="fa-solid fa-clock me-1"></i>{{ t.estado }}</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if t.asignado %}
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold" title="{{ t.asignado.nombre }} ({{ t.asignado.rol|capitalize }})">
-                                <i class="fa-solid fa-user-check me-1"></i>{{ t.asignado.nombre.split()[0] }} {{ t.asignado.nombre.split()[1] if t.asignado.nombre.split()|length > 1 else '' }}
-                            </span>
-                            {% else %}
-                            <span class="badge bg-light text-muted border">
-                                <i class="fa-regular fa-user me-1"></i>Sin asignar
+                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 0.66rem;">
+                                <i class="fa-solid fa-paperclip me-1"></i>{{ t.adjuntos|length }} adjunto(s)
                             </span>
                             {% endif %}
-                        </td>
-                        <td class="small">{{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}</td>
-                        <td class="small text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-                        <td class="text-end">
-                            <div class="d-flex justify-content-end gap-1">
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalEditarTicket{{ t.id }}" title="Ver Detalle">
-                                    <i class="fa-solid fa-eye me-1"></i>Detalle
-                                </button>
-                                {% if current_user.rol == 'admin' %}
-                                <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar permanentemente el Ticket #{{ t.id }}? Esta acción no se puede deshacer.');">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Ticket">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="11" class="text-center py-4 text-muted">No se encontraron tickets con los filtros seleccionados.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            {% if t.notas_resolucion %}
+                            <span class="badge bg-primary-subtle text-primary" style="font-size: 0.66rem;" title="{{ t.notas_resolucion }}">
+                                <i class="fa-solid fa-comment-dots me-1"></i>Con nota de solución
+                            </span>
+                            {% endif %}
+                            {% if t.notas_validacion and t.estado == 'Requiere Ajustes' %}
+                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.66rem;" title="{{ t.notas_validacion }}">
+                                <i class="fa-solid fa-rotate-left me-1"></i>Pidieron revisar
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if t.prioridad == 'Urgente' %}
+                        <span class="badge rounded-pill bg-danger">Urgente</span>
+                        {% elif t.prioridad == 'Alta' %}
+                        <span class="badge rounded-pill bg-warning text-dark">Alta</span>
+                        {% elif t.prioridad == 'Media' %}
+                        <span class="badge rounded-pill bg-info-subtle text-info-emphasis border border-info-subtle">Media</span>
+                        {% else %}
+                        <span class="badge rounded-pill bg-light text-secondary border">Baja</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set cls_estado = 'status-pill-resuelto' if t.estado == 'Resuelto' else ('status-pill-validar' if t.estado == 'Por Validar' else ('status-pill-ajustes' if t.estado == 'Requiere Ajustes' else ('status-pill-desarrollo' if t.estado == 'En Desarrollo' else 'status-pill-pendiente'))) %}
+                        {% set puede_validar_ticket = (t.solicitante_id == current_user.id or current_user.rol in ['admin', 'operaciones_finanzas']) %}
+                        <select class="form-select form-select-sm inline-status-select {{ cls_estado }}"
+                                data-ticket-id="{{ t.id }}"
+                                data-prev-estado="{{ t.estado }}"
+                                onchange="handleInlineTicketStatus(this)"
+                                title="Cambiar estado rápidamente desde aquí">
+                            <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>⏳ Pendiente</option>
+                            <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>&lt;/&gt; En Desarrollo</option>
+                            <option value="Por Validar" {% if t.estado == 'Por Validar' %}selected{% endif %}>📋 Ya Solucionado (Por Validar)</option>
+                            {% if puede_validar_ticket or t.estado == 'Requiere Ajustes' %}
+                            <option value="Requiere Ajustes" {% if t.estado == 'Requiere Ajustes' %}selected{% endif %}>🔄 Requiere Ajustes (Revisar)</option>
+                            {% endif %}
+                            {% if puede_validar_ticket or t.estado == 'Resuelto' %}
+                            <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>✅ Validado & Resuelto</option>
+                            {% endif %}
+                        </select>
+                    </td>
+                    <td>
+                        {% if t.asignado %}
+                        <span class="badge rounded-pill px-2 py-1"
+                              style="background: {{ 'var(--zenic-purple-soft)' if t.asignado_id == current_user.id else '#F1F5F9' }}; color: {{ 'var(--zenic-purple-neural)' if t.asignado_id == current_user.id else '#334155' }}; font-weight: 700;">
+                            <i class="fa-solid fa-user-check me-1"></i>{{ t.asignado.nombre.split()[0] }}
+                            <small class="opacity-75">({{ t.asignado.rol | upper }})</small>
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">Sin asignar</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-muted">
+                        {{ t.solicitante.nombre.split()[0] if t.solicitante else '—' }}
+                    </td>
+                    <td class="small text-muted" style="white-space: nowrap;">
+                        {{ t.fecha_creacion.strftime('%d/%m/%Y') }}
+                    </td>
+                    <td class="text-end" style="white-space: nowrap;">
+                        <button type="button"
+                                class="btn btn-sm {% if t.estado == 'Por Validar' and (t.solicitante_id == current_user.id or current_user.rol == 'admin') %}btn-success text-white{% elif t.asignado_id == current_user.id and t.estado != 'Resuelto' %}btn-zenic{% else %}btn-zenic-outline{% endif %} rounded-pill px-3 py-1"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalEditarTicket{{ t.id }}"
+                                style="font-size: 0.76rem; font-weight: 700;">
+                            {% if t.estado == 'Por Validar' and (t.solicitante_id == current_user.id or current_user.rol == 'admin') %}
+                            <i class="fa-solid fa-check-double me-1"></i>Validar / Revisar
+                            {% elif t.estado == 'Resuelto' and (t.solicitante_id == current_user.id or current_user.rol in ['admin', 'operaciones_finanzas']) %}
+                            <i class="fa-solid fa-rotate-left me-1"></i>Ver / Reabrir
+                            {% elif t.asignado_id == current_user.id and t.estado != 'Resuelto' %}
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i>Resolver
+                            {% else %}
+                            <i class="fa-solid fa-eye me-1"></i>Ver / Gestionar
+                            {% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center py-5 text-muted">No hay tickets registrados.</td>
+                </tr>
+                {% endfor %}
+                <tr id="emptyTicketsFilterRow" style="display: none;">
+                    <td colspan="9" class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-clipboard-check fs-2 d-block mb-2 opacity-25"></i>
+                        No hay tickets pendientes en esta pestaña. ¡Todo al día!
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- Modal Nuevo Ticket -->
-<div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-labelledby="modalNuevoTicketLabel" aria-hidden="true">
+<!-- ═══ MODAL: CREAR Y ASIGNAR NUEVO TICKET A CUALQUIER PERFIL ══════════ -->
+<div class="modal fade" id="modalNuevoTicket" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data" id="formNuevoTicket" class="modal-content border-0 shadow rounded-4">
+        <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data" id="formNuevoTicket" class="modal-content">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="modalNuevoTicketLabel"><i class="fa-solid fa-plus-circle me-2 text-primary"></i>Nuevo Ticket de Soporte / Cambio</h5>
+            <div class="modal-header modal-zenic-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="modal-zenic-icon">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title mb-0" style="color: #0F172A; font-size: 1.08rem;">
+                            Crear y Asignar Nuevo Ticket
+                        </h5>
+                        <div class="text-muted" style="font-size: 0.75rem;">La persona asignada recibirá una notificación al entrar</div>
+                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body pb-4">
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Cliente / Local Afectado</label>
-                    <select name="local_id" class="form-select" required>
-                        <option value="">Selecciona el cliente...</option>
-                        {% for l in locales %}
-                        <option value="{{ l.id }}">{{ l.nombre_marca }}</option>
-                        {% endfor %}
-                    </select>
+            <div class="modal-body p-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Cliente / Local (Opcional)</label>
+                        <select name="local_id" class="form-select">
+                            <option value="">— Interno Zenic / General —</option>
+                            {% for l in locales %}
+                            <option value="{{ l.id }}">{{ l.nombre_marca }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold" style="color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-user-check me-1"></i>Asignar a (Cualquier Perfil) *
+                        </label>
+                        <select name="asignado_id" class="form-select fw-semibold" required>
+                            <option value="">Selecciona responsable...</option>
+                            {% for u in usuarios %}
+                            <option value="{{ u.id }}">{{ u.nombre }} — [{{ u.rol | upper }}]</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">Título del Ticket</label>
-                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Error al emitir factura / Solicitar ajuste de precios" required>
+                    <label class="form-label fw-bold">Título de la Solicitud o Cambio *</label>
+                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Ajustar reporte de ventas / Crear pieza gráfica / Corregir factura" required>
                 </div>
-                <div class="row g-2 mb-3">
+
+                <div class="row g-3 mb-3">
                     <div class="col-6">
-                        <label class="form-label small fw-bold">Categoría</label>
+                        <label class="form-label fw-bold">Categoría</label>
                         <select name="categoria" class="form-select">
                             <option value="Soporte">Soporte Operativo</option>
-                            <option value="Error de Sistema">Error de Sistema (Bug)</option>
                             <option value="Nueva Función">Nueva Función / Ajuste</option>
-                            <option value="Base de Datos">Base de Datos</option>
+                            <option value="Error de Sistema">Error de Sistema (Bug)</option>
                             <option value="Despliegue">Despliegue / Servidor</option>
+                            <option value="Base de Datos">Base de Datos</option>
                         </select>
                     </div>
                     <div class="col-6">
-                        <label class="form-label small fw-bold">Prioridad</label>
+                        <label class="form-label fw-bold">Prioridad</label>
                         <select name="prioridad" class="form-select">
                             <option value="Baja">Baja</option>
                             <option value="Media" selected>Media</option>
                             <option value="Alta">Alta</option>
-                            <option value="Urgente">Urgente (Bloqueante)</option>
+                            <option value="Urgente">Urgente</option>
                         </select>
                     </div>
                 </div>
+
                 <div class="mb-3">
-                    <label class="form-label small fw-bold d-flex align-items-center gap-1">
-                        <i class="fa-solid fa-user-check text-primary"></i> Asignar a (Responsable)
-                    </label>
-                    <select name="asignado_id" class="form-select">
-                        <option value="">Sin Asignar (Pendiente de Asignación)</option>
-                        {% for u in usuarios %}
-                        <option value="{{ u.id }}">{{ u.nombre }} — [{{ u.rol|upper }}]</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label class="form-label small fw-bold mb-0">Descripción Detallada del Cambio o Problema</label>
-                        <span class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-align-left me-1"></i>Con saltos de línea</span>
-                    </div>
-                    <textarea name="descripcion" rows="4" class="form-control" placeholder="Explica detalladamente qué requiere el cliente o qué problema se presenta..." style="line-height: 1.5; font-size: 0.9rem; border-radius: 10px; resize: vertical;" required></textarea>
+                    <label class="form-label fw-bold">Descripción Detallada de lo que se necesita *</label>
+                    <textarea name="descripcion" rows="4" class="form-control" placeholder="Explica claramente qué cambio o tarea debe realizar la persona asignada..." required></textarea>
                 </div>
 
-                <!-- Adjunto Multimedia (Imágenes o Videos con compresión inteligente) -->
-                <div class="p-3 rounded-3" style="background: var(--zenic-surface-subtle); border: 1px dashed var(--zenic-border);">
-                    <label class="form-label small fw-bold d-flex align-items-center gap-2 mb-1">
-                        <i class="fa-solid fa-photo-film text-primary"></i> Evidencia Multimedia (Imágenes o Videos)
+                <div class="p-3 rounded-3" style="background: #FAF8FF; border: 1.5px dashed rgba(122, 62, 176, 0.35);">
+                    <label class="form-label fw-bold mb-1" style="color: var(--zenic-purple-neural);">
+                        <i class="fa-solid fa-photo-film me-1"></i>Evidencia Multimedia (Fotos o Videos - Opcional)
                     </label>
-                    <div class="text-muted small mb-2" style="font-size: 0.76rem;">
-                        Puedes adjuntar múltiples fotos o videos. Se optimizan automáticamente. Máx 45MB por video.
-                    </div>
-                    <input type="file" name="adjunto" id="inputAdjuntoTicket" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
-                    <div id="previewContainer" class="mt-2 d-none">
-                        <div class="small fw-semibold text-muted mb-1" id="txtArchivosSeleccionados">Archivos seleccionados:</div>
-                        <div id="listaPrevisualizaciones" class="d-flex flex-wrap gap-2"></div>
-                    </div>
+                    <input type="file" name="adjunto" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
                 </div>
             </div>
-            <div class="modal-footer border-top bg-light p-3">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 px-3 fw-semibold" id="btnSubmitTicket" style="min-height: 42px;">
-                    <i class="fa-solid fa-paper-plane"></i>
-                    <span>Registrar y Enviar a TI</span>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-zenic btn-sm px-4">
+                    <i class="fa-solid fa-paper-plane me-1"></i>Crear y Notificar al Responsable
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Modales Detalle / Edición para cada Ticket -->
+<!-- ═══ MODALES DE GESTIÓN, SOLUCIÓN Y VALIDACIÓN POR CADA TICKET ═══════ -->
 {% for t in tickets %}
-<div class="modal fade" id="modalEditarTicket{{ t.id }}" tabindex="-1" aria-labelledby="modalEditarTicketLabel{{ t.id }}" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow rounded-4">
-            <div class="modal-header border-bottom pb-3">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary-subtle text-primary fw-bold">#{{ t.id }}</span>
-                    <h5 class="modal-title fw-bold text-truncate mb-0" id="modalEditarTicketLabel{{ t.id }}" style="max-width: 260px;">{{ t.titulo }}</h5>
+<div class="modal fade" id="modalEditarTicket{{ t.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-zenic-header">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="modal-zenic-icon">
+                        <i class="fa-solid fa-ticket-simple"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white text-dark border font-mono">Ticket #{{ t.id }}</span>
+                            <h5 class="modal-title mb-0" style="color: #0F172A; font-size: 1.05rem;">{{ t.titulo }}</h5>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            Solicitado por <strong>{{ t.solicitante.nombre if t.solicitante else 'Sistema' }}</strong> ·
+                            Asignado a <strong style="color: var(--zenic-purple-neural);">{{ t.asignado.nombre if t.asignado else 'Sin asignar' }}</strong>
+                        </div>
+                    </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body p-3 p-md-4">
+
+            <div class="modal-body p-4">
+                <!-- 1. Descripción Original del Cambio Pedido -->
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Descripción Completa</label>
-                    <div class="p-3 bg-light rounded-3 small" style="white-space: pre-wrap; word-break: break-word; text-align: justify; text-justify: inter-word; line-height: 1.65; border: 1px solid var(--zenic-border);">{{ t.descripcion }}</div>
+                    <label class="form-label fw-bold">
+                        <i class="fa-solid fa-file-lines me-1" style="color: var(--zenic-purple-neural);"></i>
+                        Solicitud / Cambio Pedido
+                    </label>
+                    <div class="p-3 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; white-space: pre-wrap; line-height: 1.6; font-size: 0.9rem;">{{ t.descripcion }}</div>
                 </div>
 
+                <!-- Evidencias Multimedia Adjuntas -->
                 {% if t.adjuntos %}
                 <div class="mb-3">
-                    <label class="form-label text-muted small fw-bold">Evidencias Adjuntas ({{ t.adjuntos|length }})</label>
-                    <div class="row g-3">
+                    <label class="form-label fw-bold">Evidencias Adjuntas ({{ t.adjuntos|length }})</label>
+                    <div class="row g-2">
                         {% for adj in t.adjuntos %}
                         <div class="{% if t.adjuntos|length == 1 %}col-12{% else %}col-12 col-md-6{% endif %}">
-                            <div class="p-2 border rounded-3 text-center bg-light h-100 d-flex flex-column justify-content-between">
+                            <div class="p-2 border rounded-3 text-center bg-light">
                                 {% if adj.tipo == 'imagen' %}
                                 <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank">
-                                    <img src="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" alt="Evidencia Ticket #{{ t.id }}" class="img-fluid rounded-3" style="max-height: 220px; object-fit: contain;">
+                                    <img src="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" class="img-fluid rounded-2" style="max-height: 200px; object-fit: contain;">
                                 </a>
-                                <div class="mt-2">
-                                    <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
-                                        <i class="fa-solid fa-up-right-from-square me-1"></i>Ver en tamaño completo
-                                    </a>
-                                </div>
                                 {% elif adj.tipo == 'video' %}
-                                <video controls playsinline class="w-100 rounded-3 shadow-sm" style="max-height: 220px;">
+                                <video controls playsinline class="w-100 rounded-2" style="max-height: 200px;">
                                     <source src="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" type="video/mp4">
-                                    Tu navegador no soporta reproducción de video.
                                 </video>
-                                <div class="mt-2">
-                                    <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank" class="btn btn-sm btn-outline-secondary w-100">
-                                        <i class="fa-solid fa-download me-1"></i>Descargar Video
-                                    </a>
-                                </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -418,65 +777,128 @@
                 </div>
                 {% endif %}
 
-                <div class="card bg-light border-0 rounded-3 p-3 mb-3">
-                    <div class="row g-2 small">
-                        <div class="col-6"><strong>Cliente:</strong><br><span class="text-muted">{{ t.local.nombre_marca if t.local else 'Interno' }}</span></div>
-                        <div class="col-6"><strong>Solicitante:</strong><br><span class="text-muted">{{ t.solicitante.nombre if t.solicitante else 'N/A' }}</span></div>
-                        <div class="col-6"><strong>Prioridad:</strong><br><span class="text-muted">{{ t.prioridad }}</span></div>
-                        <div class="col-6"><strong>Categoría:</strong><br><span class="text-muted">{{ t.categoria }}</span></div>
-                        <div class="col-6"><strong>Asignado a:</strong><br><span class="text-primary fw-semibold">{{ t.asignado.nombre if t.asignado else 'Sin Asignar' }}</span></div>
-                        <div class="col-6"><strong>Fecha Creación:</strong><br><span class="text-muted">{{ t.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</span></div>
-                    </div>
-                </div>
-
-                {% if current_user.rol in ['ti', 'admin'] %}
-                <form action="{{ url_for('ti_bp.actualizar_ticket', ticket_id=t.id) }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Cambiar Estado</label>
-                        <select name="estado" class="form-select form-select-sm">
-                            <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
-                            <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>En Desarrollo</option>
-                            <option value="En Pruebas" {% if t.estado == 'En Pruebas' %}selected{% endif %}>En Pruebas</option>
-                            <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>Resuelto</option>
-                            <option value="Cancelado" {% if t.estado == 'Cancelado' %}selected{% endif %}>Cancelado</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Asignar Responsable</label>
-                        <select name="asignado_id" class="form-select form-select-sm">
-                            <option value="">Sin Asignar</option>
-                            {% for u in usuarios %}
-                            <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }} — [{{ u.rol|upper }}]</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold">Notas de Resolución / Cambios Realizados</label>
-                        <textarea name="notas_resolucion" class="form-control form-control-sm" rows="3" placeholder="Detalla qué cambios o correcciones se aplicaron...">{{ t.notas_resolucion or '' }}</textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Guardar Actualización</button>
-                </form>
-                {% else %}
+                <!-- 2. Hilo de Comentarios: Solución del Responsable y Validación del Solicitante -->
                 {% if t.notas_resolucion %}
-                <div class="p-3 bg-success-subtle text-success rounded-3 small">
-                    <strong>Respuesta TI:</strong><br>{{ t.notas_resolucion }}
+                <div class="comment-bubble-solution mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong style="font-size: 0.8rem; color: #1E40AF;">
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i>Comentario de Solución ({{ t.asignado.nombre if t.asignado else 'Responsable' }}):
+                        </strong>
+                        <span class="badge bg-white text-primary border" style="font-size: 0.68rem;">Respuesta del Asignado</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: #1E3A8A; white-space: pre-wrap;">{{ t.notas_resolucion }}</div>
                 </div>
                 {% endif %}
+
+                {% if t.notas_validacion %}
+                <div class="{{ 'comment-bubble-validation-ok' if t.validado_por_solicitante else 'comment-bubble-validation-fix' }} mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong style="font-size: 0.8rem; color: {{ '#065F46' if t.validado_por_solicitante else '#991B1B' }};">
+                            <i class="fa-solid {{ 'fa-circle-check' if t.validado_por_solicitante else 'fa-rotate-left' }} me-1"></i>
+                            Comentario de Validación ({{ t.solicitante.nombre if t.solicitante else 'Solicitante' }}):
+                        </strong>
+                        <span class="badge bg-white text-dark border" style="font-size: 0.68rem;">
+                            {{ 'Validado Conforme' if t.validado_por_solicitante else 'Pidió Revisión / Ajustes' }}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.88rem; white-space: pre-wrap;">{{ t.notas_validacion }}</div>
+                </div>
                 {% endif %}
+
+                <div class="row g-3 mt-1">
+                    <!-- BLOQUE A: PARA LA PERSONA ASIGNADA (Reportar avance o solución) -->
+                    <div class="col-12 {% if t.solicitante_id == current_user.id or current_user.rol in ['admin', 'operaciones_finanzas'] %}col-md-6{% endif %}">
+                        <div class="p-3 rounded-3 h-100" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                            <h6 class="fw-bold mb-2" style="font-size: 0.85rem; color: #0F172A;">
+                                <i class="fa-solid fa-user-gear me-1" style="color: var(--zenic-purple-neural);"></i>
+                                1. Panel del Responsable Asignado
+                            </h6>
+                            <form action="{{ url_for('ti_bp.actualizar_ticket', ticket_id=t.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold">Cambiar Estado</label>
+                                    <select name="estado" class="form-select form-select-sm fw-semibold">
+                                        <option value="Pendiente" {% if t.estado == 'Pendiente' %}selected{% endif %}>⏳ Pendiente</option>
+                                        <option value="En Desarrollo" {% if t.estado == 'En Desarrollo' %}selected{% endif %}>🛠️ En Desarrollo / Trabajando</option>
+                                        <option value="Por Validar" {% if t.estado == 'Por Validar' %}selected{% endif %}>✅ Ya Solucionado (Enviar a Validación)</option>
+                                        {% if current_user.rol in ['admin', 'operaciones_finanzas'] or t.solicitante_id == current_user.id %}
+                                        <option value="Resuelto" {% if t.estado == 'Resuelto' %}selected{% endif %}>🏁 Resuelto Definitivo</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+
+                                {% if current_user.rol in ['admin', 'operaciones_finanzas', 'ti'] or t.solicitante_id == current_user.id %}
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold">Reasignar a otro perfil</label>
+                                    <select name="asignado_id" class="form-select form-select-sm">
+                                        <option value="">Sin asignar</option>
+                                        {% for u in usuarios %}
+                                        <option value="{{ u.id }}" {% if t.asignado_id == u.id %}selected{% endif %}>{{ u.nombre }} — [{{ u.rol | upper }}]</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Comentario de Solución / Qué se hizo *</label>
+                                    <textarea name="notas_resolucion" class="form-control form-control-sm" rows="3"
+                                              placeholder="Escribe aquí qué hiciste o cómo lo solucionaste para que quien lo asignó pueda validarlo...">{{ t.notas_resolucion or '' }}</textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-sm btn-zenic w-100 py-2">
+                                    <i class="fa-solid fa-paper-plane me-1"></i>Guardar Estado y Comentario
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE B: PARA QUIEN LO ASIGNÓ / SOLICITANTE (Validar si quedó bien o pedir revisar) -->
+                    {% if t.solicitante_id == current_user.id or current_user.rol in ['admin', 'operaciones_finanzas'] %}
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 h-100" style="background: #FAF5FF; border: 1px solid rgba(122, 62, 176, 0.28);">
+                            <h6 class="fw-bold mb-2" style="font-size: 0.85rem; color: #581C87;">
+                                <i class="fa-solid fa-clipboard-check me-1"></i>
+                                2. Validación de Quien Asignó el Ticket
+                            </h6>
+                            <form action="{{ url_for('ti_bp.validar_ticket', ticket_id=t.id) }}" method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <div class="mb-2">
+                                    <label class="form-label fw-bold">¿Quedó bien la solución?</label>
+                                    <select name="decision" class="form-select form-select-sm fw-bold">
+                                        <option value="aprobar" selected>✅ Sí, quedó perfecto (Validar y Cerrar Ticket)</option>
+                                        <option value="revisar">🔄 Hay que revisar cosas (Devolver con observaciones)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Comentario de Validación / Qué falta revisar</label>
+                                    <textarea name="notas_validacion" class="form-control form-control-sm" rows="4"
+                                              placeholder="Deja tu comentario confirmando que quedó bien o indicando qué detalles hay que revisar...">{{ t.notas_validacion or '' }}</textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-sm btn-success text-white fw-bold w-100 py-2">
+                                    <i class="fa-solid fa-check-double me-1"></i>Registrar Validación
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="modal-footer border-top bg-light d-flex justify-content-between align-items-center">
+
+            <div class="modal-footer bg-light d-flex justify-content-between">
                 {% if current_user.rol == 'admin' %}
-                <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de eliminar el Ticket #{{ t.id }}? Esta acción es irreversible.');">
+                <form action="{{ url_for('ti_bp.eliminar_ticket', ticket_id=t.id) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar permanentemente este ticket?');">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="fa-solid fa-trash-can me-1"></i>Eliminar Ticket
+                    <button type="submit" class="btn btn-sm btn-danger-soft">
+                        <i class="fa-solid fa-trash-can me-1"></i>Eliminar
                     </button>
                 </form>
                 {% else %}
                 <div></div>
                 {% endif %}
-                <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-sm btn-zenic-outline px-4" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
@@ -486,109 +908,134 @@
 
 {% block scripts %}
 <script>
-    // Compresión ligera del lado del cliente (Frontend) para imágenes antes de enviar
-    const fileInput = document.getElementById('inputAdjuntoTicket');
-    const previewContainer = document.getElementById('previewContainer');
-    const listaPrev = document.getElementById('listaPrevisualizaciones');
-    const btnSubmit = document.getElementById('btnSubmitTicket');
+    let currentTicketView = "{{ vista_activa or 'todos' }}";
 
-    if (fileInput) {
-        fileInput.addEventListener('change', async function() {
-            const files = Array.from(this.files);
-            if (!files || files.length === 0) {
-                previewContainer.classList.add('d-none');
-                listaPrev.innerHTML = '';
+    function switchTicketView(viewName) {
+        currentTicketView = viewName;
+        document.getElementById('tabBtnMisAsignados').classList.toggle('active', viewName === 'mis_asignados');
+        document.getElementById('tabBtnPorValidar').classList.toggle('active', viewName === 'por_validar');
+        document.getElementById('tabBtnTodos').classList.toggle('active', viewName === 'todos');
+        applyTicketSearch();
+    }
+
+    function applyTicketSearch() {
+        const q = (document.getElementById('searchTicketsInput').value || '').toLowerCase();
+        const cli = (document.getElementById('filterClienteTicket').value || '').toLowerCase();
+        let visibles = 0;
+
+        document.querySelectorAll('#tablaTicketsPrincipal tbody tr.ticket-row').forEach(tr => {
+            const matchText = tr.textContent.toLowerCase().includes(q);
+            const matchCli = !cli || (tr.getAttribute('data-cliente') === cli);
+            let matchTab = true;
+            if (currentTicketView === 'mis_asignados') {
+                matchTab = tr.getAttribute('data-es-mio') === '1';
+            } else if (currentTicketView === 'por_validar') {
+                matchTab = tr.getAttribute('data-por-validar') === '1';
+            }
+
+            if (matchText && matchCli && matchTab) {
+                tr.style.display = '';
+                visibles++;
+            } else {
+                tr.style.display = 'none';
+            }
+        });
+
+        const emptyRow = document.getElementById('emptyTicketsFilterRow');
+        if (emptyRow) {
+            emptyRow.style.display = (visibles === 0) ? '' : 'none';
+        }
+    }
+
+    function updateSelectPillClass(selectEl, estado) {
+        selectEl.classList.remove(
+            'status-pill-pendiente',
+            'status-pill-desarrollo',
+            'status-pill-validar',
+            'status-pill-ajustes',
+            'status-pill-resuelto'
+        );
+        if (estado === 'Resuelto') selectEl.classList.add('status-pill-resuelto');
+        else if (estado === 'Por Validar') selectEl.classList.add('status-pill-validar');
+        else if (estado === 'Requiere Ajustes') selectEl.classList.add('status-pill-ajustes');
+        else if (estado === 'En Desarrollo') selectEl.classList.add('status-pill-desarrollo');
+        else selectEl.classList.add('status-pill-pendiente');
+    }
+
+    async function handleInlineTicketStatus(selectEl, passedTicketId) {
+        const ticketId = passedTicketId || selectEl.getAttribute('data-ticket-id');
+        const nuevoEstado = selectEl.value;
+        const prevEstado = selectEl.getAttribute('data-prev-estado') || 'Pendiente';
+
+        // Si elige "Por Validar" (Ya Solucionado) o "Requiere Ajustes" (Devolver para revisión),
+        // abrimos el modal con esa opción preseleccionada para que deje el comentario de solución o de revisión.
+        if (nuevoEstado === 'Por Validar' || nuevoEstado === 'Requiere Ajustes') {
+            const modalEl = document.getElementById('modalEditarTicket' + ticketId);
+            if (modalEl) {
+                if (nuevoEstado === 'Por Validar') {
+                    const selResp = modalEl.querySelector('select[name="estado"]');
+                    if (selResp) selResp.value = 'Por Validar';
+                    setTimeout(() => {
+                        const txt = modalEl.querySelector('textarea[name="notas_resolucion"]');
+                        if (txt) txt.focus();
+                    }, 350);
+                } else if (nuevoEstado === 'Requiere Ajustes') {
+                    const selDec = modalEl.querySelector('select[name="decision"]');
+                    if (selDec) selDec.value = 'revisar';
+                    setTimeout(() => {
+                        const txtVal = modalEl.querySelector('textarea[name="notas_validacion"]');
+                        if (txtVal) txtVal.focus();
+                    }, 350);
+                }
+                // Restaurar visualmente el select de la tabla hasta que guarde en el modal
+                selectEl.value = prevEstado;
+                updateSelectPillClass(selectEl, prevEstado);
+                const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                bsModal.show();
                 return;
             }
+        }
 
-            previewContainer.classList.remove('d-none');
-            listaPrev.innerHTML = '';
+        // Para "Pendiente", "En Desarrollo" o "Resuelto", guardamos al instante desde la tabla sin abrir modal
+        updateSelectPillClass(selectEl, nuevoEstado);
+        selectEl.disabled = true;
 
-            const dataTransfer = new DataTransfer();
+        try {
+            const formData = new FormData();
+            formData.append('csrf_token', '{{ csrf_token() }}');
+            formData.append('estado', nuevoEstado);
 
-            for (let i = 0; i < files.length; i++) {
-                let file = files[i];
-                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-
-                if (file.type.startsWith('image/')) {
-                    // Optimizar si supera 1MB
-                    if (file.size > 1024 * 1024) {
-                        try {
-                            const compressedBlob = await compressImageOnClient(file, 1600, 0.8);
-                            file = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
-                        } catch (e) {
-                            console.warn('Compresión en cliente omitida para:', file.name, e);
-                        }
-                    }
-
-                    dataTransfer.items.add(file);
-                    const newSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-
-                    const pill = document.createElement('div');
-                    pill.className = 'badge bg-primary-subtle text-primary border p-2 d-flex align-items-center gap-1';
-                    pill.innerHTML = `<i class="fa-solid fa-image"></i> <span>${file.name.substring(0, 18)} (${newSizeMB} MB)</span>`;
-                    listaPrev.appendChild(pill);
-
-                } else if (file.type.startsWith('video/')) {
-                    if (file.size > 45 * 1024 * 1024) {
-                        alert(`El video '${file.name}' supera el límite de 45 MB y fue omitido.`);
-                        continue;
-                    }
-
-                    dataTransfer.items.add(file);
-                    const pill = document.createElement('div');
-                    pill.className = 'badge bg-danger-subtle text-danger border p-2 d-flex align-items-center gap-1';
-                    pill.innerHTML = `<i class="fa-solid fa-video"></i> <span>${file.name.substring(0, 18)} (${sizeMB} MB)</span>`;
-                    listaPrev.appendChild(pill);
+            const resp = await fetch(`/ti/tickets/${ticketId}/actualizar`, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+            const data = await resp.json();
+            if (data && data.ok) {
+                selectEl.setAttribute('data-prev-estado', nuevoEstado);
+                // Sincronizar también el select dentro del modal
+                const modalEl = document.getElementById('modalEditarTicket' + ticketId);
+                if (modalEl) {
+                    const selResp = modalEl.querySelector('select[name="estado"]');
+                    if (selResp) selResp.value = nuevoEstado;
                 }
+                if (window.showZenicLiveToast) {
+                    window.showZenicLiveToast(`✅ Ticket #${ticketId}`, `Estado cambiado a «${nuevoEstado}» correctamente.`);
+                }
+            } else {
+                selectEl.value = prevEstado;
+                updateSelectPillClass(selectEl, prevEstado);
             }
-
-            this.files = dataTransfer.files;
-        });
+        } catch (err) {
+            selectEl.value = prevEstado;
+            updateSelectPillClass(selectEl, prevEstado);
+        } finally {
+            selectEl.disabled = false;
+        }
     }
 
-    function compressImageOnClient(file, maxDimension, quality) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > maxDimension || height > maxDimension) {
-                        if (width > height) {
-                            height = Math.round((height * maxDimension) / width);
-                            width = maxDimension;
-                        } else {
-                            width = Math.round((width * maxDimension) / height);
-                            height = maxDimension;
-                        }
-                    }
-
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
-                };
-                img.onerror = (err) => reject(err);
-            };
-            reader.onerror = (err) => reject(err);
-        });
-    }
-
-    const formTicket = document.getElementById('formNuevoTicket');
-    if (formTicket) {
-        formTicket.addEventListener('submit', () => {
-            if (btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando y Subiendo...';
-            }
-        });
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        applyTicketSearch();
+    });
 </script>
 {% endblock %}

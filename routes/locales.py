@@ -26,7 +26,7 @@ from flask import (
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
-from models import db, Local, Notificacion
+from models import db, Local, Notificacion, Factura, TicketCambio, BitacoraCliente, User, obtener_hora_bogota
 from crypto_utils import encrypt_password, decrypt_password
 
 locales_bp = Blueprint("locales_bp", __name__)
@@ -35,6 +35,31 @@ locales_bp = Blueprint("locales_bp", __name__)
 # ─── Utilidades ──────────────────────────────────────────────────────────────
 
 FECHA_CORTE_CAJA = date(2026, 11, 15)
+
+
+def _limpiar_moneda(valor_raw):
+    """Convierte un string con puntos de miles o formato moneda ('1.250.000') a float."""
+    if valor_raw is None:
+        return 0.0
+    if isinstance(valor_raw, (int, float)):
+        return float(valor_raw)
+    texto = str(valor_raw).strip().replace("$", "").replace(" ", "")
+    if not texto:
+        return 0.0
+    # Si viene como decimal estándar de Python (ej: '8500000.00' con un solo punto y 1-2 decimales)
+    if texto.count(".") == 1 and "," not in texto:
+        partes = texto.split(".")
+        if len(partes[1]) <= 2:
+            try:
+                return float(texto)
+            except ValueError:
+                pass
+    # Formato colombiano con puntos de miles (ej: '8.500.000' o '450.000')
+    texto_limpio = texto.replace(".", "").replace(",", ".")
+    try:
+        return float(texto_limpio)
+    except ValueError:
+        return 0.0
 
 def _calcular_mrr(locales):
     """Suma las mensualidades de todos los locales comerciales facturables."""
@@ -107,21 +132,29 @@ def nuevo_local():
             fecha_lanzamiento = datetime.strptime(
                 request.form["fecha_lanzamiento"], "%Y-%m-%d"
             ).date()
+
+            fecha_inicio_str = request.form.get("fecha_inicio_facturacion", "").strip()
+            if fecha_inicio_str:
+                fecha_inicio_facturacion = datetime.strptime(fecha_inicio_str, "%Y-%m-%d").date()
+            else:
+                from dateutil.relativedelta import relativedelta
+                fecha_inicio_facturacion = fecha_lanzamiento + relativedelta(months=1)
+
             tipo_plan = request.form.get("tipo_plan", "Mensual").strip()
-            inversion_inicial = float(request.form.get("inversion_inicial", 0))
-            valor_anualidad = float(request.form.get("valor_anualidad", 0))
+            inversion_inicial = _limpiar_moneda(request.form.get("inversion_inicial", 0))
+            valor_anualidad = _limpiar_moneda(request.form.get("valor_anualidad", 0))
             
             # Si es anual y no especifican mensualidad, se calcula la mensualidad equivalente
             if tipo_plan == "Anual":
-                mensualidad_input = float(request.form.get("mensualidad", 0))
+                mensualidad_input = _limpiar_moneda(request.form.get("mensualidad", 0))
                 mensualidad = mensualidad_input if mensualidad_input > 0 else (valor_anualidad / 12)
-                dia_pago = fecha_lanzamiento.day
+                dia_pago = fecha_inicio_facturacion.day if fecha_inicio_facturacion else fecha_lanzamiento.day
             elif tipo_plan == "Interna":
                 mensualidad = 0.0
                 dia_pago = 1
             else:
-                mensualidad = float(request.form.get("mensualidad", 0))
-                dia_pago = int(request.form.get("dia_pago", 1))
+                mensualidad = _limpiar_moneda(request.form.get("mensualidad", 0))
+                dia_pago = int(request.form.get("dia_pago", 1) or 1)
 
             telefono_cobro = request.form.get("telefono_cobro", "").strip() or None
 
@@ -129,6 +162,7 @@ def nuevo_local():
                 nombre_marca=request.form["nombre_marca"].strip(),
                 url_instancia=request.form.get("url_instancia", "").strip() or None,
                 fecha_lanzamiento=fecha_lanzamiento,
+                fecha_inicio_facturacion=fecha_inicio_facturacion,
                 version_software=request.form.get("version_software", "1.0.0").strip(),
                 tipo_plan=tipo_plan,
                 telefono_cobro=telefono_cobro,
@@ -143,9 +177,31 @@ def nuevo_local():
             db.session.add(local)
             db.session.flush() # Obtener local.id
 
-            # LÓGICA DE INSTALACIONES INICIALES Y CORTE DE CAJA (15/11/2026 = $0):
-            # Si fecha de lanzamiento >= 15/11/2026, crea automáticamente cobro de instalación en Facturas en estado Pendiente
-            if fecha_lanzamiento >= FECHA_CORTE_CAJA and inversion_inicial > 0 and tipo_plan != "Interna":
+            # Registrar evento inicial en bitácora del cliente
+            db.session.add(BitacoraCliente(
+                local_id=local.id,
+                user_id=current_user.id,
+                tipo="Configuración",
+                titulo="Cliente registrado en Zenic Master Control",
+                detalle=f"Modalidad: {tipo_plan} · Mensualidad: ${mensualidad:,.0f} · Inicio facturación: {fecha_inicio_facturacion.strftime('%d/%m/%Y')} (Corte día {dia_pago})."
+            ))
+
+            # Control de cobro de instalación:
+            # Si el usuario marcó que el cliente es antiguo / instalación ya pagada ('instalacion_pagada' == 'si'),
+            # o si la fecha de lanzamiento es anterior al corte de caja (15/11/2026) y no pidió generar cobro pendiente,
+            # NO se genera factura pendiente de instalación para no alterar la caja actual.
+            estado_instalacion = request.form.get("estado_instalacion", "auto")
+            generar_cobro_instalacion = False
+            if tipo_plan != "Interna" and inversion_inicial > 0:
+                if estado_instalacion == "pendiente":
+                    generar_cobro_instalacion = True
+                elif estado_instalacion == "pagada":
+                    generar_cobro_instalacion = False
+                else:
+                    # 'auto': solo si lanzamiento >= 15/11/2026
+                    generar_cobro_instalacion = (fecha_lanzamiento >= FECHA_CORTE_CAJA)
+
+            if generar_cobro_instalacion:
                 from datetime import timedelta
                 count_fac = Factura.query.count() + 1
                 hoy_dt = obtener_hora_bogota()
@@ -184,23 +240,31 @@ def editar_local(local_id):
             local.fecha_lanzamiento = datetime.strptime(
                 request.form["fecha_lanzamiento"], "%Y-%m-%d"
             ).date()
+
+            fecha_inicio_str = request.form.get("fecha_inicio_facturacion", "").strip()
+            if fecha_inicio_str:
+                local.fecha_inicio_facturacion = datetime.strptime(fecha_inicio_str, "%Y-%m-%d").date()
+            else:
+                from dateutil.relativedelta import relativedelta
+                local.fecha_inicio_facturacion = local.fecha_lanzamiento + relativedelta(months=1)
+
             local.version_software = request.form.get("version_software", "1.0.0").strip()
             
             tipo_plan = request.form.get("tipo_plan", "Mensual").strip()
             local.tipo_plan = tipo_plan
-            local.inversion_inicial = float(request.form.get("inversion_inicial", 0))
-            local.valor_anualidad = float(request.form.get("valor_anualidad", 0))
+            local.inversion_inicial = _limpiar_moneda(request.form.get("inversion_inicial", 0))
+            local.valor_anualidad = _limpiar_moneda(request.form.get("valor_anualidad", 0))
 
             if tipo_plan == "Anual":
-                mensualidad_input = float(request.form.get("mensualidad", 0))
+                mensualidad_input = _limpiar_moneda(request.form.get("mensualidad", 0))
                 local.mensualidad = mensualidad_input if mensualidad_input > 0 else (local.valor_anualidad / 12)
-                local.dia_pago = local.fecha_lanzamiento.day
+                local.dia_pago = local.fecha_inicio_facturacion.day if local.fecha_inicio_facturacion else local.fecha_lanzamiento.day
             elif tipo_plan == "Interna":
                 local.mensualidad = 0.0
                 local.dia_pago = 1
             else:
-                local.mensualidad = float(request.form.get("mensualidad", 0))
-                local.dia_pago = int(request.form.get("dia_pago", 1))
+                local.mensualidad = _limpiar_moneda(request.form.get("mensualidad", 0))
+                local.dia_pago = int(request.form.get("dia_pago", 1) or 1)
 
             local.telefono_cobro = request.form.get("telefono_cobro", "").strip() or None
             local.estado_pago = request.form.get("estado_pago", "Activo")
@@ -213,6 +277,14 @@ def editar_local(local_id):
             if pass_plain:
                 local.boveda_password = encrypt_password(pass_plain)
 
+            db.session.add(BitacoraCliente(
+                local_id=local.id,
+                user_id=current_user.id,
+                tipo="Configuración",
+                titulo="Actualización de ficha comercial / configuración",
+                detalle=f"Plan: {local.tipo_plan} · Mensualidad: ${float(local.mensualidad):,.0f} · Inicio cobro: {local.fecha_inicio_facturacion.strftime('%d/%m/%Y') if local.fecha_inicio_facturacion else 'Automático'} · Día corte: {local.dia_pago} · Estado: {local.estado_pago}."
+            ))
+
             db.session.commit()
             flash(f"✅ Local «{local.nombre_marca}» actualizado.", "success")
             return redirect(url_for("locales_bp.ver_local", local_id=local.id))
@@ -223,19 +295,84 @@ def editar_local(local_id):
     return render_template("locales/form_local.html", local=local, modo="editar")
 
 
+@locales_bp.route("/clientes")
+@login_required
+def directorio_clientes():
+    """Módulo Directorio de Perfiles de Clientes: Tarjetas 360° con resumen de pagos, tickets y cambios."""
+    locales = Local.query.order_by(Local.nombre_marca.asc()).all()
+    hoy = obtener_hora_bogota().date()
+    return render_template(
+        "locales/clientes_hub.html",
+        locales=locales,
+        hoy=hoy
+    )
+
+
 @locales_bp.route("/locales/<int:local_id>")
 @login_required
 def ver_local(local_id):
     local = Local.query.get_or_404(local_id)
+    hoy = obtener_hora_bogota().date()
+
     # Desencriptar para mostrar (solo en vista detalle)
     email_dec = decrypt_password(local.boveda_email) if local.boveda_email else "—"
     pass_dec = decrypt_password(local.boveda_password) if local.boveda_password else "—"
+
+    # 1. Historial de Facturas y Meses Pagados del cliente
+    facturas_cliente = Factura.query.filter_by(local_id=local.id).order_by(Factura.fecha_vencimiento.desc()).all()
+    facturas_pagadas = [f for f in facturas_cliente if f.estado == "Pagado"]
+    facturas_pendientes = [f for f in facturas_cliente if f.estado in ("Pendiente", "Vencido")]
+    total_pagado_cliente = sum(float(f.monto) for f in facturas_pagadas)
+    total_pendiente_cliente = sum(float(f.monto) for f in facturas_pendientes)
+
+    # 2. Tickets de Soporte y Cambios Técnicos del cliente
+    tickets_cliente = TicketCambio.query.filter_by(local_id=local.id).order_by(TicketCambio.fecha_creacion.desc()).all()
+    usuarios_ti = User.query.filter(User.rol.in_(["ti", "admin"])).order_by(User.nombre).all()
+
+    # 3. Bitácora cronológica de cambios y eventos (combina registros explícitos + pagos + tickets)
+    bitacora_db = BitacoraCliente.query.filter_by(local_id=local.id).order_by(BitacoraCliente.fecha.desc()).all()
+
     return render_template(
         "locales/detalle_local.html",
         local=local,
         email_dec=email_dec,
         pass_dec=pass_dec,
+        facturas_cliente=facturas_cliente,
+        facturas_pagadas=facturas_pagadas,
+        facturas_pendientes=facturas_pendientes,
+        total_pagado_cliente=total_pagado_cliente,
+        total_pendiente_cliente=total_pendiente_cliente,
+        tickets_cliente=tickets_cliente,
+        usuarios_ti=usuarios_ti,
+        bitacora_db=bitacora_db,
+        hoy=hoy
     )
+
+
+@locales_bp.route("/locales/<int:local_id>/bitacora", methods=["POST"])
+@login_required
+def agregar_bitacora_cliente(local_id):
+    """Permite registrar un cambio, ajuste o nota en el perfil histórico del cliente."""
+    local = Local.query.get_or_404(local_id)
+    tipo = request.form.get("tipo", "Cambio").strip()
+    titulo = request.form.get("titulo", "").strip()
+    detalle = request.form.get("detalle", "").strip()
+
+    if not titulo:
+        flash("El título del cambio o registro es obligatorio.", "danger")
+        return redirect(url_for("locales_bp.ver_local", local_id=local.id))
+
+    nuevo_evento = BitacoraCliente(
+        local_id=local.id,
+        user_id=current_user.id,
+        tipo=tipo,
+        titulo=titulo,
+        detalle=detalle or None
+    )
+    db.session.add(nuevo_evento)
+    db.session.commit()
+    flash(f"✅ Registro agregado al historial de «{local.nombre_marca}».", "success")
+    return redirect(url_for("locales_bp.ver_local", local_id=local.id))
 
 
 @locales_bp.route("/locales/<int:local_id>/eliminar", methods=["POST"])

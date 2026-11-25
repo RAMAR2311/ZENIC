@@ -435,17 +435,28 @@
 
 {% block scripts %}
 {% if chart_labels %}
+<script id="marketingChartData" type="application/json">
+{
+    "labels": {{ chart_labels | tojson }},
+    "alcance": {{ chart_alcance | tojson }},
+    "interacciones": {{ chart_interacciones | tojson }},
+    "seguidores": {{ chart_seguidores | tojson }},
+    "leads": {{ chart_leads | tojson }}
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const ctx = document.getElementById("graficaEvolucionMarketing");
-    if (!ctx) return;
+    const rawDataEl = document.getElementById("marketingChartData");
+    if (!ctx || !rawDataEl) return;
 
-    const labels = {{ chart_labels | tojson }};
-    const dataAlcance = {{ chart_alcance | tojson }};
-    const dataInteracciones = {{ chart_interacciones | tojson }};
-    const dataSeguidores = {{ chart_seguidores | tojson }};
-    const dataLeads = {{ chart_leads | tojson }};
+    const parsed = JSON.parse(rawDataEl.textContent);
+    const labels = parsed.labels || [];
+    const dataAlcance = parsed.alcance || [];
+    const dataInteracciones = parsed.interacciones || [];
+    const dataSeguidores = parsed.seguidores || [];
+    const dataLeads = parsed.leads || [];
 
     new Chart(ctx, {
         type: 'line',

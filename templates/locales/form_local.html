@@ -1,265 +1,823 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Nuevo Local' if modo == 'nuevo' else 'Editar — ' + local.nombre_marca }}{% endblock %}
+{% block title %}{{ 'Nuevo Cliente / Local' if modo == 'nuevo' else 'Editar — ' + local.nombre_marca }}{% endblock %}
+
+{% block head %}
+<style>
+    /* ═══ Rediseño Premium Formulario de Clientes Zenic ═══ */
+    .form-hero-banner {
+        background: linear-gradient(135deg, #111827 0%, #1E1B4B 55%, #3B1E6D 100%);
+        border-radius: 18px;
+        padding: 1.75rem 2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 12px 30px -8px rgba(122, 62, 176, 0.25);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .form-hero-banner::after {
+        content: '';
+        position: absolute;
+        top: -40%;
+        right: -5%;
+        width: 320px;
+        height: 320px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.32) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .hero-icon-box {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #7A3EB0 0%, #5C8AC8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: #FFFFFF;
+        box-shadow: 0 8px 20px rgba(122, 62, 176, 0.45);
+        flex-shrink: 0;
+    }
+
+    /* Tarjetas de sección con cabecera clara */
+    .section-card {
+        background: #FFFFFF;
+        border: 1px solid var(--zenic-border);
+        border-radius: 16px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .section-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+    }
+    .section-card-header {
+        background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+        padding: 1.15rem 1.5rem;
+        border-bottom: 1px solid var(--zenic-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    .section-badge-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+    .section-card-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--zenic-text-main);
+        margin: 0;
+        letter-spacing: -0.2px;
+    }
+    .section-card-sub {
+        font-size: 0.78rem;
+        color: var(--zenic-text-muted);
+        margin: 2px 0 0;
+    }
+    .section-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Selector visual de Modalidad de Plan */
+    .plan-selector-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.85rem;
+    }
+    @media (max-width: 768px) {
+        .plan-selector-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .plan-card-option {
+        border: 2px solid var(--zenic-border);
+        border-radius: 12px;
+        padding: 0.95rem 1.1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #FFFFFF;
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+    }
+    .plan-card-option:hover {
+        border-color: #94A3B8;
+        background: #F8FAFC;
+    }
+    .plan-card-option.active {
+        border-color: var(--zenic-purple-neural);
+        background: rgba(122, 62, 176, 0.04);
+        box-shadow: 0 4px 12px rgba(122, 62, 176, 0.12);
+    }
+    .plan-card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        background: #F1F5F9;
+        color: #475569;
+        transition: all 0.2s ease;
+    }
+    .plan-card-option.active .plan-card-icon {
+        background: var(--zenic-gradient-neural);
+        color: #FFFFFF;
+    }
+    .plan-card-title {
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: var(--zenic-text-main);
+        margin-bottom: 2px;
+    }
+    .plan-card-desc {
+        font-size: 0.73rem;
+        color: var(--zenic-text-muted);
+        line-height: 1.3;
+    }
+
+    /* Campos de moneda con puntos de miles */
+    .currency-input-group .input-group-text {
+        background: #F1F5F9 !important;
+        border: 1.5px solid var(--zenic-border) !important;
+        border-right: none !important;
+        color: var(--zenic-purple-neural) !important;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        padding-left: 1rem;
+        padding-right: 0.65rem;
+        border-top-left-radius: 10px !important;
+        border-bottom-left-radius: 10px !important;
+    }
+    .currency-input-group .form-control {
+        border-left: none !important;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #0F172A !important;
+        border-top-right-radius: 10px !important;
+        border-bottom-right-radius: 10px !important;
+    }
+    .currency-input-group:focus-within .input-group-text {
+        border-color: var(--zenic-purple-neural) !important;
+        background: rgba(122, 62, 176, 0.06) !important;
+    }
+
+    /* Botones rápidos de monto */
+    .quick-amount-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        margin-top: 0.45rem;
+    }
+    .pill-amount {
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 0.18rem 0.55rem;
+        border-radius: 6px;
+        background: #F1F5F9;
+        color: #475569;
+        border: 1px solid #E2E8F0;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .pill-amount:hover {
+        background: var(--zenic-purple-soft);
+        color: var(--zenic-purple-neural);
+        border-color: rgba(122, 62, 176, 0.3);
+    }
+
+    /* Panel Lateral de Resumen Financiero en Vivo */
+    .summary-sticky-card {
+        position: sticky;
+        top: 5.25rem;
+        background: #FFFFFF;
+        border: 1px solid var(--zenic-border);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+    }
+    .summary-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        color: #FFFFFF;
+        padding: 1.25rem 1.4rem;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.7rem 0;
+        border-bottom: 1px dashed #E2E8F0;
+        font-size: 0.84rem;
+    }
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+    .summary-highlight-box {
+        background: linear-gradient(135deg, rgba(122, 62, 176, 0.07) 0%, rgba(92, 138, 200, 0.08) 100%);
+        border: 1px solid rgba(122, 62, 176, 0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 0.75rem;
+    }
+    .field-hint {
+        font-size: 0.73rem;
+        color: var(--zenic-text-muted);
+        margin-top: 0.35rem;
+        line-height: 1.35;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="pt-2 mb-4">
+<div class="pt-1 mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
     <a href="{{ url_for('locales_bp.dashboard') }}"
-       style="font-size:0.8rem;color:var(--zenic-text-muted);text-decoration:none">
-        <i class="fa-solid fa-arrow-left me-1"></i> Volver al Dashboard
+       class="d-inline-flex align-items-center gap-2 text-decoration-none fw-semibold"
+       style="font-size:0.84rem;color:var(--zenic-text-muted)">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Dashboard de Clientes
     </a>
+    {% if modo == 'editar' and local %}
+    <span class="badge bg-light text-dark border px-3 py-2" style="font-size: 0.78rem;">
+        <i class="fa-solid fa-hashtag me-1 text-muted"></i>ID Cliente: {{ local.id }}
+    </span>
+    {% endif %}
 </div>
 
-<div class="row justify-content-center">
-<div class="col-12 col-xl-8">
-
-<div class="page-header">
-    <h1 class="page-title">
-        {% if modo == 'nuevo' %}
-        <i class="fa-solid fa-plus-circle me-2" style="color:var(--zenic-success)"></i> Registrar Nuevo Local
-        {% else %}
-        <i class="fa-solid fa-pen me-2" style="color:var(--zenic-primary)"></i> Editar — {{ local.nombre_marca }}
-        {% endif %}
-    </h1>
-    <p class="page-subtitle">
-        {% if modo == 'nuevo' %}Ingresa los datos de la nueva instancia cliente{% else %}Actualiza la información del local{% endif %}
-    </p>
-</div>
-
-<form method="POST"
-      action="{{ url_for('locales_bp.nuevo_local') if modo=='nuevo' else url_for('locales_bp.editar_local', local_id=local.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-    <!-- SECCIÓN 1: Identificación -->
-    <div class="card-zenic p-4 mb-3">
-        <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-                   color:var(--zenic-text-muted);margin-bottom:1.25rem">
-            <i class="fa-solid fa-tag me-2" style="color:var(--zenic-accent)"></i> Identificación & Modalidad
-        </h2>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Nombre de la Marca *</label>
-                <input type="text" name="nombre_marca" class="form-control"
-                       placeholder="Ej: Tekfix, Sarotex, Bendito Encanto"
-                       value="{{ local.nombre_marca if local else '' }}" required>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">URL de la Instancia</label>
-                <input type="url" name="url_instancia" class="form-control"
-                       placeholder="https://crm.tekfix.co"
-                       value="{{ local.url_instancia if local and local.url_instancia else '' }}">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Tipo de Plan / Instancia *</label>
-                <select name="tipo_plan" id="selectTipoPlan" class="form-select" required onchange="togglePlanFields()">
-                    <option value="Mensual" {% if local and local.tipo_plan == 'Mensual' %}selected{% endif %}>📅 Mensual (Día de corte)</option>
-                    <option value="Anual"   {% if local and local.tipo_plan == 'Anual'   %}selected{% endif %}>🏆 Anual (Corte a 1 año)</option>
-                    <option value="Interna" {% if local and local.tipo_plan == 'Interna' %}selected{% endif %}>⚙️ Interna / Operativa (Sin cobro)</option>
-                </select>
-                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Las instancias internas se excluyen del MRR y semáforo.
-                </div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Fecha de Lanzamiento *</label>
-                <input type="date" name="fecha_lanzamiento" id="inputFechaLanzamiento" class="form-control"
-                       value="{{ local.fecha_lanzamiento.strftime('%Y-%m-%d') if local and local.fecha_lanzamiento else '' }}"
-                       required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Versión del Software</label>
-                <input type="text" name="version_software" class="form-control"
-                       placeholder="1.0.0"
-                       value="{{ local.version_software if local else '1.0.0' }}">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Teléfono / WhatsApp de Cobro</label>
-                <div class="input-group">
-                    <span class="input-group-text" style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
-                        <i class="fa-brands fa-whatsapp text-success"></i>
-                    </span>
-                    <input type="text" name="telefono_cobro" class="form-control"
-                           placeholder="Ej: 3001234567 o enlace de grupo"
-                           value="{{ local.telefono_cobro if local and local.telefono_cobro else '' }}">
-                </div>
-                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Número para envío de recordatorios de mora con constancia.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECCIÓN 2: Finanzas -->
-    <div class="card-zenic p-4 mb-3" id="seccionFinanzas">
-        <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-                   color:var(--zenic-text-muted);margin-bottom:1.25rem">
-            <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas & Cobranza
-        </h2>
-        <div class="row g-3">
-            <div class="col-md-4" id="colInversion">
-                <label class="form-label">Inversión Inicial (COP) *</label>
-                <div class="input-group">
-                    <span class="input-group-text"
-                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
-                    <input type="number" name="inversion_inicial" class="form-control"
-                           placeholder="0" min="0" step="1000"
-                           value="{{ local.inversion_inicial if local else '0' }}" required>
-                </div>
-                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Si lanzamiento ≥ 15/11/2026, genera cobro de instalación pendiente.
-                </div>
-            </div>
-
-            <!-- Campo Mensualidad -->
-            <div class="col-md-4" id="colMensualidad">
-                <label class="form-label">Mensualidad (COP) *</label>
-                <div class="input-group">
-                    <span class="input-group-text"
-                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
-                    <input type="number" name="mensualidad" id="inputMensualidad" class="form-control"
-                           placeholder="0" min="0" step="1000"
-                           value="{{ local.mensualidad if local else '0' }}">
-                </div>
-            </div>
-
-            <!-- Campo Anualidad -->
-            <div class="col-md-4" id="colAnualidad" style="display:none;">
-                <label class="form-label">Valor Anualidad (COP) *</label>
-                <div class="input-group">
-                    <span class="input-group-text"
-                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">$</span>
-                    <input type="number" name="valor_anualidad" id="inputAnualidad" class="form-control"
-                           placeholder="0" min="0" step="1000"
-                           value="{{ local.valor_anualidad if local and local.valor_anualidad else '0' }}">
-                </div>
-                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Corte automático a 1 año desde fecha de lanzamiento.
-                </div>
-            </div>
-
-            <!-- Campo Día de Corte Mensual -->
-            <div class="col-md-4" id="colDiaPago">
-                <label class="form-label">Día de Corte (1–31) *</label>
-                <input type="number" name="dia_pago" id="inputDiaPago" class="form-control"
-                       placeholder="1" min="1" max="31"
-                       value="{{ local.dia_pago if local else '1' }}">
-                <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                    Primer mes cubierto por instalación (corte a partir del 2do mes).
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label">Estado de Pago *</label>
-                <select name="estado_pago" class="form-select" required>
-                    <option value="Activo"     {% if local and local.estado_pago == 'Activo'     %}selected{% endif %}>✅ Activo</option>
-                    <option value="Pendiente"  {% if local and local.estado_pago == 'Pendiente'  %}selected{% endif %}>⏳ Pendiente</option>
-                    <option value="Suspendido" {% if local and local.estado_pago == 'Suspendido' %}selected{% endif %}>🚫 Suspendido</option>
-                </select>
-            </div>
-        </div>
-    </div>
-
-    <!-- SECCIÓN 3: Bóveda de Credenciales -->
-    <div class="card-zenic p-4 mb-4"
-         style="border-color: rgba(79,142,247,0.3);">
-        <div class="d-flex align-items-start gap-3 mb-3">
-            <div style="width:36px;height:36px;background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.2);
-                        border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-                <i class="fa-solid fa-lock" style="color:var(--zenic-primary)"></i>
+<!-- ═══ BANNER SUPERIOR ══════════════════════════════════════════════════ -->
+<div class="form-hero-banner">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="hero-icon-box">
+                {% if modo == 'nuevo' %}
+                <i class="fa-solid fa-store"></i>
+                {% else %}
+                <i class="fa-solid fa-pen-to-square"></i>
+                {% endif %}
             </div>
             <div>
-                <h2 style="font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-                           color:var(--zenic-text-muted);margin:0">
-                    Bóveda de Credenciales
-                </h2>
-                <p style="font-size:0.75rem;color:var(--zenic-text-muted);margin:4px 0 0">
-                    Las credenciales se encriptan con Fernet (AES-128 + HMAC). Nunca se guardan en texto plano.
-                    {% if modo == 'editar' %}Deja en blanco para mantener las actuales.{% endif %}
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.18); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 0.68rem; letter-spacing: 0.08em;">
+                        OPERACIONES & FINANZAS
+                    </span>
+                </div>
+                <h1 style="font-size: 1.45rem; font-weight: 800; margin: 0; color: #FFFFFF; letter-spacing: -0.4px;">
+                    {% if modo == 'nuevo' %}
+                    Registrar Nuevo Cliente / Local
+                    {% else %}
+                    Editar Cliente — {{ local.nombre_marca }}
+                    {% endif %}
+                </h1>
+                <p style="font-size: 0.84rem; color: rgba(255, 255, 255, 0.72); margin: 3px 0 0;">
+                    {% if modo == 'nuevo' %}
+                    Configura la instancia, el inicio real de su facturación y los valores con separador de miles.
+                    {% else %}
+                    Actualiza las condiciones comerciales, fechas de facturación o credenciales encriptadas.
+                    {% endif %}
                 </p>
             </div>
         </div>
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">Email Admin del CRM</label>
-                <div class="input-group">
-                    <span class="input-group-text"
-                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
-                        <i class="fa-solid fa-envelope fa-xs"></i>
-                    </span>
-                    <input type="email" name="boveda_email" class="form-control"
-                           placeholder="admin@cliente.co"
-                           autocomplete="off">
+    </div>
+</div>
+
+<form method="POST" id="formClienteZenic"
+      action="{{ url_for('locales_bp.nuevo_local') if modo=='nuevo' else url_for('locales_bp.editar_local', local_id=local.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="row g-4">
+        <!-- ═══ COLUMNA PRINCIPAL (FORMULARIO) ═══════════════════════════ -->
+        <div class="col-12 col-lg-8">
+
+            <!-- PASO 1: IDENTIFICACIÓN & MODALIDAD -->
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="section-badge-icon" style="background: rgba(122, 62, 176, 0.1); color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-building-user"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-card-title">1. Identificación & Modalidad del Cliente</h2>
+                            <p class="section-card-sub">Datos principales de la marca, URL del sistema y tipo de suscripción</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-light text-secondary border">Paso 1 de 3</span>
+                </div>
+
+                <div class="section-card-body">
+                    <!-- Selector Visual de Tipo de Plan -->
+                    <label class="form-label mb-2">Modalidad de Plan / Suscripción *</label>
+                    <input type="hidden" name="tipo_plan" id="selectTipoPlan" value="{{ local.tipo_plan if local else 'Mensual' }}">
+                    <div class="plan-selector-grid mb-4">
+                        <div class="plan-card-option" data-plan="Mensual" onclick="selectPlanCard('Mensual')">
+                            <div class="plan-card-icon"><i class="fa-solid fa-calendar-day"></i></div>
+                            <div>
+                                <div class="plan-card-title">Plan Mensual</div>
+                                <div class="plan-card-desc">Cobro recurrente cada mes según el día de corte e inicio elegido.</div>
+                            </div>
+                        </div>
+                        <div class="plan-card-option" data-plan="Anual" onclick="selectPlanCard('Anual')">
+                            <div class="plan-card-icon"><i class="fa-solid fa-award"></i></div>
+                            <div>
+                                <div class="plan-card-title">Plan Anual</div>
+                                <div class="plan-card-desc">Licencia por 1 año completo. Calcula MRR proporcional.</div>
+                            </div>
+                        </div>
+                        <div class="plan-card-option" data-plan="Interna" onclick="selectPlanCard('Interna')">
+                            <div class="plan-card-icon"><i class="fa-solid fa-gears"></i></div>
+                            <div>
+                                <div class="plan-card-title">Instancia Interna</div>
+                                <div class="plan-card-desc">Uso propio operativo. Excluida del MRR y de cobros.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre de la Marca / Cliente *</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-store"></i></span>
+                                <input type="text" name="nombre_marca" id="inputNombreMarca" class="form-control"
+                                       placeholder="Ej: Tekfix, Sarotex, Bendito Encanto"
+                                       value="{{ local.nombre_marca if local else '' }}" required oninput="updateLiveSummary()">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">URL de la Instancia CRM</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-globe"></i></span>
+                                <input type="url" name="url_instancia" class="form-control"
+                                       placeholder="https://cliente.zenic.cloud"
+                                       value="{{ local.url_instancia if local and local.url_instancia else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Teléfono / WhatsApp de Cobranza</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-brands fa-whatsapp text-success fs-6"></i></span>
+                                <input type="text" name="telefono_cobro" class="form-control"
+                                       placeholder="Ej: 300 123 4567"
+                                       value="{{ local.telefono_cobro if local and local.telefono_cobro else '' }}">
+                            </div>
+                            <div class="field-hint">Para envío directo de recordatorios de pago con constancia por WhatsApp.</div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Versión Software</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-code-branch"></i></span>
+                                <input type="text" name="version_software" class="form-control"
+                                       placeholder="1.4.0"
+                                       value="{{ local.version_software if local else '1.4.0' }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">Estado Actual *</label>
+                            <select name="estado_pago" id="selectEstadoPago" class="form-select" required onchange="updateLiveSummary()">
+                                <option value="Activo"     {% if not local or local.estado_pago == 'Activo'     %}selected{% endif %}>🟢 Activo (Al día)</option>
+                                <option value="Pendiente"  {% if local and local.estado_pago == 'Pendiente'  %}selected{% endif %}>🟡 Pendiente</option>
+                                <option value="Suspendido" {% if local and local.estado_pago == 'Suspendido' %}selected{% endif %}>🔴 Suspendido</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <label class="form-label">Contraseña Admin</label>
-                <div class="input-group">
-                    <span class="input-group-text"
-                          style="background:var(--zenic-surface-2);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
-                        <i class="fa-solid fa-key fa-xs"></i>
-                    </span>
-                    <input type="password" name="boveda_password" class="form-control"
-                           placeholder="••••••••"
-                           id="bovedaPass" autocomplete="new-password">
-                    <button class="btn" type="button" id="togglePass"
-                            style="background:var(--zenic-surface-2);border:1px solid var(--zenic-border);color:var(--zenic-text-muted)">
-                        <i class="fa-solid fa-eye fa-xs"></i>
-                    </button>
+
+            <!-- PASO 2: FECHAS, FINANZAS & FACTURACIÓN -->
+            <div class="section-card" id="seccionFinanzas">
+                <div class="section-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="section-badge-icon" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-card-title">2. Fechas de Facturación & Valores Comerciales</h2>
+                            <p class="section-card-sub">Separa cuándo se creó el cliente de cuándo empieza su facturación en el sistema</p>
+                        </div>
+                    </div>
+                    <span class="badge bg-light text-secondary border">Paso 2 de 3</span>
+                </div>
+
+                <div class="section-card-body">
+                    <!-- Bloque de Fechas y Ciclo de Facturación -->
+                    <div class="p-3 rounded-3 mb-4" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <i class="fa-solid fa-calendar-check" style="color: var(--zenic-purple-neural);"></i>
+                            <span style="font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--zenic-text-main);">
+                                Control de Fechas (Ideal para clientes antiguos o nuevos)
+                            </span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Fecha de Inicio / Lanzamiento *</label>
+                                <input type="date" name="fecha_lanzamiento" id="inputFechaLanzamiento" class="form-control"
+                                       value="{{ local.fecha_lanzamiento.strftime('%Y-%m-%d') if local and local.fecha_lanzamiento else '' }}"
+                                       required onchange="onLaunchDateChange()">
+                                <div class="field-hint">
+                                    Fecha real en la que el cliente entró a operar con Zenic (puede ser histórica).
+                                </div>
+                            </div>
+
+                            <div class="col-md-4" id="colFechaInicioFacturacion">
+                                <label class="form-label" style="color: var(--zenic-purple-neural);">
+                                    <i class="fa-solid fa-play me-1"></i>¿Desde cuándo empieza facturación? *
+                                </label>
+                                <input type="date" name="fecha_inicio_facturacion" id="inputFechaInicioFacturacion" class="form-control"
+                                       style="border-color: rgba(122, 62, 176, 0.45) !important; background: #FAF5FF !important;"
+                                       value="{{ local.fecha_inicio_facturacion.strftime('%Y-%m-%d') if local and local.fecha_inicio_facturacion else '' }}"
+                                       onchange="onBillingStartDateChange()">
+                                <div class="field-hint">
+                                    <strong>No cobrará meses anteriores</strong> a esta fecha. Define el próximo cobro real.
+                                </div>
+                            </div>
+
+                            <div class="col-md-4" id="colDiaPago">
+                                <label class="form-label">Día de Corte Mensual (1–31) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                                    <input type="number" name="dia_pago" id="inputDiaPago" class="form-control fw-bold"
+                                           placeholder="1" min="1" max="31"
+                                           value="{{ local.dia_pago if local else '1' }}" oninput="updateLiveSummary()">
+                                </div>
+                                <div class="field-hint">
+                                    Día del mes en que vence su mensualidad a partir de la fecha de inicio.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloque de Valores Monetarios con Puntos de Miles -->
+                    <div class="row g-3 align-items-start">
+                        <!-- Inversión Inicial -->
+                        <div class="col-md-6" id="colInversion">
+                            <label class="form-label">Valor Instalación / Inversión Inicial (COP) *</label>
+                            <div class="input-group currency-input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" name="inversion_inicial" id="inputInversion" class="form-control currency-mask"
+                                       inputmode="numeric" autocomplete="off" placeholder="0"
+                                       value="{{ local.inversion_inicial | miles if local else '0' }}" required>
+                            </div>
+                            <div class="quick-amount-pills">
+                                <span class="pill-amount" onclick="setCurrencyValue('inputInversion', 0)">$0</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputInversion', 1500000)">$1.500.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputInversion', 3500000)">$3.500.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputInversion', 5000000)">$5.000.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputInversion', 8500000)">$8.500.000</span>
+                            </div>
+                        </div>
+
+                        <!-- Mensualidad -->
+                        <div class="col-md-6" id="colMensualidad">
+                            <label class="form-label">Valor Mensualidad (COP) *</label>
+                            <div class="input-group currency-input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" name="mensualidad" id="inputMensualidad" class="form-control currency-mask"
+                                       inputmode="numeric" autocomplete="off" placeholder="0"
+                                       value="{{ local.mensualidad | miles if local else '0' }}">
+                            </div>
+                            <div class="quick-amount-pills">
+                                <span class="pill-amount" onclick="setCurrencyValue('inputMensualidad', 250000)">$250.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputMensualidad', 380000)">$380.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputMensualidad', 450000)">$450.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputMensualidad', 650000)">$650.000</span>
+                            </div>
+                        </div>
+
+                        <!-- Anualidad -->
+                        <div class="col-md-6" id="colAnualidad" style="display:none;">
+                            <label class="form-label">Valor Anualidad (COP) *</label>
+                            <div class="input-group currency-input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" name="valor_anualidad" id="inputAnualidad" class="form-control currency-mask"
+                                       inputmode="numeric" autocomplete="off" placeholder="0"
+                                       value="{{ local.valor_anualidad | miles if local and local.valor_anualidad else '0' }}">
+                            </div>
+                            <div class="quick-amount-pills">
+                                <span class="pill-amount" onclick="setCurrencyValue('inputAnualidad', 3500000)">$3.500.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputAnualidad', 4800000)">$4.800.000</span>
+                                <span class="pill-amount" onclick="setCurrencyValue('inputAnualidad', 6500000)">$6.500.000</span>
+                            </div>
+                        </div>
+
+                        {% if modo == 'nuevo' %}
+                        <!-- ¿Cómo tratar la inversión inicial en Facturación? -->
+                        <div class="col-12 mt-3" id="colEstadoInstalacion">
+                            <div class="p-3 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                                <label class="form-label mb-1">¿La instalación inicial ya fue pagada anteriormente o está pendiente por cobrar?</label>
+                                <select name="estado_instalacion" id="selectEstadoInstalacion" class="form-select" onchange="updateLiveSummary()">
+                                    <option value="pagada" selected>✅ Cliente existente / Instalación ya pagada antes (No generar cobro pendiente)</option>
+                                    <option value="pendiente">⏳ Instalación pendiente por cobrar (Generar factura de instalación pendiente ahora)</option>
+                                    <option value="auto">⚙️ Automático (Solo genera factura si el lanzamiento es posterior al 15/11/2026)</option>
+                                </select>
+                                <div class="field-hint">
+                                    Si el cliente ya venía de antes, déjalo en <strong>"Instalación ya pagada antes"</strong> para registrar el valor histórico sin sumarlo como deuda ni alterar tu caja actual.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 3: BÓVEDA DE CREDENCIALES -->
+            <div class="section-card">
+                <div class="section-card-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="section-badge-icon" style="background: rgba(74, 123, 176, 0.12); color: var(--zenic-blue-electric);">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div>
+                            <h2 class="section-card-title">3. Bóveda Criptográfica de Credenciales</h2>
+                            <p class="section-card-sub">
+                                Encriptación militar Fernet (AES-128 + HMAC).
+                                {% if modo == 'editar' %}Deja los campos vacíos para conservar las credenciales actuales.{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <span class="badge bg-light text-secondary border">Paso 3 de 3</span>
+                </div>
+
+                <div class="section-card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Correo Administrador CRM</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+                                <input type="email" name="boveda_email" class="form-control"
+                                       placeholder="admin@cliente.co" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña Administrador</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
+                                <input type="password" name="boveda_password" class="form-control"
+                                       placeholder="••••••••••••" id="bovedaPass" autocomplete="new-password">
+                                <button class="btn btn-outline-secondary" type="button" id="togglePass"
+                                        style="border-color: var(--zenic-border);">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ═══ COLUMNA LATERAL (RESUMEN EN VIVO DE FACTURACIÓN) ═════════ -->
+        <div class="col-12 col-lg-4">
+            <div class="summary-sticky-card">
+                <div class="summary-header">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; color: #38BDF8; text-transform: uppercase;">
+                            VISTA PREVIA EN TIEMPO REAL
+                        </span>
+                        <i class="fa-solid fa-bolt text-warning"></i>
+                    </div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; margin: 0;" id="sumNombre">
+                        {{ local.nombre_marca if local else 'Nuevo Cliente' }}
+                    </h3>
+                    <div style="font-size: 0.78rem; color: rgba(255,255,255,0.68); margin-top: 2px;" id="sumModalidad">
+                        Modalidad: Plan Mensual
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <div class="summary-row">
+                        <span class="text-muted">Inversión Inicial (Histórica)</span>
+                        <strong class="font-mono text-dark" id="sumInversion">$0</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted" id="sumLabelRecurrente">Mensualidad Pactada</span>
+                        <strong class="font-mono" style="color: var(--zenic-success); font-size: 1rem;" id="sumRecurrente">$0</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Inicio del Cliente</span>
+                        <strong id="sumFechaLanzamiento">—</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Inicio Facturación</span>
+                        <strong style="color: var(--zenic-purple-neural);" id="sumFechaFacturacion">—</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-muted">Día de Corte</span>
+                        <strong id="sumDiaCorte">Día 1 de cada mes</strong>
+                    </div>
+
+                    <div class="summary-highlight-box">
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <i class="fa-solid fa-circle-info" style="color: var(--zenic-purple-neural);"></i>
+                            <span style="font-size: 0.76rem; font-weight: 800; color: var(--zenic-purple-neural); text-transform: uppercase;">
+                                Impacto en Facturación
+                            </span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: #334155; margin: 0; line-height: 1.45;" id="sumImpactoTexto">
+                            Configura las fechas y montos para ver cómo se programará el cobro.
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn-zenic py-2 fs-6">
+                            {% if modo == 'nuevo' %}
+                            <i class="fa-solid fa-check-circle me-1"></i> Guardar y Registrar Cliente
+                            {% else %}
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Cambios del Cliente
+                            {% endif %}
+                        </button>
+                        <a href="{{ url_for('locales_bp.dashboard') }}" class="btn-zenic-outline py-2 text-center">
+                            Cancelar
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Botones -->
-    <div class="d-flex gap-3 justify-content-end">
-        <a href="{{ url_for('locales_bp.dashboard') }}" class="btn-zenic-outline text-decoration-none px-4 py-2 rounded-2 d-inline-flex align-items-center">
-            Cancelar
-        </a>
-        <button type="submit" class="btn-zenic px-5 py-2 rounded-2">
-            {% if modo == 'nuevo' %}
-            <i class="fa-solid fa-plus me-2"></i>Registrar Local
-            {% else %}
-            <i class="fa-solid fa-floppy-disk me-2"></i>Guardar Cambios
-            {% endif %}
-        </button>
-    </div>
 </form>
-
-</div>
-</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // ── Formateador de Miles con Puntos (Estilo Colombia: 1.250.000) ──────────
+    function formatThousandDots(val) {
+        if (val === null || val === undefined) return '0';
+        const digits = String(val).replace(/\D/g, '');
+        if (!digits) return '';
+        const num = parseInt(digits, 10);
+        if (isNaN(num)) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function parseFormattedNumber(str) {
+        if (!str) return 0;
+        const clean = String(str).replace(/\D/g, '');
+        return clean ? parseInt(clean, 10) : 0;
+    }
+
+    function setCurrencyValue(inputId, amount) {
+        const el = document.getElementById(inputId);
+        if (el) {
+            el.value = formatThousandDots(amount);
+            updateLiveSummary();
+        }
+    }
+
+    // Aplicar máscara en vivo a todos los inputs .currency-mask
+    document.querySelectorAll('.currency-mask').forEach(inp => {
+        inp.addEventListener('input', function () {
+            const rawDigits = this.value.replace(/\D/g, '');
+            this.value = rawDigits ? formatThousandDots(rawDigits) : '';
+            updateLiveSummary();
+        });
+        inp.addEventListener('blur', function () {
+            if (!this.value.trim()) this.value = '0';
+        });
+    });
+
+    // ── Selección Visual de Tarjeta de Plan ───────────────────────────────────
+    function selectPlanCard(planValue) {
+        document.getElementById('selectTipoPlan').value = planValue;
+        document.querySelectorAll('.plan-card-option').forEach(card => {
+            card.classList.toggle('active', card.dataset.plan === planValue);
+        });
+        togglePlanFields();
+        updateLiveSummary();
+    }
+
     function togglePlanFields() {
         const plan = document.getElementById('selectTipoPlan').value;
         const colMensualidad = document.getElementById('colMensualidad');
         const colAnualidad = document.getElementById('colAnualidad');
         const colDiaPago = document.getElementById('colDiaPago');
-        const seccionFinanzas = document.getElementById('seccionFinanzas');
+        const colFechaInicioFact = document.getElementById('colFechaInicioFacturacion');
+        const colEstadoInst = document.getElementById('colEstadoInstalacion');
 
         if (plan === 'Anual') {
             colMensualidad.style.display = 'none';
             colAnualidad.style.display = 'block';
             colDiaPago.style.display = 'none';
-            seccionFinanzas.style.display = 'block';
+            colFechaInicioFact.style.display = 'block';
+            if (colEstadoInst) colEstadoInst.style.display = 'block';
         } else if (plan === 'Interna') {
             colMensualidad.style.display = 'none';
             colAnualidad.style.display = 'none';
             colDiaPago.style.display = 'none';
-            seccionFinanzas.style.display = 'block';
+            colFechaInicioFact.style.display = 'none';
+            if (colEstadoInst) colEstadoInst.style.display = 'none';
         } else {
-            // Mensual
             colMensualidad.style.display = 'block';
             colAnualidad.style.display = 'none';
             colDiaPago.style.display = 'block';
-            seccionFinanzas.style.display = 'block';
+            colFechaInicioFact.style.display = 'block';
+            if (colEstadoInst) colEstadoInst.style.display = 'block';
         }
     }
 
-    // Ejecutar al cargar la vista
-    document.addEventListener('DOMContentLoaded', () => {
-        togglePlanFields();
-    });
+    // ── Sincronización inteligente de fechas ──────────────────────────────────
+    function onLaunchDateChange() {
+        const launchInput = document.getElementById('inputFechaLanzamiento');
+        const billingInput = document.getElementById('inputFechaInicioFacturacion');
+        if (launchInput.value && !billingInput.value) {
+            // Por defecto sugerir 1 mes después o el mes actual si el cliente es antiguo
+            const parts = launchInput.value.split('-');
+            const launchDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            const nextMonth = new Date(launchDate);
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            const yyyy = nextMonth.getFullYear();
+            const mm = String(nextMonth.getMonth() + 1).padStart(2, '0');
+            const dd = String(nextMonth.getDate()).padStart(2, '0');
+            billingInput.value = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('inputDiaPago').value = nextMonth.getDate();
+        }
+        updateLiveSummary();
+    }
+
+    function onBillingStartDateChange() {
+        const billingInput = document.getElementById('inputFechaInicioFacturacion');
+        const diaInput = document.getElementById('inputDiaPago');
+        if (billingInput.value) {
+            const parts = billingInput.value.split('-');
+            if (parts.length === 3) {
+                diaInput.value = parseInt(parts[2], 10);
+            }
+        }
+        updateLiveSummary();
+    }
+
+    function formatDateShort(isoStr) {
+        if (!isoStr) return '—';
+        const p = isoStr.split('-');
+        if (p.length !== 3) return isoStr;
+        return `${p[2]}/${p[1]}/${p[0]}`;
+    }
+
+    // ── Resumen en Tiempo Real ────────────────────────────────────────────────
+    function updateLiveSummary() {
+        const nombre = document.getElementById('inputNombreMarca').value.trim() || 'Nuevo Cliente';
+        const plan = document.getElementById('selectTipoPlan').value;
+        const inv = parseFormattedNumber(document.getElementById('inputInversion').value);
+        const mens = parseFormattedNumber(document.getElementById('inputMensualidad').value);
+        const anual = parseFormattedNumber(document.getElementById('inputAnualidad').value);
+        const fLanz = document.getElementById('inputFechaLanzamiento').value;
+        const fFact = document.getElementById('inputFechaInicioFacturacion').value;
+        const dia = document.getElementById('inputDiaPago').value || '1';
+        const estInstEl = document.getElementById('selectEstadoInstalacion');
+        const estInst = estInstEl ? estInstEl.value : 'pagada';
+
+        document.getElementById('sumNombre').textContent = nombre;
+        document.getElementById('sumInversion').textContent = '$' + formatThousandDots(inv || 0);
+        document.getElementById('sumFechaLanzamiento').textContent = formatDateShort(fLanz);
+        document.getElementById('sumFechaFacturacion').textContent = plan === 'Interna' ? 'No aplica' : formatDateShort(fFact);
+
+        if (plan === 'Anual') {
+            document.getElementById('sumModalidad').textContent = 'Modalidad: Plan Anual';
+            document.getElementById('sumLabelRecurrente').textContent = 'Anualidad Pactada';
+            document.getElementById('sumRecurrente').textContent = '$' + formatThousandDots(anual || 0);
+            document.getElementById('sumDiaCorte').textContent = 'Renovación Anual';
+        } else if (plan === 'Interna') {
+            document.getElementById('sumModalidad').textContent = 'Modalidad: Operativa Interna';
+            document.getElementById('sumLabelRecurrente').textContent = 'Cobro Recurrente';
+            document.getElementById('sumRecurrente').textContent = '$0 (Excluida)';
+            document.getElementById('sumDiaCorte').textContent = 'Sin cobro';
+        } else {
+            document.getElementById('sumModalidad').textContent = 'Modalidad: Plan Mensual';
+            document.getElementById('sumLabelRecurrente').textContent = 'Mensualidad Pactada';
+            document.getElementById('sumRecurrente').textContent = '$' + formatThousandDots(mens || 0);
+            document.getElementById('sumDiaCorte').textContent = `Día ${dia} de cada mes`;
+        }
+
+        // Mensaje explicativo del impacto
+        let msg = '';
+        if (plan === 'Interna') {
+            msg = 'Esta instancia es de uso interno de Zenic. No generará facturas ni sumará al MRR.';
+        } else {
+            if (estInst === 'pagada') {
+                msg += '✅ <strong>Instalación ya saldada:</strong> No se creará factura pendiente por la inversión inicial. ';
+            } else if (estInst === 'pendiente' && inv > 0) {
+                msg += `⏳ <strong>Se creará factura pendiente</strong> de instalación por $${formatThousandDots(inv)}. `;
+            }
+            if (fFact) {
+                msg += `📅 Las mensualidades se contabilizarán únicamente a partir del <strong>${formatDateShort(fFact)}</strong> (sin cobrar meses pasados).`;
+            } else {
+                msg += 'Selecciona la fecha desde la cual empieza a correr la facturación.';
+            }
+        }
+        document.getElementById('sumImpactoTexto').innerHTML = msg;
+    }
 
     // Toggle contraseña visible
     const btnToggle = document.getElementById('togglePass');
@@ -269,12 +827,18 @@
             const ico = document.querySelector('#togglePass i');
             if (inp.type === 'password') {
                 inp.type = 'text';
-                ico.className = 'fa-solid fa-eye-slash fa-xs';
+                ico.className = 'fa-solid fa-eye-slash';
             } else {
                 inp.type = 'password';
-                ico.className = 'fa-solid fa-eye fa-xs';
+                ico.className = 'fa-solid fa-eye';
             }
         });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const currentPlan = document.getElementById('selectTipoPlan').value || 'Mensual';
+        selectPlanCard(currentPlan);
+        updateLiveSummary();
+    });
 </script>
 {% endblock %}

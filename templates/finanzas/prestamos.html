@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+{% block title %}Préstamos & Cartera a Favor de Zenic{% endblock %}
+
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       MÓDULO DE PRÉSTAMOS & CARTERA POR COBRAR (A FAVOR DE ZENIC)
+       Control de préstamos otorgados anteriormente o nuevos, abonos
+       parciales/totales con comprobante (Imagen/PDF) y barra de progreso.
+    ═══════════════════════════════════════════════════════════════════ */
+    .loans-hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 52%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.7rem 2.2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.28);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .loans-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -5%;
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* Tarjetas KPI Superiores */
+    .loan-kpi-card {
+        border-radius: 18px;
+        padding: 1.4rem 1.5rem;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.22s ease;
+    }
+    .loan-kpi-card:hover {
+        transform: translateY(-3px);
+    }
+
+    /* 1. Saldo por Cobrar (Activo a favor de Zenic — Púrpura Neural) */
+    .lkpi-purple {
+        background: linear-gradient(135deg, #5B21B6 0%, #7A3EB0 52%, #4A7BB0 100%);
+        color: #FFFFFF;
+        box-shadow: 0 12px 26px -6px rgba(122, 62, 176, 0.42);
+    }
+    .lkpi-purple .lkpi-lbl { color: rgba(255, 255, 255, 0.82); }
+    .lkpi-purple .lkpi-val { color: #FFFFFF; }
+    .lkpi-purple .lkpi-sub { color: rgba(255, 255, 255, 0.78); border-top-color: rgba(255, 255, 255, 0.18); }
+    .lkpi-purple .lkpi-icon { background: rgba(255, 255, 255, 0.18); color: #FFFFFF; }
+
+    /* 2. Total Capital Prestado (Azul Acero) */
+    .lkpi-blue {
+        background: linear-gradient(160deg, #FFFFFF 0%, #EFF6FF 100%);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        box-shadow: 0 8px 22px -6px rgba(59, 130, 246, 0.14);
+    }
+    .lkpi-blue::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, #1D4ED8 0%, #38BDF8 100%);
+    }
+    .lkpi-blue .lkpi-val { color: #1E3A8A; }
+    .lkpi-blue .lkpi-icon { background: #2563EB; color: #FFFFFF; }
+
+    /* 3. Total Recuperado en Abonos (Verde Esmeralda) */
+    .lkpi-emerald {
+        background: linear-gradient(160deg, #FFFFFF 0%, #ECFDF5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.38);
+        box-shadow: 0 8px 22px -6px rgba(16, 185, 129, 0.15);
+    }
+    .lkpi-emerald::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, #059669 0%, #10B981 100%);
+    }
+    .lkpi-emerald .lkpi-val { color: #047857; }
+    .lkpi-emerald .lkpi-icon { background: #10B981; color: #FFFFFF; }
+
+    .lkpi-lbl {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        color: #475569;
+        margin-bottom: 0.3rem;
+    }
+    .lkpi-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.95rem;
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.15;
+    }
+    .lkpi-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .lkpi-sub {
+        margin-top: 0.85rem;
+        padding-top: 0.6rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.35);
+        font-size: 0.76rem;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Tarjetas de cada Préstamo */
+    .prestamo-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+        transition: all 0.22s ease;
+    }
+    .prestamo-card:hover {
+        border-color: #CBD5E1;
+        box-shadow: 0 14px 30px -8px rgba(122, 62, 176, 0.15);
+    }
+    .prestamo-top-strip {
+        height: 5px;
+        width: 100%;
+    }
+    .strip-activo { background: linear-gradient(90deg, #7A3EB0 0%, #38BDF8 100%); }
+    .strip-pagado { background: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+
+    .abono-item-row {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 0.7rem 0.95rem;
+        margin-bottom: 0.55rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══ BANNER HERO SUPERIOR ════════════════════════════════════════════ -->
+<div class="loans-hero-banner d-flex align-items-center justify-content-between flex-wrap gap-3 mt-1">
+    <div style="position: relative; z-index: 2;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+             style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38BDF8; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Activos Exigibles · A Favor de Zenic
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #FFFFFF;">
+            Préstamos Otorgados & Control de Abonos
+        </h1>
+        <p style="font-size: 0.86rem; color: rgba(255, 255, 255, 0.75); margin: 4px 0 0;">
+            Registra préstamos anteriores o nuevos a favor de la empresa, controla la deuda pendiente y guarda cada abono con su comprobante
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap" style="position: relative; z-index: 2;">
+        <a href="{{ url_for('finanzas_bp.ingresos') }}"
+           class="btn btn-sm px-3 py-2 rounded-3 text-decoration-none fw-semibold"
+           style="background: rgba(255,255,255,0.08); color: #E2E8F0; border: 1px solid rgba(255,255,255,0.16);">
+            <i class="fa-solid fa-vault me-1 text-info"></i> Volver a Tesorería
+        </a>
+        <button type="button" class="btn-zenic px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
+            <i class="fa-solid fa-plus-circle"></i> Registrar Préstamo a Favor
+        </button>
+    </div>
+</div>
+
+<!-- ═══ TARJETAS KPI DE CARTERA DE PRÉSTAMOS ════════════════════════════ -->
+<div class="row g-3 mb-4">
+    <!-- 1. Deuda Pendiente a Favor de Zenic -->
+    <div class="col-12 col-md-4">
+        <div class="loan-kpi-card lkpi-purple">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="lkpi-lbl">Deuda Pendiente (A Favor de Zenic)</div>
+                    <div class="lkpi-val">{{ total_por_cobrar | cop }}</div>
+                </div>
+                <div class="lkpi-icon">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+            </div>
+            <div class="lkpi-sub">
+                <span>Suma directamente al Patrimonio Neto</span>
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: #FFF;">{{ activos_count }} activo(s)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Capital Total Prestado -->
+    <div class="col-12 col-md-4">
+        <div class="loan-kpi-card lkpi-blue">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="lkpi-lbl">Capital Total Prestado</div>
+                    <div class="lkpi-val">{{ total_prestado | cop }}</div>
+                </div>
+                <div class="lkpi-icon">
+                    <i class="fa-solid fa-file-signature"></i>
+                </div>
+            </div>
+            <div class="lkpi-sub">
+                <span>Incluye préstamos históricos y actuales</span>
+                <span class="fw-bold text-primary">{{ prestamos|length }} registro(s)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Total Recuperado en Abonos -->
+    <div class="col-12 col-md-4">
+        <div class="loan-kpi-card lkpi-emerald">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="lkpi-lbl">Total Recuperado (Abonos)</div>
+                    <div class="lkpi-val">{{ total_recuperado | cop }}</div>
+                </div>
+                <div class="lkpi-icon">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="lkpi-sub">
+                <span>Dinero ya abonado con comprobante</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Recaudado</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ LISTADO DE PRÉSTAMOS Y SUS ABONOS CON COMPROBANTE ═══════════════ -->
+{% if prestamos %}
+<div class="row g-4">
+    {% for p in prestamos %}
+    <div class="col-12 col-xl-6">
+        <div class="prestamo-card h-100 d-flex flex-column justify-content-between">
+            <div>
+                <div class="prestamo-top-strip {{ 'strip-pagado' if p.saldo_pendiente <= 0 else 'strip-activo' }}"></div>
+                <div class="p-4">
+                    <!-- Cabecera del Préstamo -->
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <h3 style="font-size: 1.15rem; font-weight: 800; margin: 0; color: #0F172A;">
+                                    {{ p.deudor }}
+                                </h3>
+                                <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
+                                    <i class="fa-solid fa-clock-rotate-left me-1"></i>Préstamo Anterior
+                                </span>
+                            </div>
+                            <div class="text-muted mt-1" style="font-size: 0.84rem;">
+                                {{ p.concepto }}
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            {% if p.saldo_pendiente <= 0 %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: #ECFDF5; color: #047857; border: 1px solid rgba(16,185,129,0.35);">
+                                <i class="fa-solid fa-check-double me-1"></i>100% Saldado
+                            </span>
+                            {% else %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: #FAF5FF; color: #6B21A8; border: 1px solid rgba(122,62,176,0.35);">
+                                <i class="fa-solid fa-hourglass-half me-1"></i>Deuda Activa
+                            </span>
+                            {% endif %}
+                            {% if p.fecha_prestamo %}
+                            <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                                Fecha: {{ p.fecha_prestamo | fecha_corta }}
+                            </div>
+                            {% else %}
+                            <div class="text-muted mt-1" style="font-size: 0.72rem;">
+                                Registro histórico (Sin fecha)
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Resumen Numérico: Prestado vs Abonado vs Saldo Pendiente -->
+                    <div class="row g-2 p-3 rounded-3 mb-3 text-center" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                        <div class="col-4 border-end">
+                            <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem;">Capital Prestado</div>
+                            <div class="font-mono fw-bold text-dark" style="font-size: 0.98rem;">{{ p.monto_total | cop }}</div>
+                        </div>
+                        <div class="col-4 border-end">
+                            <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem;">Total Abonado</div>
+                            <div class="font-mono fw-bold text-success" style="font-size: 0.98rem;">{{ p.total_abonado | cop }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted text-uppercase fw-bold" style="font-size: 0.66rem;">Saldo por Cobrar</div>
+                            <div class="font-mono fw-bolder" style="font-size: 1.02rem; color: {{ '#047857' if p.saldo_pendiente <= 0 else '#7A3EB0' }};">
+                                {{ p.saldo_pendiente | cop }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progreso de Recuperación -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-muted" style="font-size: 0.75rem;">Progreso de pago</span>
+                            <strong class="font-mono" style="font-size: 0.76rem; color: var(--zenic-purple-neural);">{{ p.porcentaje_pagado }}% recuperado</strong>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 999px; background: #E2E8F0;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: {{ p.porcentaje_pagado }}%; background: linear-gradient(90deg, #7A3EB0 0%, #10B981 100%);"
+                                 aria-valuenow="{{ p.porcentaje_pagado }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+
+                    <!-- Historial de Abonos y Comprobantes -->
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #475569;">
+                                <i class="fa-solid fa-receipt me-1" style="color: var(--zenic-purple-neural);"></i>
+                                Abonos & Comprobantes ({{ p.abonos | length }})
+                            </span>
+                        </div>
+
+                        {% if p.abonos %}
+                        <div style="max-height: 210px; overflow-y: auto; padding-right: 2px;">
+                            {% for ab in p.abonos %}
+                            <div class="abono-item-row">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="font-mono fw-bolder text-success" style="font-size: 0.92rem;">
+                                            +{{ ab.monto | cop }}
+                                        </span>
+                                        <span class="badge"
+                                              style="background: {{ '#6D09A8' if ab.cuenta_destino == 'Nu' else ('#1D4ED8' if ab.cuenta_destino == 'Nequi' else '#334155') }}; color: #fff; font-size: 0.66rem;">
+                                            {{ ab.cuenta_destino }}
+                                        </span>
+                                        <span class="text-muted" style="font-size: 0.74rem;">
+                                            · {{ ab.fecha_abono | fecha_corta }}
+                                        </span>
+                                    </div>
+                                    {% if ab.observacion %}
+                                    <div class="text-muted" style="font-size: 0.74rem;">{{ ab.observacion }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    {% if ab.comprobante_ruta %}
+                                    <a href="{{ url_for('static', filename='uploads/comprobantes/' + ab.comprobante_ruta) }}"
+                                       target="_blank"
+                                       class="btn btn-sm btn-zenic-outline py-1 px-2 rounded-pill"
+                                       style="font-size: 0.72rem;"
+                                       title="Ver comprobante adjunto">
+                                        <i class="fa-solid fa-paperclip me-1"></i>Ver Comprobante
+                                    </a>
+                                    {% else %}
+                                    <span class="badge bg-light text-muted border" style="font-size: 0.68rem;">Sin adjunto</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="p-3 rounded-3 text-center text-muted small" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
+                            Aún no se han registrado abonos para este préstamo.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie de Tarjeta con Botón Registrar Abono -->
+            <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center">
+                <form action="{{ url_for('finanzas_bp.eliminar_prestamo', prestamo_id=p.id) }}" method="POST"
+                      onsubmit="return confirm('¿Seguro que deseas eliminar este préstamo y sus abonos?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm btn-danger-soft py-1 px-2" title="Eliminar préstamo">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </form>
+
+                {% if p.saldo_pendiente > 0 %}
+                <button type="button" class="btn btn-sm btn-zenic px-4 py-2 rounded-pill"
+                        data-bs-toggle="modal" data-bs-target="#modalAbonarPrestamo{{ p.id }}">
+                    <i class="fa-solid fa-hand-holding-dollar me-1"></i> Registrar Abono + Comprobante
+                </button>
+                {% else %}
+                <span class="text-success fw-bold small">
+                    <i class="fa-solid fa-circle-check me-1"></i>Deuda completamente pagada
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Abono con Comprobante para este Préstamo -->
+    <div class="modal fade" id="modalAbonarPrestamo{{ p.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form action="{{ url_for('finanzas_bp.abonar_prestamo', prestamo_id=p.id) }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fa-solid fa-hand-holding-dollar text-success me-2"></i>Registrar Abono — {{ p.deudor }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="p-3 rounded-3 mb-3 d-flex justify-content-between align-items-center"
+                             style="background: #FAF5FF; border: 1px solid rgba(122,62,176,0.25); font-size: 0.85rem;">
+                            <span>Saldo pendiente actual:</span>
+                            <strong class="font-mono fs-6" style="color: var(--zenic-purple-neural);">{{ p.saldo_pendiente | cop }}</strong>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-7">
+                                <label class="form-label fw-bold">Valor del Abono (COP) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" name="monto" class="form-control font-mono fw-bold mask-miles"
+                                           inputmode="numeric" autocomplete="off"
+                                           value="{{ p.saldo_pendiente | miles }}" required>
+                                </div>
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label fw-bold">Fecha del Abono *</label>
+                                <input type="date" name="fecha_abono" class="form-control" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">¿A qué cuenta o billetera entró el dinero? *</label>
+                            <select name="cuenta_destino" class="form-select" required>
+                                <option value="Nu" selected>🟣 Cuenta Nu (Suma al saldo disponible de Nu)</option>
+                                <option value="Nequi">🔵 Cuenta Nequi (Suma al saldo disponible de Nequi)</option>
+                                <option value="Banco">🏦 Cuenta de Banco (Suma a Banco en Tesorería)</option>
+                                <option value="Caja Menor">💵 Caja Menor / Efectivo (Suma a Caja Menor)</option>
+                            </select>
+                        </div>
+
+                        <div class="p-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
+                            <label class="form-label fw-bold mb-1">
+                                <i class="fa-solid fa-file-arrow-up me-1 text-primary"></i>Subir Comprobante del Abono (Foto o PDF)
+                            </label>
+                            <input type="file" name="comprobante" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.pdf">
+                            <div class="form-text" style="font-size: 0.73rem;">
+                                Adjunta la captura de transferencia (Nequi, Nu, Bancolombia) o recibo en PDF como soporte.
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label fw-bold">Nota u Observación (Opcional)</label>
+                            <input type="text" name="observacion" class="form-control" placeholder="Ej: Abono cuota #2 por transferencia">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success btn-sm fw-bold px-4">
+                            <i class="fa-solid fa-check me-1"></i>Confirmar Abono y Guardar Soporte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card-zenic p-5 text-center">
+    <i class="fa-solid fa-hand-holding-dollar fa-3x mb-3" style="color: var(--zenic-purple-neural); opacity: 0.35;"></i>
+    <h3 style="font-size: 1.15rem; font-weight: 800;">Aún no has registrado préstamos a favor de Zenic</h3>
+    <p class="text-muted mx-auto" style="max-width: 520px; font-size: 0.88rem;">
+        Agrega los préstamos que la empresa ha realizado anteriormente para que sumen como activos a favor de Zenic y puedas ir registrando sus abonos con comprobante.
+    </p>
+    <button type="button" class="btn-zenic px-4 py-2 rounded-3 mx-auto mt-2" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
+        <i class="fa-solid fa-plus-circle"></i> Registrar Primer Préstamo
+    </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<!-- Modal Registrar Nuevo Préstamo a Favor de Zenic -->
+<div class="modal fade" id="modalNuevoPrestamo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.prestamos') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fa-solid fa-hand-holding-dollar me-2" style="color: var(--zenic-purple-neural);"></i>
+                        Registrar Préstamo Antiguo a Favor de Zenic
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Nombre de la Persona / Deudor *</label>
+                            <input type="text" name="deudor" class="form-control" placeholder="Ej: Nombre de la persona o socio" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Concepto o Motivo del Préstamo *</label>
+                            <input type="text" name="concepto" class="form-control"
+                                   placeholder="Ej: Préstamo personal / Adelanto / Capital a favor de Zenic" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Monto Total Prestado (COP) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" name="monto_total" class="form-control font-mono fw-bold mask-miles"
+                                       inputmode="numeric" autocomplete="off" placeholder="0" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">¿Ya había abonado algo antes? (Opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" name="abono_inicial" class="form-control font-mono fw-bold mask-miles"
+                                       inputmode="numeric" autocomplete="off" value="0">
+                            </div>
+                            <div class="form-text" style="font-size: 0.72rem;">Déjalo en 0 si debe el total, o pon cuánto había abonado antes.</div>
+                        </div>
+
+                        <!-- Opción colapsable para agregar fechas solo si se desea -->
+                        <div class="col-12">
+                            <button type="button" class="btn btn-sm btn-light border text-secondary rounded-pill px-3"
+                                    onclick="const box = document.getElementById('boxFechasOpcionales'); box.style.display = box.style.display === 'none' ? 'flex' : 'none';">
+                                <i class="fa-regular fa-calendar-plus me-1"></i> + Agregar fechas (Opcional — Por defecto queda sin fecha)
+                            </button>
+                        </div>
+
+                        <div class="row g-2 mt-1" id="boxFechasOpcionales" style="display: none;">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fecha del Préstamo (Opcional)</label>
+                                <input type="date" name="fecha_prestamo" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Fecha Acordada (Opcional)</label>
+                                <input type="date" name="fecha_vencimiento" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Guardar Préstamo a Favor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('.mask-miles').forEach(inp => {
+        inp.addEventListener('input', function () {
+            const digits = this.value.replace(/\D/g, '');
+            this.value = digits ? parseInt(digits, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        });
+    });
+</script>
+{% endblock %}

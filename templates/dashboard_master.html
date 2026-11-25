@@ -189,9 +189,21 @@
 <!-- ============================================== -->
 <!-- 3. SCRIPTS DE CHART.JS                         -->
 <!-- ============================================== -->
+<script id="chartFinanzasData" type="application/json">
+{
+    "labels": {{ meses_labels | tojson }},
+    "ingresos": {{ ingresos_hist | tojson }},
+    "gastos": {{ gastos_hist | tojson }},
+    "costos": [{{ gastos_directos }}, {{ gastos_indirectos }}, {{ gastos_admin }}],
+    "cartera": [{{ al_dia }}, {{ por_vencer }}, {{ atrasado }}]
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const rawDataEl = document.getElementById('chartFinanzasData');
+    const chartData = rawDataEl ? JSON.parse(rawDataEl.textContent) : {};
+
     // Design Tokens Oficiales Zenic
     const colorPurple = '#7A3EB0';
     const colorPurpleLight = '#8A45D1';
@@ -209,18 +221,18 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(ctxFinanzas.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: {{ meses_labels | tojson }},
+                labels: chartData.labels || [],
                 datasets: [
                     {
                         label: 'Ingresos Totales',
-                        data: {{ ingresos_hist | tojson }},
+                        data: chartData.ingresos || [],
                         backgroundColor: colorPurple,
                         hoverBackgroundColor: colorPurpleLight,
                         borderRadius: 6
                     },
                     {
                         label: 'Gastos Totales',
-                        data: {{ gastos_hist | tojson }},
+                        data: chartData.gastos || [],
                         backgroundColor: '#CBD5E1',
                         hoverBackgroundColor: '#94A3B8',
                         borderRadius: 6
@@ -249,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: ['Costos Directos', 'Costos Indirectos', 'Gasto Admin'],
                 datasets: [{
-                    data: [{{ gastos_directos }}, {{ gastos_indirectos }}, {{ gastos_admin }}],
+                    data: chartData.costos || [0, 0, 0],
                     backgroundColor: [colorPurple, colorBlueSteel, '#94A3B8'],
                     borderWidth: 2,
                     borderColor: '#FFFFFF'
@@ -274,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: ['Al Día', 'Por Vencer (≤5 d)', 'Atrasado/Suspendido'],
                 datasets: [{
-                    data: [{{ al_dia }}, {{ por_vencer }}, {{ atrasado }}],
+                    data: chartData.cartera || [0, 0, 0],
                     backgroundColor: [colorSuccess, colorWarning, colorDanger],
                     borderWidth: 2,
                     borderColor: '#FFFFFF'

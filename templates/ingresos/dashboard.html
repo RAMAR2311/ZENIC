@@ -1,76 +1,575 @@
 {% extends "base.html" %}
 {% block title %}Facturas & Control de Cuentas{% endblock %}
 
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       MÓDULO DE FACTURAS & COBROS — Rediseño Ejecutivo Zenic v3.5
+       Billeteras de alto contraste (Nu Morado Intenso / Nequi Azul Profundo),
+       KPIs con profundidad y tabla ejecutiva.
+    ═══════════════════════════════════════════════════════════════════ */
+
+    /* Banner Hero Superior */
+    .billing-hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 52%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.7rem 2.2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.28);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .billing-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -5%;
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .btn-hero-emitir {
+        background: linear-gradient(135deg, #8A45D1 0%, #5C8AC8 100%);
+        color: #FFFFFF !important;
+        font-weight: 700;
+        padding: 0.7rem 1.45rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 8px 20px rgba(122, 62, 176, 0.45);
+        transition: all 0.25s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+    .btn-hero-emitir:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 26px rgba(138, 69, 209, 0.65);
+        background: linear-gradient(135deg, #9B51E0 0%, #4A7BB0 100%);
+    }
+
+    /* ── Contenedor de Billeteras Privadas (Nu & Nequi) ── */
+    .wallets-vault-wrapper {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 20px;
+        padding: 1.35rem 1.5rem 1.5rem;
+        box-shadow: 0 10px 28px -8px rgba(15, 23, 42, 0.07);
+        margin-bottom: 1.75rem;
+    }
+    .wallets-vault-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding-bottom: 1.1rem;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid #F1F5F9;
+    }
+    .badge-private-vault {
+        background: linear-gradient(135deg, #7A3EB0 0%, #5D2E88 100%);
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        padding: 0.35rem 0.8rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 0 4px 10px rgba(122, 62, 176, 0.25);
+    }
+
+    /* Tarjeta Base tipo Tarjeta Bancaria Fintech */
+    .fintech-wallet-card {
+        border-radius: 18px;
+        padding: 1.5rem 1.65rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .fintech-wallet-card:hover {
+        transform: translateY(-4px);
+    }
+    .fintech-wallet-card::before {
+        content: '';
+        position: absolute;
+        top: -35%;
+        right: -12%;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .fintech-wallet-card::after {
+        content: '';
+        position: absolute;
+        bottom: -45%;
+        left: -10%;
+        width: 200px;
+        height: 200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    /* 1. Billetera Nu Bank — Morado Intenso Oficial */
+    .wallet-card-nu {
+        background: linear-gradient(135deg, #4C0677 0%, #6D09A8 48%, #8A1CC7 100%);
+        box-shadow: 0 14px 30px -8px rgba(109, 9, 168, 0.48);
+        border: 1px solid rgba(216, 180, 254, 0.28);
+    }
+
+    /* 2. Billetera Nequi — Azul Profundo & Eléctrico */
+    .wallet-card-nequi {
+        background: linear-gradient(135deg, #0B2559 0%, #1D4ED8 52%, #0284C7 100%);
+        box-shadow: 0 14px 30px -8px rgba(29, 78, 216, 0.45);
+        border: 1px solid rgba(147, 197, 253, 0.28);
+    }
+
+    .wallet-chip-icon {
+        width: 42px;
+        height: 32px;
+        border-radius: 7px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.1) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        color: #FFFFFF;
+        backdrop-filter: blur(6px);
+    }
+    .wallet-brand-pill {
+        padding: 0.32rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #FFFFFF;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        backdrop-filter: blur(6px);
+    }
+    .wallet-balance-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.78);
+        margin-bottom: 0.2rem;
+    }
+    .wallet-balance-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 2.15rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        letter-spacing: -1px;
+        line-height: 1.15;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+    .wallet-stats-bar {
+        margin-top: 1.25rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.24);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        position: relative;
+        z-index: 2;
+    }
+    .wallet-stat-item {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.92);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .wallet-stat-dot-in {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: rgba(16, 185, 129, 0.25);
+        color: #6EE7B7;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+    .wallet-stat-dot-out {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: rgba(244, 63, 94, 0.28);
+        color: #FDA4AF;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    /* ── Tarjetas KPI de Facturación (Pagadas / Pendientes / Vencidas) ── */
+    .billing-kpi-card {
+        border-radius: 18px;
+        padding: 1.4rem 1.5rem;
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        transition: all 0.22s ease;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    .billing-kpi-card:hover {
+        transform: translateY(-3px);
+    }
+    .billing-kpi-card.active-kpi-filter {
+        box-shadow: 0 0 0 3px rgba(122, 62, 176, 0.35);
+    }
+
+    /* KPI Pagadas (Verde Esmeralda) */
+    .bkpi-emerald {
+        background: linear-gradient(155deg, #FFFFFF 0%, #ECFDF5 100%);
+        border: 1px solid rgba(16, 185, 129, 0.38);
+        box-shadow: 0 10px 24px -8px rgba(16, 185, 129, 0.18);
+    }
+    .bkpi-emerald::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #059669 0%, #10B981 100%);
+    }
+    .bkpi-emerald .bkpi-amount { color: #047857; }
+    .bkpi-emerald .bkpi-icon {
+        background: #10B981;
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(16, 185, 129, 0.32);
+    }
+
+    /* KPI Pendientes (Ámbar / Dorado) */
+    .bkpi-amber {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FFFBEB 100%);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        box-shadow: 0 10px 24px -8px rgba(245, 158, 11, 0.18);
+    }
+    .bkpi-amber::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%);
+    }
+    .bkpi-amber .bkpi-amount { color: #B45309; }
+    .bkpi-amber .bkpi-icon {
+        background: #F59E0B;
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(245, 158, 11, 0.32);
+    }
+
+    /* KPI Vencidas / Mora (Rojo Intenso) */
+    .bkpi-rose {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FEF2F2 100%);
+        border: 1px solid rgba(239, 68, 68, 0.38);
+        box-shadow: 0 10px 24px -8px rgba(239, 68, 68, 0.18);
+    }
+    .bkpi-rose::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%);
+    }
+    .bkpi-rose .bkpi-amount { color: #B91C1C; }
+    .bkpi-rose .bkpi-icon {
+        background: #EF4444;
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(239, 68, 68, 0.32);
+    }
+
+    .bkpi-label {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #475569;
+        margin-bottom: 0.35rem;
+    }
+    .bkpi-amount {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -0.8px;
+        line-height: 1.15;
+    }
+    .bkpi-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .bkpi-sub {
+        margin-top: 0.85rem;
+        padding-top: 0.65rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.35);
+        font-size: 0.76rem;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* ── Tabla Ejecutiva de Facturas ── */
+    .invoices-panel-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.07);
+        overflow: hidden;
+    }
+    .invoices-panel-header {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+        padding: 1.2rem 1.5rem;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .table-invoices-modern {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 0;
+    }
+    .table-invoices-modern thead th {
+        background: #0F172A !important;
+        color: #CBD5E1 !important;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.95rem 1.15rem;
+        border: none !important;
+        white-space: nowrap;
+    }
+    .table-invoices-modern tbody td {
+        padding: 1rem 1.15rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9 !important;
+        color: #0F172A;
+        font-size: 0.88rem;
+    }
+    .table-invoices-modern tbody tr:hover td {
+        background-color: #F8FAFC !important;
+    }
+    .table-invoices-modern tbody tr.inv-row-Pagado td:first-child {
+        border-left: 4px solid #10B981 !important;
+    }
+    .table-invoices-modern tbody tr.inv-row-Pendiente td:first-child {
+        border-left: 4px solid #F59E0B !important;
+    }
+    .table-invoices-modern tbody tr.inv-row-Vencido td:first-child {
+        border-left: 4px solid #EF4444 !important;
+    }
+
+    /* Badges de Cuenta (Nu Morado / Nequi Azul / Empresarial) */
+    .badge-cuenta-nu {
+        background: linear-gradient(135deg, #6D09A8 0%, #8A1CC7 100%);
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .badge-cuenta-nequi {
+        background: linear-gradient(135deg, #1D4ED8 0%, #0284C7 100%);
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    .badge-cuenta-empresarial {
+        background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+        color: #FFFFFF;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.25rem 0.65rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .inv-filter-pill {
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #475569;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.36rem 0.85rem;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+    .inv-filter-pill:hover {
+        border-color: var(--zenic-purple-neural);
+        color: var(--zenic-purple-neural);
+    }
+    .inv-filter-pill.active {
+        background: var(--zenic-gradient-neural);
+        color: #FFFFFF;
+        border-color: transparent;
+        box-shadow: 0 4px 10px rgba(122, 62, 176, 0.25);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
-    <div>
-        <h1 class="page-title">
-            <i class="fa-solid fa-file-invoice-dollar me-2" style="color: var(--zenic-gold)"></i>
-            Módulo de Facturas & Cobros
+<!-- ═══ BANNER HERO SUPERIOR ════════════════════════════════════════════ -->
+<div class="billing-hero-banner d-flex align-items-center justify-content-between flex-wrap gap-3 mt-1">
+    <div style="position: relative; z-index: 2;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+             style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38BDF8; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Tesorería & Cobranza · Zenic S.A.S.
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #FFFFFF;">
+            Módulo de Facturas & Control de Cuentas
         </h1>
-        <p class="page-subtitle">Emisión, validación de ingresos y trazabilidad de cuentas</p>
+        <p style="font-size: 0.86rem; color: rgba(255, 255, 255, 0.75); margin: 4px 0 0;">
+            Emisión de cobros, validación de ingresos en billeteras y recordatorios de mora con constancia
+        </p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn-zenic px-4 py-2 rounded-2 d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
-            <i class="fa-solid fa-plus"></i> Nueva Factura
+    <div class="d-flex align-items-center gap-2" style="position: relative; z-index: 2;">
+        <a href="{{ url_for('locales_bp.dashboard') }}"
+           class="btn btn-sm px-3 py-2 rounded-3 text-decoration-none fw-semibold"
+           style="background: rgba(255,255,255,0.08); color: #E2E8F0; border: 1px solid rgba(255,255,255,0.16);">
+            <i class="fa-solid fa-server me-1 text-info"></i> Ver Clientes
+        </a>
+        <button type="button" class="btn-hero-emitir" data-bs-toggle="modal" data-bs-target="#modalNuevaFactura">
+            <i class="fa-solid fa-plus-circle"></i> Emitir Nueva Factura
         </button>
     </div>
 </div>
 
 {% if tiene_acceso_billeteras %}
-<!-- Bloque Privado: Billeteras de Control (Nu y Nequi) - Solo Perfil Jhon / Admin -->
-<div class="card-zenic mb-4" style="border: 1px solid rgba(130, 10, 209, 0.35); background: linear-gradient(145deg, rgba(20, 20, 30, 0.6) 0%, rgba(30, 20, 45, 0.6) 100%);">
-    <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge" style="background: #820ad1; color: #fff; font-size: 0.75rem;"><i class="fa-solid fa-lock me-1"></i> VISTA PRIVADA</span>
-            <h2 style="font-size: 0.95rem; font-weight: 700; margin: 0; color: #fff;">
-                Billeteras de Control de Saldos (Punto de Partida: 15/11/2026)
+<!-- ═══ BILLETERAS DE CONTROL (NU MORADO & NEQUI AZUL) ══════════════════ -->
+<div class="wallets-vault-wrapper">
+    <div class="wallets-vault-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge-private-vault">
+                <i class="fa-solid fa-lock"></i> VISTA PRIVADA
+            </span>
+            <h2 style="font-size: 1rem; font-weight: 800; margin: 0; color: #0F172A;">
+                Billeteras de Control de Saldos
             </h2>
+            <span class="badge bg-light text-secondary border" style="font-size: 0.74rem;">
+                Punto de partida: 15/11/2026
+            </span>
         </div>
-        <small class="text-muted" style="font-size: 0.78rem;">
-            <i class="fa-solid fa-info-circle me-1"></i> Caja inicial $0 al 15/Nov/2026. Control en tiempo real hasta formalización de cuenta empresarial.
-        </small>
+        <div style="font-size: 0.78rem; color: #64748B;">
+            <i class="fa-solid fa-building-columns me-1" style="color: var(--zenic-purple-neural);"></i>
+            Cuentas transitorias activas mientras se formaliza el método de pago empresarial
+        </div>
     </div>
-    <div class="p-3">
-        <div class="row g-3">
-            <!-- Cuenta Nu -->
-            <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="background: rgba(130, 10, 209, 0.08); border: 1px solid rgba(130, 10, 209, 0.25);">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#820ad1;"></span>
-                            <span style="font-weight:700; font-size: 0.95rem; color:#d8b4fe;">Cuenta Nu (Jhon)</span>
+
+    <div class="row g-3">
+        <!-- TARJETA 1: CUENTA NU (MORADO INTENSO) -->
+        <div class="col-12 col-md-6">
+            <div class="fintech-wallet-card wallet-card-nu">
+                <div class="d-flex justify-content-between align-items-center mb-3" style="position: relative; z-index: 2;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="wallet-chip-icon">
+                            <i class="fa-solid fa-credit-card"></i>
                         </div>
-                        <span class="badge" style="background: rgba(130, 10, 209, 0.2); color:#c084fc; border:1px solid #820ad1;">Nu Bank</span>
+                        <div>
+                            <div style="font-weight: 800; font-size: 1.05rem; color: #FFFFFF; letter-spacing: -0.2px;">
+                                Cuenta Nu (Jhon)
+                            </div>
+                            <div style="font-size: 0.73rem; color: rgba(255,255,255,0.75);">
+                                Billetera Principal · Nu Colombia
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-baseline gap-2 mb-2">
-                        <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{{ saldo_nu | cop }}</span>
-                        <small class="text-muted" style="font-size: 0.78rem;">Saldo Real Disponible</small>
+                    <span class="wallet-brand-pill">
+                        <i class="fa-solid fa-shield-halved me-1"></i>Nu Bank
+                    </span>
+                </div>
+
+                <div style="position: relative; z-index: 2;">
+                    <div class="wallet-balance-label">Saldo Real Disponible</div>
+                    <div class="wallet-balance-amount">{{ saldo_nu | cop }}</div>
+                </div>
+
+                <div class="wallet-stats-bar">
+                    <div class="wallet-stat-item">
+                        <span class="wallet-stat-dot-in"><i class="fa-solid fa-arrow-down"></i></span>
+                        <span>Cobrado: <strong class="font-mono text-white">{{ ingresos_nu | cop }}</strong></span>
                     </div>
-                    <div class="d-flex justify-content-between pt-2 border-top border-secondary border-opacity-25" style="font-size: 0.8rem;">
-                        <span class="text-success"><i class="fa-solid fa-arrow-down me-1"></i>Cobrado: <strong>{{ ingresos_nu | cop }}</strong></span>
-                        <span class="text-danger"><i class="fa-solid fa-arrow-up me-1"></i>Gastos: <strong>{{ gastos_nu | cop }}</strong></span>
+                    <div class="wallet-stat-item">
+                        <span class="wallet-stat-dot-out"><i class="fa-solid fa-arrow-up"></i></span>
+                        <span>Gastos: <strong class="font-mono text-white">{{ gastos_nu | cop }}</strong></span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Cuenta Nequi -->
-            <div class="col-12 col-md-6">
-                <div class="p-3 rounded-3" style="background: rgba(255, 0, 85, 0.07); border: 1px solid rgba(255, 0, 85, 0.25);">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:#ff0055;"></span>
-                            <span style="font-weight:700; font-size: 0.95rem; color:#fda4af;">Cuenta Nequi (Jhon)</span>
+        <!-- TARJETA 2: CUENTA NEQUI (AZUL PROFUNDO & ELÉCTRICO) -->
+        <div class="col-12 col-md-6">
+            <div class="fintech-wallet-card wallet-card-nequi">
+                <div class="d-flex justify-content-between align-items-center mb-3" style="position: relative; z-index: 2;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="wallet-chip-icon">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
                         </div>
-                        <span class="badge" style="background: rgba(255, 0, 85, 0.2); color:#f43f5e; border:1px solid #ff0055;">Nequi</span>
+                        <div>
+                            <div style="font-weight: 800; font-size: 1.05rem; color: #FFFFFF; letter-spacing: -0.2px;">
+                                Cuenta Nequi (Jhon)
+                            </div>
+                            <div style="font-size: 0.73rem; color: rgba(255,255,255,0.78);">
+                                Billetera Digital · Pagos Rápidos
+                            </div>
+                        </div>
                     </div>
-                    <div class="d-flex align-items-baseline gap-2 mb-2">
-                        <span style="font-size: 1.6rem; font-weight: 800; color: #ffffff;">{{ saldo_nequi | cop }}</span>
-                        <small class="text-muted" style="font-size: 0.78rem;">Saldo Real Disponible</small>
+                    <span class="wallet-brand-pill">
+                        <i class="fa-solid fa-bolt me-1"></i>Nequi
+                    </span>
+                </div>
+
+                <div style="position: relative; z-index: 2;">
+                    <div class="wallet-balance-label">Saldo Real Disponible</div>
+                    <div class="wallet-balance-amount">{{ saldo_nequi | cop }}</div>
+                </div>
+
+                <div class="wallet-stats-bar">
+                    <div class="wallet-stat-item">
+                        <span class="wallet-stat-dot-in"><i class="fa-solid fa-arrow-down"></i></span>
+                        <span>Cobrado: <strong class="font-mono text-white">{{ ingresos_nequi | cop }}</strong></span>
                     </div>
-                    <div class="d-flex justify-content-between pt-2 border-top border-secondary border-opacity-25" style="font-size: 0.8rem;">
-                        <span class="text-success"><i class="fa-solid fa-arrow-down me-1"></i>Cobrado: <strong>{{ ingresos_nequi | cop }}</strong></span>
-                        <span class="text-danger"><i class="fa-solid fa-arrow-up me-1"></i>Gastos: <strong>{{ gastos_nequi | cop }}</strong></span>
+                    <div class="wallet-stat-item">
+                        <span class="wallet-stat-dot-out"><i class="fa-solid fa-arrow-up"></i></span>
+                        <span>Gastos: <strong class="font-mono text-white">{{ gastos_nequi | cop }}</strong></span>
                     </div>
                 </div>
             </div>
@@ -79,122 +578,236 @@
 </div>
 {% endif %}
 
-<!-- KPIs Financieros Generales -->
+<!-- ═══ TARJETAS KPI DE FACTURACIÓN ═════════════════════════════════════ -->
 <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4 fade-up">
-        <div class="kpi-card kpi-green">
-            <i class="fa-solid fa-hand-holding-dollar kpi-icon"></i>
-            <div class="kpi-label">Facturas Pagadas (>= 15/Nov/2026)</div>
-            <div class="kpi-value" style="color: var(--zenic-success)">{{ ingresos_actuales | cop }}</div>
-            <div class="kpi-sub">Caja efectiva desde punto de corte</div>
+    <!-- 1. Facturas Pagadas -->
+    <div class="col-12 col-md-4">
+        <div class="billing-kpi-card bkpi-emerald" onclick="filterInvoices('Pagado', this)" title="Clic para filtrar facturas pagadas">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="bkpi-label">Facturas Pagadas (≥ 15/Nov/2026)</div>
+                    <div class="bkpi-amount">{{ ingresos_actuales | cop }}</div>
+                </div>
+                <div class="bkpi-icon">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+            <div class="bkpi-sub">
+                <span>Caja efectiva desde punto de corte</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle">Recaudado</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 fade-up">
-        <div class="kpi-card kpi-gold">
-            <i class="fa-solid fa-clock kpi-icon"></i>
-            <div class="kpi-label">Facturas Pendientes / Futuras</div>
-            <div class="kpi-value" style="color: var(--zenic-gold)">{{ ingresos_futuros | cop }}</div>
-            <div class="kpi-sub">Por validar o pendientes de pago</div>
+
+    <!-- 2. Facturas Pendientes / Futuras -->
+    <div class="col-12 col-md-4">
+        <div class="billing-kpi-card bkpi-amber" onclick="filterInvoices('Pendiente', this)" title="Clic para filtrar facturas pendientes">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="bkpi-label">Facturas Pendientes / Futuras</div>
+                    <div class="bkpi-amount">{{ ingresos_futuros | cop }}</div>
+                </div>
+                <div class="bkpi-icon">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+            </div>
+            <div class="bkpi-sub">
+                <span>Por validar o próximas a vencer</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">En curso</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 fade-up">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-danger)">
-            <i class="fa-solid fa-circle-exclamation kpi-icon" style="color:var(--zenic-danger)"></i>
-            <div class="kpi-label">Facturas Vencidas (Mora)</div>
-            <div class="kpi-value" style="color: var(--zenic-danger)">{{ ingresos_vencidos | cop }}</div>
-            <div class="kpi-sub">Habilitadas para recordatorio rápido</div>
+
+    <!-- 3. Facturas Vencidas (Mora) -->
+    <div class="col-12 col-md-4">
+        <div class="billing-kpi-card bkpi-rose" onclick="filterInvoices('Vencido', this)" title="Clic para filtrar facturas vencidas">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="bkpi-label">Facturas Vencidas (En Mora)</div>
+                    <div class="bkpi-amount">{{ ingresos_vencidos | cop }}</div>
+                </div>
+                <div class="bkpi-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+            </div>
+            <div class="bkpi-sub">
+                <span>Habilitadas para recordatorio WhatsApp</span>
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Cobro prioritario</span>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Tabla de Facturas -->
-<div class="card-zenic">
-    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-        <h2 style="font-size:1rem;font-weight:700;margin:0">Listado de Facturas & Trazabilidad</h2>
-        <span class="badge bg-dark border text-muted">Total: {{ facturas|length }}</span>
+<!-- ═══ TABLA EJECUTIVA DE FACTURAS & TRAZABILIDAD ══════════════════════ -->
+<div class="invoices-panel-card">
+    <div class="invoices-panel-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <span style="width: 36px; height: 36px; border-radius: 10px; background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); display: inline-flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-receipt"></i>
+                </span>
+                <div>
+                    <h2 style="font-size: 1.02rem; font-weight: 800; margin: 0; color: #0F172A;">
+                        Listado de Facturas & Trazabilidad
+                    </h2>
+                    <div style="font-size: 0.75rem; color: #64748B;">
+                        Mostrando <strong id="invCountVisibles">{{ facturas|length }}</strong> de {{ facturas|length }} facturas emitidas
+                    </div>
+                </div>
+            </div>
+
+            <!-- Píldoras de filtro por estado (Por defecto muestra Próximas a Vencer / En Mora) -->
+            <div class="d-flex flex-wrap gap-1 ms-md-2">
+                <button type="button" class="inv-filter-pill active" data-est="por_cobrar" onclick="filterInvoices('por_cobrar', this)">
+                    ⚡ Próximas a Vencer & En Mora ({{ por_cobrar_count }})
+                </button>
+                <button type="button" class="inv-filter-pill" data-est="Pendiente" onclick="filterInvoices('Pendiente', this)">
+                    🟡 Próximas / Pendientes
+                </button>
+                <button type="button" class="inv-filter-pill" data-est="Vencido" onclick="filterInvoices('Vencido', this)">
+                    🔴 Vencidas
+                </button>
+                <button type="button" class="inv-filter-pill" data-est="Pagado" onclick="filterInvoices('Pagado', this)">
+                    🟢 Pagadas ({{ pagadas_count }})
+                </button>
+                <button type="button" class="inv-filter-pill" data-est="todos" onclick="filterInvoices('todos', this)">
+                    Todas ({{ facturas|length }})
+                </button>
+            </div>
+        </div>
+
+        <!-- Buscador de facturas -->
+        <div class="position-relative" style="min-width: 240px;">
+            <i class="fa-solid fa-magnifying-glass position-absolute"
+               style="left: 13px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.85rem;"></i>
+            <input type="text" id="searchFacturas" class="form-control form-control-sm ps-5"
+                   placeholder="Buscar # factura o cliente..."
+                   style="border-radius: 999px !important; padding-top: 0.45rem; padding-bottom: 0.45rem;">
+        </div>
     </div>
+
     <div class="table-responsive">
-        <table class="table table-zenic mb-0 align-middle">
+        <table class="table-invoices-modern" id="tablaFacturas">
             <thead>
                 <tr>
                     <th>Factura</th>
-                    <th>Tipo</th>
+                    <th>Concepto / Tipo</th>
                     <th>Cliente / Local</th>
                     <th>Vencimiento</th>
                     <th>Monto</th>
-                    <th>Estado / Cuenta</th>
+                    <th>Estado & Billetera</th>
                     <th>Trazabilidad / Recordatorio</th>
                     <th class="text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for f in facturas %}
-                <tr>
+                <tr class="inv-row-{{ f.estado }}" data-estado="{{ f.estado }}">
                     <td>
-                        <span style="font-weight:700; color:var(--zenic-text-muted)">{{ f.numero_factura }}</span>
-                        <div style="font-size:0.75rem; color:var(--zenic-text-muted)">Emisión: {{ f.fecha_emision | fecha_corta }}</div>
+                        <div class="font-mono fw-bold" style="color: #0F172A; font-size: 0.9rem;">{{ f.numero_factura }}</div>
+                        <div style="font-size:0.74rem; color:#64748B;">Emisión: {{ f.fecha_emision | fecha_corta }}</div>
                     </td>
                     <td>
                         {% if f.tipo_cobro == 'Instalación' %}
-                        <span class="badge" style="background:rgba(59, 130, 246, 0.2); color:#60a5fa; border:1px solid #3b82f6;">
+                        <span class="badge rounded-pill px-3 py-1" style="background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 0.74rem;">
                             <i class="fa-solid fa-screwdriver-wrench me-1"></i>Instalación
                         </span>
                         {% elif f.tipo_cobro == 'Anualidad' %}
-                        <span class="badge" style="background:rgba(234, 179, 8, 0.2); color:#facc15; border:1px solid #eab308;">
-                            <i class="fa-solid fa-calendar-check me-1"></i>Anualidad
+                        <span class="badge rounded-pill px-3 py-1" style="background: #FEF9C3; color: #A16207; border: 1px solid #FDE047; font-size: 0.74rem;">
+                            <i class="fa-solid fa-award me-1"></i>Anualidad
                         </span>
                         {% else %}
-                        <span class="badge" style="background:rgba(100, 116, 139, 0.2); color:#cbd5e1; border:1px solid #64748b;">
+                        <span class="badge rounded-pill px-3 py-1" style="background: #F3E8FF; color: #6B21A8; border: 1px solid #E9D5FF; font-size: 0.74rem;">
                             <i class="fa-solid fa-calendar-days me-1"></i>Mensualidad
                         </span>
                         {% endif %}
                     </td>
                     <td>
-                        <div style="font-weight:600">{{ f.local.nombre_marca }}</div>
+                        <a href="{{ url_for('locales_bp.ver_local', local_id=f.local.id) }}" class="text-decoration-none" style="font-weight:700; color:#0F172A;">
+                            {{ f.local.nombre_marca }} <i class="fa-solid fa-arrow-up-right-from-square fa-2xs text-muted ms-1"></i>
+                        </a>
                         {% if f.local.telefono_cobro %}
-                        <small class="text-muted" style="font-size:0.75rem;"><i class="fa-brands fa-whatsapp text-success me-1"></i>{{ f.local.telefono_cobro }}</small>
+                        <div style="font-size:0.75rem; color:#64748B;">
+                            <i class="fa-brands fa-whatsapp text-success me-1"></i>{{ f.local.telefono_cobro }}
+                        </div>
                         {% endif %}
                     </td>
                     <td style="font-size:0.85rem">
-                        {% if f.estado != 'Pagado' and f.fecha_vencimiento < hoy %}
-                        <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i>{{ f.fecha_vencimiento | fecha_corta }}</span>
+                        {% set dias_v = (f.fecha_vencimiento - hoy).days %}
+                        {% if f.estado == 'Pagado' %}
+                        <span class="fw-semibold text-secondary">{{ f.fecha_vencimiento | fecha_corta }}</span>
+                        {% elif dias_v < 0 %}
+                        <div class="text-danger fw-bold">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ f.fecha_vencimiento | fecha_corta }}
+                        </div>
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.68rem;">
+                            Vencida hace {{ dias_v * -1 }} día(s)
+                        </span>
+                        {% elif dias_v == 0 %}
+                        <div class="text-warning-emphasis fw-bold">
+                            <i class="fa-solid fa-bell me-1 text-warning"></i>{{ f.fecha_vencimiento | fecha_corta }}
+                        </div>
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.68rem;">
+                            Vence HOY
+                        </span>
                         {% else %}
-                        <span>{{ f.fecha_vencimiento | fecha_corta }}</span>
+                        <div class="fw-bold text-dark">{{ f.fecha_vencimiento | fecha_corta }}</div>
+                        <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" style="font-size: 0.68rem;">
+                            Vence en {{ dias_v }} día(s)
+                        </span>
                         {% endif %}
                     </td>
-                    <td style="font-weight:700; color:var(--zenic-primary)">{{ f.monto | cop }}</td>
+                    <td>
+                        <span class="font-mono fw-bolder" style="color: #0F172A; font-size: 0.98rem;">
+                            {{ f.monto | cop }}
+                        </span>
+                    </td>
                     <td>
                         {% if f.estado == 'Pagado' %}
-                        <span class="badge" style="background:var(--zenic-success)">
-                            <i class="fa-solid fa-check-circle me-1"></i>Pagada ({{ f.fecha_pago | fecha_corta }})
-                        </span>
+                        <div>
+                            <span class="badge rounded-pill" style="background: #ECFDF5; color: #047857; border: 1px solid rgba(16,185,129,0.35); font-size: 0.74rem;">
+                                <i class="fa-solid fa-check-circle me-1"></i>Pagada ({{ f.fecha_pago | fecha_corta }})
+                            </span>
+                        </div>
                         {% if f.cuenta_destino %}
                         <div class="mt-1">
-                            <span class="badge" style="background: {{ '#820ad1' if f.cuenta_destino == 'Nu' else '#ff0055' }}; color:#fff; font-size:0.7rem;">
-                                Cuenta {{ f.cuenta_destino }}
+                            {% if f.cuenta_destino == 'Nu' %}
+                            <span class="badge-cuenta-nu">
+                                <i class="fa-solid fa-credit-card fa-xs"></i> Cuenta Nu
                             </span>
+                            {% elif f.cuenta_destino == 'Nequi' %}
+                            <span class="badge-cuenta-nequi">
+                                <i class="fa-solid fa-bolt fa-xs"></i> Cuenta Nequi
+                            </span>
+                            {% else %}
+                            <span class="badge-cuenta-empresarial">
+                                <i class="fa-solid fa-building-columns fa-xs"></i> {{ f.cuenta_destino }}
+                            </span>
+                            {% endif %}
                         </div>
                         {% endif %}
                         {% elif f.estado == 'Vencido' %}
-                        <span class="badge" style="background:var(--zenic-danger)">
+                        <span class="badge rounded-pill" style="background: #FEF2F2; color: #B91C1C; border: 1px solid rgba(239,68,68,0.35); font-size: 0.75rem;">
                             <i class="fa-solid fa-clock me-1"></i>Vencido
                         </span>
                         {% else %}
-                        <span class="badge" style="background:var(--zenic-gold); color:#111;">
+                        <span class="badge rounded-pill" style="background: #FFFBEB; color: #B45309; border: 1px solid rgba(245,158,11,0.4); font-size: 0.75rem;">
                             <i class="fa-solid fa-hourglass-half me-1"></i>Pendiente
                         </span>
                         {% endif %}
                     </td>
                     <td style="font-size:0.78rem;">
                         {% if f.ultimo_recordatorio %}
-                        <div class="text-info fw-semibold">
+                        <div class="fw-bold" style="color: #047857;">
                             <i class="fa-brands fa-whatsapp text-success me-1"></i>Recordatorio enviado
                         </div>
                         <div class="text-muted">
                             {{ f.ultimo_recordatorio.strftime('%d/%m/%Y %H:%M') }}
-                            {% if f.recordatorio_por %}por {{ f.recordatorio_por.nombre }}{% endif %}
+                            {% if f.recordatorio_por %}por {{ f.recordatorio_por.nombre.split()[0] }}{% endif %}
                         </div>
-                        <small class="badge bg-secondary" style="font-size:0.68rem;">{{ f.total_recordatorios }} recordatorio(s)</small>
+                        <span class="badge bg-light text-secondary border mt-1" style="font-size:0.68rem;">
+                            {{ f.total_recordatorios }} envío(s)
+                        </span>
                         {% else %}
                         <span class="text-muted">— Sin recordatorios —</span>
                         {% endif %}
@@ -203,48 +816,57 @@
                         <div class="d-flex gap-1 justify-content-center align-items-center">
                             {% if f.estado != 'Pagado' %}
                             <!-- Botón Validar Pago -->
-                            <button type="button" class="btn btn-sm btn-success text-white" title="Validar Pago Real"
-                                    data-bs-toggle="modal" data-bs-target="#modalValidarPago{{ f.id }}" style="font-size:0.78rem; font-weight:600;">
+                            <button type="button" class="btn btn-sm btn-success text-white rounded-pill px-3" title="Validar Pago Real"
+                                    data-bs-toggle="modal" data-bs-target="#modalValidarPago{{ f.id }}" style="font-size:0.76rem; font-weight:700;">
                                 <i class="fa-solid fa-check-double me-1"></i>Validar Pago
                             </button>
 
                             <!-- Modal Validar Pago -->
                             <div class="modal fade" id="modalValidarPago{{ f.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
-                                <div class="modal-dialog">
+                                <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <form action="{{ url_for('ingresos_bp.validar_pago', factura_id=f.id) }}" method="POST">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" style="font-size:1rem; font-weight:700;">
+                                                <h5 class="modal-title" style="font-size:1.05rem; font-weight:800;">
                                                     <i class="fa-solid fa-circle-check text-success me-2"></i>Validar Pago: {{ f.numero_factura }}
                                                 </h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div class="alert alert-dark p-2 mb-3" style="font-size:0.85rem;">
-                                                    <div><strong>Cliente:</strong> {{ f.local.nombre_marca }}</div>
-                                                    <div><strong>Concepto:</strong> {{ f.tipo_cobro }}</div>
-                                                    <div><strong>Monto:</strong> <span class="text-success fw-bold">{{ f.monto | cop }}</span></div>
+                                                <div class="p-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; font-size:0.86rem;">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span class="text-muted">Cliente:</span>
+                                                        <strong>{{ f.local.nombre_marca }}</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span class="text-muted">Concepto:</span>
+                                                        <strong>{{ f.tipo_cobro }}</strong>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="text-muted">Monto a ingresar:</span>
+                                                        <strong class="text-success font-mono fs-6">{{ f.monto | cop }}</strong>
+                                                    </div>
                                                 </div>
 
                                                 <div class="mb-3">
-                                                    <label class="form-label fw-bold" style="font-size:0.85rem;">Cuenta Destino del Ingreso</label>
+                                                    <label class="form-label fw-bold">Billetera / Cuenta Destino del Ingreso</label>
                                                     <select class="form-select" name="cuenta_destino" required>
-                                                        <option value="Nu" selected>Cuenta Nu (Jhon)</option>
-                                                        <option value="Nequi">Cuenta Nequi (Jhon)</option>
-                                                        <option value="Bancolombia">Bancolombia Empresarial / Otra</option>
+                                                        <option value="Nu" selected>🟣 Cuenta Nu (Jhon)</option>
+                                                        <option value="Nequi">🔵 Cuenta Nequi (Jhon)</option>
+                                                        <option value="Bancolombia">🏦 Cuenta Empresarial / Bancolombia</option>
                                                     </select>
-                                                    <div class="form-text" style="font-size:0.75rem;">Suma automáticamente al saldo de la tarjeta seleccionada.</div>
+                                                    <div class="form-text" style="font-size:0.75rem;">Suma automáticamente al saldo disponible de la billetera seleccionada.</div>
                                                 </div>
 
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold" style="font-size:0.85rem;">Fecha Real de Pago</label>
+                                                <div class="mb-2">
+                                                    <label class="form-label fw-bold">Fecha Real de Pago</label>
                                                     <input type="date" class="form-control" name="fecha_pago" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-success btn-sm fw-bold">
+                                                <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success btn-sm fw-bold px-3">
                                                     <i class="fa-solid fa-check me-1"></i>Confirmar Ingreso & Reactivar
                                                 </button>
                                             </div>
@@ -253,25 +875,92 @@
                                 </div>
                             </div>
 
-                            <!-- Botón Enviar Recordatorio WhatsApp con Constancia -->
-                            <form action="{{ url_for('ingresos_bp.enviar_recordatorio', factura_id=f.id) }}" method="POST" target="_blank" class="d-inline">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <button type="submit" class="btn btn-sm btn-outline-success" title="Enviar recordatorio WhatsApp con constancia"
-                                        onclick="setTimeout(function(){ location.reload(); }, 1200);">
-                                    <i class="fa-brands fa-whatsapp"></i>
-                                </button>
-                            </form>
-                            {% endif %}
+                            <!-- Botón Abrir Modal Editable de Recordatorio WhatsApp -->
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3"
+                                    title="Revisar y enviar recordatorio de pago por WhatsApp"
+                                    data-bs-toggle="modal" data-bs-target="#modalRecordatorioWA{{ f.id }}"
+                                    style="font-size:0.76rem; font-weight:700;">
+                                <i class="fa-brands fa-whatsapp me-1"></i>Recordar
+                            </button>
 
-                            <!-- Ver Soporte Factura -->
-                            <a href="{{ url_for('ingresos_bp.soporte_factura', factura_id=f.id) }}" target="_blank" class="btn btn-sm btn-zenic" title="Ver Soporte / Recibo">
-                                <i class="fa-solid fa-file-pdf"></i>
+                            <!-- Modal Editable de Recordatorio WhatsApp -->
+                            <div class="modal fade" id="modalRecordatorioWA{{ f.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <form action="{{ url_for('ingresos_bp.enviar_recordatorio', factura_id=f.id) }}" method="POST" target="_blank">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" style="font-size:1.05rem; font-weight:800;">
+                                                    <i class="fa-brands fa-whatsapp text-success me-2"></i>Enviar Recordatorio a {{ f.local.nombre_marca }}
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                {% set dias_v = (f.fecha_vencimiento - hoy).days %}
+                                                <div class="p-3 rounded-3 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+                                                     style="background: {% if dias_v < 0 %}#FEF2F2{% elif dias_v == 0 %}#FFFBEB{% else %}#EFF6FF{% endif %}; border: 1px solid {% if dias_v < 0 %}rgba(239,68,68,0.3){% elif dias_v == 0 %}rgba(245,158,11,0.35){% else %}rgba(59,130,246,0.28){% endif %}; font-size:0.84rem;">
+                                                    <div>
+                                                        <strong>Factura {{ f.numero_factura }}</strong> · <span class="font-mono fw-bold">{{ f.monto | cop }}</span>
+                                                    </div>
+                                                    <div>
+                                                        {% if dias_v < 0 %}
+                                                        <span class="badge bg-danger">Vencida hace {{ dias_v * -1 }} día(s)</span>
+                                                        {% elif dias_v == 0 %}
+                                                        <span class="badge bg-warning text-dark">Vence HOY</span>
+                                                        {% else %}
+                                                        <span class="badge bg-primary">Faltan {{ dias_v }} día(s)</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Número de WhatsApp Destino</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text"><i class="fa-brands fa-whatsapp text-success"></i></span>
+                                                        <input type="text" name="telefono_wa" class="form-control"
+                                                               value="{{ f.local.telefono_cobro or '' }}"
+                                                               placeholder="Ej: 3001234567">
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <label class="form-label fw-bold mb-0">Mensaje de Recordatorio (Editable)</label>
+                                                        <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
+                                                            Adaptado automáticamente
+                                                        </span>
+                                                    </div>
+                                                    <textarea name="mensaje_wa" rows="8" class="form-control"
+                                                              style="font-size: 0.85rem; line-height: 1.5;">{{ f | mensaje_wa }}</textarea>
+                                                    <div class="form-text" style="font-size: 0.74rem;">
+                                                        Puedes modificar cualquier parte del texto antes de abrir WhatsApp. Quedará registrada la constancia de envío.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-success btn-sm fw-bold px-3"
+                                                        onclick="setTimeout(function(){ location.reload(); }, 1200);">
+                                                    <i class="fa-brands fa-whatsapp me-1"></i>Enviar por WhatsApp
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <a href="{{ url_for('locales_bp.ver_local', local_id=f.local.id) }}"
+                               class="btn btn-sm btn-light border rounded-pill px-3 text-secondary"
+                               style="font-size:0.75rem; font-weight:600;"
+                               title="Ver historial del cliente">
+                                <i class="fa-solid fa-user-check me-1 text-success"></i>Ver Perfil
                             </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="8" class="text-center py-4 text-muted">No hay facturas registradas.</td></tr>
+                <tr><td colspan="8" class="text-center py-5 text-muted">No hay facturas registradas.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -282,21 +971,21 @@
 {% block modals %}
 <!-- Modal Nueva Factura -->
 <div class="modal fade" id="modalNuevaFactura" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form action="{{ url_for('ingresos_bp.nueva_factura') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-plus me-2 text-primary"></i>Emitir Nueva Factura</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-file-circle-plus me-2" style="color: var(--zenic-purple-neural);"></i>Emitir Nueva Factura</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Cliente (Local)</label>
                         <select class="form-select" name="local_id" required>
-                            <option value="">Selecciona un local...</option>
+                            <option value="">Selecciona un cliente...</option>
                             {% for l in locales %}
-                            <option value="{{ l.id }}">{{ l.nombre_marca }} [{{ l.tipo_plan }}] (Mensual: {{ l.mensualidad|cop }} | Anual: {{ l.valor_anualidad|cop }})</option>
+                            <option value="{{ l.id }}">{{ l.nombre_marca }} [{{ l.tipo_plan }}] — {{ l.mensualidad|cop }}/mes</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -304,17 +993,20 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tipo de Cobro</label>
                         <select class="form-select" name="tipo_cobro" required>
-                            <option value="Mensualidad" selected>Mensualidad (Plan Regular)</option>
-                            <option value="Instalación">Instalación Inicial</option>
-                            <option value="Anualidad">Anualidad (Plan Anual)</option>
-                            <option value="Otro">Otro Servicio / Adicional</option>
+                            <option value="Mensualidad" selected>📅 Mensualidad (Plan Regular)</option>
+                            <option value="Instalación">🛠️ Instalación Inicial</option>
+                            <option value="Anualidad">🏆 Anualidad (Plan Anual)</option>
+                            <option value="Otro">➕ Otro Servicio / Adicional</option>
                         </select>
                     </div>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-bold">Monto Personalizado (Opcional)</label>
-                            <input type="number" class="form-control" name="monto" placeholder="Dejar vacío para usar valor del plan" step="0.01">
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="text" class="form-control font-mono fw-bold" id="inputMontoFactura" name="monto" inputmode="numeric" autocomplete="off" placeholder="Valor del plan">
+                            </div>
                         </div>
                         <div class="col-6">
                             <label class="form-label fw-bold">Vencimiento (Opcional)</label>
@@ -322,17 +1014,85 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-2">
                         <label class="form-label fw-bold">Observaciones / Concepto Detallado</label>
-                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Ej. Cobro mensualidad Noviembre 2026"></textarea>
+                        <textarea class="form-control" name="observaciones" rows="2" placeholder="Ej. Cobro mensualidad vigente"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-zenic btn-sm">Generar Factura</button>
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">Generar Factura</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Filtro interactivo de tabla de facturas (Inicia en 'por_cobrar': Próximas a vencer y en mora)
+    let currentInvFilter = 'por_cobrar';
+
+    function applyInvoicesFilter() {
+        const q = (document.getElementById('searchFacturas').value || '').toLowerCase();
+        let visibles = 0;
+        document.querySelectorAll('#tablaFacturas tbody tr[data-estado]').forEach(tr => {
+            const matchText = tr.textContent.toLowerCase().includes(q);
+            const est = tr.getAttribute('data-estado');
+            let matchEst = false;
+            if (currentInvFilter === 'todos') {
+                matchEst = true;
+            } else if (currentInvFilter === 'por_cobrar') {
+                matchEst = (est === 'Pendiente' || est === 'Vencido');
+            } else {
+                matchEst = (est === currentInvFilter);
+            }
+            if (matchText && matchEst) {
+                tr.style.display = '';
+                visibles++;
+            } else {
+                tr.style.display = 'none';
+            }
+        });
+        const countEl = document.getElementById('invCountVisibles');
+        if (countEl) countEl.textContent = visibles;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyInvoicesFilter();
+    });
+
+    function filterInvoices(estado, el) {
+        if (currentInvFilter === estado && estado !== 'todos' && el && el.classList.contains('billing-kpi-card')) {
+            currentInvFilter = 'todos';
+        } else {
+            currentInvFilter = estado;
+        }
+        document.querySelectorAll('.inv-filter-pill').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-est') === currentInvFilter);
+        });
+        document.querySelectorAll('.billing-kpi-card').forEach(c => {
+            c.classList.remove('active-kpi-filter');
+        });
+        if (el && el.classList.contains('billing-kpi-card') && currentInvFilter !== 'todos') {
+            el.classList.add('active-kpi-filter');
+        }
+        applyInvoicesFilter();
+    }
+
+    const searchFactInp = document.getElementById('searchFacturas');
+    if (searchFactInp) {
+        searchFactInp.addEventListener('input', applyInvoicesFilter);
+    }
+
+    // Formateo con puntos de miles para monto personalizado en modal Nueva Factura
+    const montoInp = document.getElementById('inputMontoFactura');
+    if (montoInp) {
+        montoInp.addEventListener('input', function () {
+            const digits = this.value.replace(/\D/g, '');
+            this.value = digits ? parseInt(digits, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        });
+    }
+</script>
 {% endblock %}

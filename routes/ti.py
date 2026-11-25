@@ -14,10 +14,10 @@ from datetime import datetime
 from PIL import Image, ImageOps
 from werkzeug.utils import secure_filename
 
-from flask import Blueprint, render_template, request, flash, redirect, url_for, abort, current_app
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort, current_app, jsonify
 from flask_login import login_required, current_user
 
-from models import db, TicketCambio, Local, User, obtener_hora_bogota
+from models import db, TicketCambio, Local, User, BitacoraCliente, obtener_hora_bogota
 from decorators import ti_required, tickets_access_required, admin_required
 
 ti_bp = Blueprint("ti_bp", __name__, url_prefix="/ti")
@@ -135,38 +135,64 @@ def procesar_adjunto_ticket(archivo):
 @tickets_access_required
 def tickets():
     """
-    Lista de tickets de cambio / soporte.
-    Permite filtrar por estado y prioridad.
+    Módulo Universal de Tickets, Asignaciones y Validación:
+    Permite ver Todos los tickets, Mis Tickets Asignados (pendientes por resolver)
+    y los Tickets Por Validar (que el usuario asignó y ya fueron solucionados).
     """
     estado_filtro = request.args.get("estado", "")
     local_filtro = request.args.get("local_id", "")
+    vista_activa = request.args.get("vista", "") # 'mis_asignados', 'por_validar', 'todos'
 
     query = TicketCambio.query.order_by(
-        TicketCambio.estado.asc(),
+        TicketCambio.fecha_actualizacion.desc(),
         TicketCambio.fecha_creacion.desc()
     )
 
     if estado_filtro:
         query = query.filter_by(estado=estado_filtro)
-    if local_filtro:
+    if local_filtro and local_filtro.isdigit():
         query = query.filter_by(local_id=int(local_filtro))
 
     tickets_list = query.all()
     locales = Local.query.order_by(Local.nombre_marca).all()
     usuarios = User.query.order_by(User.nombre).all()
 
+    # Subconjuntos personalizados para el usuario actual
+    mis_asignados = [
+        t for t in tickets_list
+        if t.asignado_id == current_user.id and t.estado in ("Pendiente", "En Desarrollo", "Requiere Ajustes")
+    ]
+    por_validar_mios = [
+        t for t in tickets_list
+        if (t.solicitante_id == current_user.id or current_user.rol == "admin") and t.estado == "Por Validar"
+    ]
+
+    # Si el usuario no especificó pestaña pero tiene tickets asignados pendientes, mostrarle esos primero si no es admin/operaciones, o mantener vista inteligente
+    if not vista_activa:
+        if len(mis_asignados) > 0 and current_user.rol in ("ti", "marketing"):
+            vista_activa = "mis_asignados"
+        elif len(por_validar_mios) > 0:
+            vista_activa = "por_validar"
+        else:
+            vista_activa = "todos"
+
     # Métricas rápidas
-    total_pendientes = TicketCambio.query.filter(TicketCambio.estado.in_(["Pendiente", "En Desarrollo"])).count()
+    total_pendientes = TicketCambio.query.filter(TicketCambio.estado.in_(["Pendiente", "En Desarrollo", "Requiere Ajustes"])).count()
+    total_por_validar = TicketCambio.query.filter_by(estado="Por Validar").count()
     total_urgentes = TicketCambio.query.filter(TicketCambio.prioridad == "Urgente", TicketCambio.estado != "Resuelto").count()
     total_resueltos = TicketCambio.query.filter_by(estado="Resuelto").count()
 
     return render_template(
         "ti/tickets.html",
         tickets=tickets_list,
+        mis_asignados=mis_asignados,
+        por_validar_mios=por_validar_mios,
+        vista_activa=vista_activa,
         locales=locales,
         usuarios=usuarios,
         usuarios_ti=usuarios,
         total_pendientes=total_pendientes,
+        total_por_validar=total_por_validar,
         total_urgentes=total_urgentes,
         total_resueltos=total_resueltos,
         estado_filtro=estado_filtro,
@@ -231,17 +257,36 @@ def nuevo_ticket():
     )
 
     db.session.add(ticket)
+    db.session.flush()
+
+    if ticket.local_id:
+        db.session.add(BitacoraCliente(
+            local_id=ticket.local_id,
+            user_id=current_user.id,
+            tipo="Ticket",
+            titulo=f"Ticket #{ticket.id} creado: {ticket.titulo}",
+            detalle=f"Categoría: {ticket.categoria} · Prioridad: {ticket.prioridad} · {ticket.descripcion[:160]}"
+        ))
+
     db.session.commit()
 
     flash(f"Ticket #{ticket.id} registrado correctamente.", "success")
+    next_url = request.form.get("next_url")
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for("ti_bp.tickets"))
 
 
 @ti_bp.route("/tickets/<int:ticket_id>/actualizar", methods=["POST"])
 @login_required
-@ti_required
+@tickets_access_required
 def actualizar_ticket(ticket_id):
-    """Actualización del estado y notas de resolución por parte del equipo de TI."""
+    """
+    Permite a la persona asignada (de cualquier perfil) o a TI/Admin/Solicitante:
+    - Cambiar el estado del ticket (ej. 'En Desarrollo', 'Por Validar')
+    - Reasignar responsable si aplica
+    - Dejar su comentario de solución después de realizar el cambio
+    """
     ticket = TicketCambio.query.get_or_404(ticket_id)
 
     nuevo_estado = request.form.get("estado")
@@ -250,19 +295,156 @@ def actualizar_ticket(ticket_id):
 
     if nuevo_estado:
         ticket.estado = nuevo_estado
-        if nuevo_estado == "Resuelto" and not ticket.fecha_cierre:
+        if nuevo_estado == "Resuelto":
             ticket.fecha_cierre = obtener_hora_bogota()
-        elif nuevo_estado != "Resuelto":
+            ticket.validado_por_solicitante = True
+        else:
             ticket.fecha_cierre = None
+            if nuevo_estado in ("Por Validar", "Requiere Ajustes", "Pendiente", "En Desarrollo"):
+                ticket.validado_por_solicitante = False
 
-    if asignado_id is not None:
+    if asignado_id is not None and (current_user.rol in ["admin", "operaciones_finanzas", "ti"] or ticket.solicitante_id == current_user.id):
         ticket.asignado_id = int(asignado_id) if (asignado_id and asignado_id.strip()) else None
 
-    if notas is not None:
+    if notas is not None and notas.strip():
         ticket.notas_resolucion = notas.strip()
 
+    notas_val = request.form.get("notas_validacion")
+    if notas_val is not None and notas_val.strip():
+        ticket.notas_validacion = notas_val.strip()
+
+    if ticket.local_id:
+        db.session.add(BitacoraCliente(
+            local_id=ticket.local_id,
+            user_id=current_user.id,
+            tipo="Ticket",
+            titulo=f"Ticket #{ticket.id} pasó a «{ticket.estado}» por {current_user.nombre.split()[0]}",
+            detalle=ticket.notas_resolucion or f"Actualización en ticket ({ticket.titulo})."
+        ))
+
     db.session.commit()
-    flash(f"Ticket #{ticket.id} actualizado exitosamente.", "success")
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json":
+        return jsonify({
+            "ok": True,
+            "ticket_id": ticket.id,
+            "estado": ticket.estado,
+            "mensaje": f"Ticket #{ticket.id} actualizado a «{ticket.estado}»."
+        })
+
+    if ticket.estado == "Por Validar":
+        flash(f"✅ Ticket #{ticket.id} marcado como solucionado y enviado a validación de quien lo solicitó.", "success")
+    elif ticket.estado == "Requiere Ajustes":
+        flash(f"🔄 Ticket #{ticket.id} devuelto a «Requiere Ajustes». Se notificó al responsable asignado.", "info")
+    else:
+        flash(f"✅ Ticket #{ticket.id} actualizado a «{ticket.estado}».", "success")
+
+    next_url = request.form.get("next_url")
+    if next_url:
+        return redirect(next_url)
+    return redirect(url_for("ti_bp.tickets"))
+
+
+@ti_bp.route("/api/notificaciones", methods=["GET"])
+@login_required
+def api_notificaciones_tickets():
+    """
+    Endpoint JSON en tiempo real para notificaciones en PC, Android y iPhone (PWA/Navegador).
+    Devuelve los tickets asignados al usuario actual (incluyendo los devueltos a 'Requiere Ajustes')
+    y los tickets que el usuario asignó y están listos 'Por Validar'.
+    """
+    asignados = TicketCambio.query.filter(
+        TicketCambio.asignado_id == current_user.id,
+        TicketCambio.estado.in_(["Pendiente", "En Desarrollo", "Requiere Ajustes"])
+    ).order_by(TicketCambio.fecha_actualizacion.desc()).all()
+
+    por_validar = TicketCambio.query.filter(
+        TicketCambio.solicitante_id == current_user.id,
+        TicketCambio.estado == "Por Validar"
+    ).order_by(TicketCambio.fecha_actualizacion.desc()).all()
+
+    items = []
+    for t in asignados:
+        es_ajuste = (t.estado == "Requiere Ajustes")
+        ts = (t.fecha_actualizacion or t.fecha_creacion).strftime("%Y-%m-%d %H:%M:%S")
+        items.append({
+            "key": f"asig_{t.id}_{t.estado}_{ts}",
+            "id": t.id,
+            "titulo": t.titulo,
+            "estado": t.estado,
+            "prioridad": t.prioridad,
+            "tipo": "ajustes" if es_ajuste else "asignado",
+            "encabezado": f"🔄 Revisar nuevamente Ticket #{t.id}" if es_ajuste else f"🛠️ Ticket #{t.id} asignado ({t.estado})",
+            "mensaje": (f"Observación: {t.notas_validacion}" if (es_ajuste and t.notas_validacion) else t.titulo),
+            "url": url_for("ti_bp.tickets", vista="mis_asignados")
+        })
+
+    for tv in por_validar:
+        ts = (tv.fecha_actualizacion or tv.fecha_creacion).strftime("%Y-%m-%d %H:%M:%S")
+        resp_nombre = tv.asignado.nombre.split()[0] if tv.asignado else "Responsable"
+        items.append({
+            "key": f"val_{tv.id}_{tv.estado}_{ts}",
+            "id": tv.id,
+            "titulo": tv.titulo,
+            "estado": tv.estado,
+            "prioridad": tv.prioridad,
+            "tipo": "por_validar",
+            "encabezado": f"✅ Ticket #{tv.id} listo para validar",
+            "mensaje": f"{resp_nombre} reportó solución: {tv.notas_resolucion or tv.titulo}",
+            "url": url_for("ti_bp.tickets", vista="por_validar")
+        })
+
+    return jsonify({
+        "ok": True,
+        "total": len(items),
+        "asignados_count": len(asignados),
+        "por_validar_count": len(por_validar),
+        "items": items
+    })
+
+
+@ti_bp.route("/tickets/<int:ticket_id>/validar", methods=["POST"])
+@login_required
+@tickets_access_required
+def validar_ticket(ticket_id):
+    """
+    Permite a la persona que creó/asignó el ticket (o Admin/Operaciones) validar el trabajo:
+    - 'aprobar': Marca el ticket como 'Resuelto', validado_por_solicitante=True y guarda su comentario de conformidad.
+    - 'revisar': Devuelve el ticket a 'Requiere Ajustes' y guarda el comentario con lo que falta por revisar para que le notifique al responsable.
+    """
+    ticket = TicketCambio.query.get_or_404(ticket_id)
+    decision = request.form.get("decision", "aprobar").strip() # 'aprobar' o 'revisar'
+    comentario = request.form.get("notas_validacion", "").strip()
+
+    if decision == "aprobar":
+        ticket.estado = "Resuelto"
+        ticket.validado_por_solicitante = True
+        ticket.fecha_cierre = obtener_hora_bogota()
+        ticket.notas_validacion = comentario or "Validado y aprobado conforme por el solicitante."
+        msg_flash = f"✅ Ticket #{ticket.id} validado y cerrado exitosamente como Resuelto."
+        cat_flash = "success"
+    else:
+        ticket.estado = "Requiere Ajustes"
+        ticket.validado_por_solicitante = False
+        ticket.fecha_cierre = None
+        ticket.notas_validacion = comentario or "Se requiere revisar algunos detalles adicionales."
+        msg_flash = f"🔄 Se solicitaron ajustes en el Ticket #{ticket.id}. El responsable ha sido notificado."
+        cat_flash = "info"
+
+    if ticket.local_id:
+        db.session.add(BitacoraCliente(
+            local_id=ticket.local_id,
+            user_id=current_user.id,
+            tipo="Ticket",
+            titulo=f"Validación de Ticket #{ticket.id}: «{ticket.estado}»",
+            detalle=f"Comentario de {current_user.nombre.split()[0]}: {ticket.notas_validacion}"
+        ))
+
+    db.session.commit()
+    flash(msg_flash, cat_flash)
+
+    next_url = request.form.get("next_url")
+    if next_url:
+        return redirect(next_url)
     return redirect(url_for("ti_bp.tickets"))
 
 

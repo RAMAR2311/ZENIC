@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from flask_login import login_required
-from models import db, Local, Gasto, Ingreso, Factura, Tesoreria, ActivoFijo, Personal, obtener_hora_bogota
+from models import db, Local, Gasto, Ingreso, Factura, Tesoreria, ActivoFijo, Personal, Prestamo, obtener_hora_bogota
 from sqlalchemy import func
 import calendar
 from dateutil.relativedelta import relativedelta
@@ -29,11 +29,12 @@ def master():
     gastos_indirectos = sum(float(g.monto) for g in gastos_mes if getattr(g, 'tipo_costo', '') == 'Costo Indirecto')
     gastos_admin = sum(float(g.monto) for g in gastos_mes if getattr(g, 'tipo_costo', '') == 'Gasto Administrativo')
     
-    # 3. Tesoreria
+    # 3. Tesoreria + Cartera de Préstamos a favor de Zenic
     tesoreria = Tesoreria.query.first()
     patrimonio = (float(tesoreria.saldo_banco) + float(tesoreria.caja_menor)) if tesoreria else 0
     total_equipos = db.session.query(func.sum(ActivoFijo.valor)).scalar() or 0
-    patrimonio_neto = patrimonio + float(total_equipos)
+    total_cartera_prestamos = sum(p.saldo_pendiente for p in Prestamo.query.all() if p.estado != "Pagado")
+    patrimonio_neto = patrimonio + float(total_equipos) + total_cartera_prestamos
     
     # 4. Locales (Clientes)
     locales = Local.query.all()

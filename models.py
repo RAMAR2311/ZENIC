@@ -52,6 +52,7 @@ class Local(db.Model):
 
     # Fechas y Versión
     fecha_lanzamiento = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    fecha_inicio_facturacion = db.Column(db.Date, nullable=True)       # Desde cuándo empieza a correr facturación en sistema
     version_software = db.Column(db.String(20), nullable=False, default="1.0.0")
     fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
 
@@ -95,6 +96,12 @@ class Local(db.Model):
             return None
 
         if self.tipo_plan == "Anual":
+            # Si definieron una fecha específica de inicio de facturación futura o de renovación
+            if self.fecha_inicio_facturacion:
+                proximo = self.fecha_inicio_facturacion
+                while proximo < hoy:
+                    proximo += relativedelta(years=1)
+                return proximo
             # 1 año exacto desde fecha de lanzamiento
             proximo = self.fecha_lanzamiento + relativedelta(years=1)
             while proximo < hoy:
@@ -102,29 +109,28 @@ class Local(db.Model):
             return proximo
 
         # Plan Mensual
-        # Regla: Como la instalación cubre el primer mes de uso/pruebas,
-        # el primer cobro de mensualidad debe programarse automáticamente 1 mes después de lanzamiento.
-        fecha_min_primer_cobro = self.fecha_lanzamiento + relativedelta(months=1)
+        # Si se configuró explícitamente la fecha desde que inicia la facturación,
+        # se toma como punto de partida mínimo; de lo contrario, 1 mes después del lanzamiento.
+        if self.fecha_inicio_facturacion:
+            fecha_min_primer_cobro = self.fecha_inicio_facturacion
+        else:
+            fecha_min_primer_cobro = self.fecha_lanzamiento + relativedelta(months=1)
 
-        max_dia = calendar.monthrange(hoy.year, hoy.month)[1]
+        # Base de referencia para evaluar el corte vigente (el mayor entre hoy y el inicio de facturación)
+        ref_date = max(hoy, fecha_min_primer_cobro)
+        max_dia = calendar.monthrange(ref_date.year, ref_date.month)[1]
         dia_efectivo = min(self.dia_pago, max_dia)
-        corte_mes_actual = date(hoy.year, hoy.month, dia_efectivo)
+        corte_ref = date(ref_date.year, ref_date.month, dia_efectivo)
 
-        if corte_mes_actual < fecha_min_primer_cobro:
-            # Aún dentro del primer mes incluido de pruebas
-            ano_t = fecha_min_primer_cobro.year
-            mes_t = fecha_min_primer_cobro.month
-            max_dia_t = calendar.monthrange(ano_t, mes_t)[1]
-            return date(ano_t, mes_t, min(self.dia_pago, max_dia_t))
-
-        if corte_mes_actual < hoy:
-            # Ya pasó este mes y está activo, siguiente corte mes próximo
-            mes_sig = hoy.month + 1 if hoy.month < 12 else 1
-            ano_sig = hoy.year if hoy.month < 12 else hoy.year + 1
+        if corte_ref < fecha_min_primer_cobro or corte_ref < hoy:
+            # Si el día de pago de ese mes es anterior al inicio de facturación o ya pasó hoy,
+            # el próximo corte pasa al mes siguiente de ref_date
+            mes_sig = ref_date.month + 1 if ref_date.month < 12 else 1
+            ano_sig = ref_date.year if ref_date.month < 12 else ref_date.year + 1
             max_dia_sig = calendar.monthrange(ano_sig, mes_sig)[1]
             return date(ano_sig, mes_sig, min(self.dia_pago, max_dia_sig))
 
-        return corte_mes_actual
+        return corte_ref
 
     @property
     def dias_para_pago(self):
@@ -257,10 +263,40 @@ class Gasto(db.Model):
     fecha = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
     categoria = db.Column(db.String(100), nullable=True)
     tipo_costo = db.Column(db.String(50), nullable=False, default="Gasto Administrativo")
-    cuenta_origen = db.Column(db.String(30), nullable=True, default="Nu") # 'Nu', 'Nequi', 'Bancolombia', 'Caja Menor', 'Otra'
+    cuenta_origen = db.Column(db.String(30), nullable=True, default="Nu") # 'Nu', 'Nequi', 'Banco', 'Caja Menor', 'Otra'
+    comprobante_ruta = db.Column(db.String(255), nullable=True)            # Foto o PDF del comprobante del gasto
     presupuesto_id = db.Column(db.Integer, db.ForeignKey('presupuestos_area.id'), nullable=True)
     
     presupuesto = db.relationship('PresupuestoArea', backref=db.backref('gastos', lazy=True))
+
+
+class CostoFijo(db.Model):
+    """
+    Costos Fijos Mensuales y Obligaciones Recurrentes de Zenic (incluyendo Préstamos de la empresa,
+    Servidores, Licencias, Servicios, etc.).
+    Permite dejarlos configurados de forma permanente y validarlos cada mes cuando ya se pagaron,
+    guardando el comprobante y descontando de la cuenta seleccionada.
+    """
+    __tablename__ = 'costos_fijos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(180), nullable=False)             # Ej: Cuota Préstamo Empresarial, Servidores AWS
+    categoria = db.Column(db.String(60), nullable=False, default="Operativo") # 'Préstamos', 'Servidores / Cloud', 'Software / Licencias', 'Servicios / Nómina', 'Otro'
+    tipo_costo = db.Column(db.String(50), nullable=False, default="Costo Directo") # 'Costo Directo', 'Costo Indirecto', 'Gasto Administrativo', 'Pago de Préstamo'
+    monto_mensual = db.Column(db.Numeric(12, 2), nullable=False, default=0.00)
+    dia_pago = db.Column(db.Integer, nullable=True, default=1)     # Día estimado de pago del mes (1-31)
+    activo = db.Column(db.Boolean, default=True, nullable=False)
+
+    # Control del último pago validado
+    ultimo_mes_pagado = db.Column(db.Integer, nullable=True)
+    ultimo_ano_pagado = db.Column(db.Integer, nullable=True)
+    ultima_fecha_pago = db.Column(db.Date, nullable=True)
+    ultima_cuenta_origen = db.Column(db.String(40), nullable=True)
+    ultimo_comprobante = db.Column(db.String(255), nullable=True)
+    observaciones = db.Column(db.String(255), nullable=True)
+
+    def pagado_en_periodo(self, mes, ano):
+        return (self.ultimo_mes_pagado == mes) and (self.ultimo_ano_pagado == ano)
 
 class PresupuestoArea(db.Model):
     __tablename__ = 'presupuestos_area'
@@ -334,9 +370,11 @@ class TicketCambio(db.Model):
     estado = db.Column(
         db.String(30),
         nullable=False,
-        default="Pendiente", # Pendiente, En Desarrollo, En Pruebas, Resuelto, Cancelado
+        default="Pendiente", # Pendiente, En Desarrollo, Por Validar, Requiere Ajustes, Resuelto, Cancelado
     )
-    notas_resolucion = db.Column(db.Text, nullable=True)
+    notas_resolucion = db.Column(db.Text, nullable=True)       # Comentario dejado por el asignado al solucionarlo
+    notas_validacion = db.Column(db.Text, nullable=True)       # Comentario dejado por quien lo asignó al validar o pedir revisión
+    validado_por_solicitante = db.Column(db.Boolean, default=False, nullable=False)
     adjunto_ruta = db.Column(db.Text, nullable=True) # Nombre de archivo o lista en formato JSON de múltiples archivos
     adjunto_tipo = db.Column(db.String(50), nullable=True)  # 'imagen', 'video', o 'multiple'
 
@@ -532,4 +570,95 @@ class CorteMetricaSocial(db.Model):
         if self.alcance and self.alcance > 0:
             return round((float(self.interacciones) / float(self.alcance)) * 100, 2)
         return 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELO: BitacoraCliente (Historial de Cambios, Pagos y Eventos por Cliente)
+# ─────────────────────────────────────────────────────────────────────────────
+class BitacoraCliente(db.Model):
+    """
+    Registra cronológicamente todos los cambios y eventos realizados en un cliente:
+    - Creación/modificación de condiciones comerciales o fechas de facturación
+    - Pagos validados y facturas emitidas
+    - Tickets de soporte o cambios técnicos realizados
+    - Notas manuales de seguimiento del equipo
+    """
+    __tablename__ = "bitacora_clientes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    local_id = db.Column(db.Integer, db.ForeignKey("locales.id", ondelete="CASCADE"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    tipo = db.Column(db.String(40), nullable=False, default="Cambio") # 'Pago', 'Ticket', 'Cambio', 'Configuración', 'Nota'
+    titulo = db.Column(db.String(200), nullable=False)
+    detalle = db.Column(db.Text, nullable=True)
+    fecha = db.Column(db.DateTime, default=obtener_hora_bogota)
+
+    local = db.relationship("Local", backref=db.backref("bitacora_list", lazy=True, cascade="all, delete-orphan"))
+    usuario = db.relationship("User", backref=db.backref("bitacoras_registradas", lazy=True))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MODELOS: Prestamo y AbonoPrestamo (Cuentas por Cobrar / Préstamos a Favor de Zenic)
+# ─────────────────────────────────────────────────────────────────────────────
+class Prestamo(db.Model):
+    """
+    Préstamos o créditos otorgados por Zenic (anteriores o nuevos) que constituyen
+    un activo / cuenta por cobrar a favor de la empresa.
+    Permite llevar el control del monto prestado, abonos recibidos y saldo pendiente.
+    """
+    __tablename__ = "prestamos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    deudor = db.Column(db.String(150), nullable=False)            # Nombre de la persona, socio o cliente
+    local_id = db.Column(db.Integer, db.ForeignKey("locales.id", ondelete="SET NULL"), nullable=True)
+    concepto = db.Column(db.String(255), nullable=False)          # Motivo o detalle del préstamo
+    monto_total = db.Column(db.Numeric(15, 2), nullable=False)    # Capital total prestado
+    fecha_prestamo = db.Column(db.Date, nullable=True)            # Opcional (None para préstamos antiguos sin fecha)
+    fecha_vencimiento = db.Column(db.Date, nullable=True)         # Opcional
+    es_historico = db.Column(db.Boolean, default=True, nullable=False) # True si se prestó antes del corte (no resta caja actual)
+    estado = db.Column(db.String(30), nullable=False, default="Activo") # 'Activo', 'Pagado'
+    observaciones = db.Column(db.Text, nullable=True)
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=obtener_hora_bogota)
+
+    local = db.relationship("Local", backref=db.backref("prestamos_list", lazy=True))
+    creado_por = db.relationship("User", backref=db.backref("prestamos_creados", lazy=True))
+    abonos = db.relationship("AbonoPrestamo", backref="prestamo", lazy=True, cascade="all, delete-orphan", order_by="AbonoPrestamo.fecha_abono.desc()")
+
+    @property
+    def total_abonado(self):
+        return sum(float(a.monto) for a in self.abonos)
+
+    @property
+    def saldo_pendiente(self):
+        restante = float(self.monto_total) - self.total_abonado
+        return max(0.0, restante)
+
+    @property
+    def porcentaje_pagado(self):
+        if not self.monto_total or float(self.monto_total) <= 0:
+            return 0.0
+        return min(100.0, round((self.total_abonado / float(self.monto_total)) * 100, 1))
+
+
+class AbonoPrestamo(db.Model):
+    """
+    Registro de cada abono o pago parcial/total recibido sobre un préstamo a favor de Zenic,
+    incluyendo la cuenta destino donde entró el dinero y el archivo del comprobante.
+    """
+    __tablename__ = "abonos_prestamo"
+
+    id = db.Column(db.Integer, primary_key=True)
+    prestamo_id = db.Column(db.Integer, db.ForeignKey("prestamos.id", ondelete="CASCADE"), nullable=False)
+    monto = db.Column(db.Numeric(15, 2), nullable=False)
+    fecha_abono = db.Column(db.Date, nullable=False, default=obtener_hora_bogota)
+    cuenta_destino = db.Column(db.String(40), nullable=False, default="Nu") # 'Nu', 'Nequi', 'Banco', 'Caja Menor'
+    comprobante_ruta = db.Column(db.String(255), nullable=True)   # Imagen o PDF del comprobante de pago
+    observacion = db.Column(db.String(255), nullable=True)
+    registrado_por_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    fecha_registro = db.Column(db.DateTime, default=obtener_hora_bogota)
+
+    registrado_por = db.relationship("User", backref=db.backref("abonos_prestamos_registrados", lazy=True))
+
+
 

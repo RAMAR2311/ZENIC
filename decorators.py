@@ -56,12 +56,13 @@ def operaciones_finanzas_required(f):
 def tickets_access_required(f):
     """
     Acceso al módulo de tickets:
-    - TI y Admin gestionan y resuelven.
-    - Operaciones_finanzas crea y consulta solicitudes de sus clientes.
+    Todos los perfiles autenticados (admin, operaciones_finanzas, ti, marketing)
+    pueden acceder para ver sus tickets asignados, cambiar estado, dejar comentarios
+    de solución y validar los tickets que crearon/asignaron.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.rol not in ["ti", "operaciones_finanzas", "admin"]:
+        if not current_user.is_authenticated:
             abort(403)
         return f(*args, **kwargs)
     return decorated_function

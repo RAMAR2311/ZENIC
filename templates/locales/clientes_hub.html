@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Perfiles de Clientes 360°{% endblock %}
+
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       MÓDULO PERFILES DE CLIENTES 360° — Directorio Visual Zenic
+       Muestra cada cliente en una tarjeta interactiva con su estado,
+       meses pagados, tickets activos y acceso directo a su perfil completo.
+    ═══════════════════════════════════════════════════════════════════ */
+    .hub-hero-banner {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 52%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.75rem 2.25rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.28);
+        margin-bottom: 1.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .hub-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -5%;
+        width: 360px;
+        height: 360px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .client-profile-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 6px 18px -6px rgba(15, 23, 42, 0.06);
+        position: relative;
+    }
+    .client-profile-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 32px -8px rgba(122, 62, 176, 0.18);
+        border-color: rgba(122, 62, 176, 0.45);
+    }
+    .client-card-top-bar {
+        height: 5px;
+        width: 100%;
+    }
+    .top-bar-verde    { background: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+    .top-bar-amarillo { background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+    .top-bar-rojo     { background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%); }
+    .top-bar-azul     { background: linear-gradient(90deg, #4A7BB0 0%, #38BDF8 100%); }
+
+    .client-avatar-lg {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #7A3EB0 0%, #5C8AC8 100%);
+        color: #FFFFFF;
+        font-weight: 800;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        position: relative;
+        box-shadow: 0 6px 14px rgba(122, 62, 176, 0.25);
+    }
+    .client-metrics-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 0.75rem 0.6rem;
+        text-align: center;
+        margin: 1rem 0;
+    }
+    .metric-mini-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0F172A;
+        line-height: 1.1;
+    }
+    .metric-mini-lbl {
+        font-size: 0.67rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748B;
+        margin-top: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══ BANNER HERO ═════════════════════════════════════════════════════ -->
+<div class="hub-hero-banner d-flex align-items-center justify-content-between flex-wrap gap-3 mt-1">
+    <div style="position: relative; z-index: 2;">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+             style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38BDF8; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">
+            <i class="fa-solid fa-address-card"></i> Expedientes 360° · Zenic Cloud
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; margin: 0; letter-spacing: -0.5px; color: #FFFFFF;">
+            Perfiles de Clientes & Trazabilidad
+        </h1>
+        <p style="font-size: 0.86rem; color: rgba(255, 255, 255, 0.75); margin: 4px 0 0;">
+            Ingresa al perfil de cualquier cliente para consultar sus meses pagados, tickets de soporte y bitácora de cambios
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2" style="position: relative; z-index: 2;">
+        <div class="position-relative">
+            <i class="fa-solid fa-magnifying-glass position-absolute"
+               style="left: 13px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.85rem;"></i>
+            <input type="text" id="searchClientCards" class="form-control form-control-sm ps-5"
+                   placeholder="Buscar cliente..."
+                   style="border-radius: 999px !important; min-width: 220px;">
+        </div>
+        <a href="{{ url_for('locales_bp.nuevo_local') }}" class="btn-zenic px-3 py-2 rounded-3 text-decoration-none">
+            <i class="fa-solid fa-plus-circle"></i> Nuevo Cliente
+        </a>
+    </div>
+</div>
+
+<!-- ═══ GRILLA DE PERFILES DE CLIENTES ══════════════════════════════════ -->
+<div class="row g-4" id="gridClientes">
+    {% for l in locales %}
+    {% set sem_clean = l.semaforo | replace('semaforo-', '') %}
+    {% set pagadas_cnt = l.facturas_list | selectattr('estado', 'equalto', 'Pagado') | list | length %}
+    {% set pendientes_cnt = l.facturas_list | rejectattr('estado', 'equalto', 'Pagado') | list | length %}
+    {% set tickets_cnt = l.tickets | length %}
+    {% set cambios_cnt = (l.bitacora_list | length) + tickets_cnt %}
+    <div class="col-12 col-md-6 col-xl-4 client-card-col">
+        <div class="client-profile-card">
+            <div class="client-card-top-bar top-bar-{{ sem_clean }}"></div>
+            <div class="p-4 flex-grow-1 d-flex flex-column justify-content-between">
+                <div>
+                    <!-- Cabecera Cliente -->
+                    <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="client-avatar-lg">
+                                {{ l.nombre_marca[:2] | upper }}
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1.08rem; font-weight: 800; margin: 0; color: #0F172A;">
+                                    {{ l.nombre_marca }}
+                                </h3>
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
+                                        {{ l.tipo_plan }}
+                                    </span>
+                                    <span class="badge bg-light text-dark border" style="font-size: 0.68rem;">
+                                        v{{ l.version_software }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="badge-semaforo {{ l.semaforo }}">
+                            <span class="dot dot-{{ sem_clean }}"></span>
+                            {{ l.semaforo_label }}
+                        </span>
+                    </div>
+
+                    <!-- Resumen Comercial y Fechas -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top" style="font-size: 0.8rem;">
+                        <span class="text-muted">Suscripción:</span>
+                        {% if l.tipo_plan == 'Interna' %}
+                        <strong class="text-secondary">Uso Interno ($0)</strong>
+                        {% elif l.tipo_plan == 'Anual' %}
+                        <strong class="font-mono text-primary">{{ l.valor_anualidad | cop }}/año</strong>
+                        {% else %}
+                        <strong class="font-mono text-success">{{ l.mensualidad | cop }}/mes (Día {{ l.dia_pago }})</strong>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 0.78rem;">
+                        <span class="text-muted">Próximo Corte:</span>
+                        <strong style="color: var(--zenic-purple-neural);">
+                            {{ l.proxima_fecha_corte | fecha_corta if l.proxima_fecha_corte else 'No aplica' }}
+                        </strong>
+                    </div>
+
+                    <!-- Mini-indicadores de Historial -->
+                    <div class="client-metrics-strip">
+                        <div>
+                            <div class="metric-mini-val text-success">{{ pagadas_cnt }}</div>
+                            <div class="metric-mini-lbl">Pagos Realizados</div>
+                        </div>
+                        <div style="border-left: 1px solid #E2E8F0; border-right: 1px solid #E2E8F0;">
+                            <div class="metric-mini-val {% if pendientes_cnt > 0 %}text-warning-emphasis{% else %}text-muted{% endif %}">{{ pendientes_cnt }}</div>
+                            <div class="metric-mini-lbl">Por Cobrar</div>
+                        </div>
+                        <div>
+                            <div class="metric-mini-val" style="color: var(--zenic-purple-neural);">{{ tickets_cnt }}</div>
+                            <div class="metric-mini-lbl">Tickets / Cambios</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Abrir Perfil 360 -->
+                <div class="d-flex gap-2 mt-2">
+                    <a href="{{ url_for('locales_bp.ver_local', local_id=l.id) }}"
+                       class="btn-zenic w-100 py-2 text-decoration-none">
+                        <i class="fa-solid fa-folder-tree me-1"></i> Abrir Perfil & Historial
+                    </a>
+                    <a href="{{ url_for('locales_bp.editar_local', local_id=l.id) }}"
+                       class="btn-zenic-outline px-3 py-2" title="Editar configuración">
+                        <i class="fa-solid fa-pen"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const inpSearch = document.getElementById('searchClientCards');
+    if (inpSearch) {
+        inpSearch.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('.client-card-col').forEach(col => {
+                col.style.display = col.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    }
+</script>
+{% endblock %}

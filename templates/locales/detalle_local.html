@@ -1,263 +1,977 @@
 {% extends "base.html" %}
-{% block title %}{{ local.nombre_marca }}{% endblock %}
+{% block title %}Perfil 360° — {{ local.nombre_marca }}{% endblock %}
+
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       PERFIL 360° DEL CLIENTE — Expediente Histórico Zenic
+       Muestra en un solo lugar:
+       1. Meses Pagados y Facturas por cobrar
+       2. Tickets de Soporte generados para el cliente
+       3. Bitácora cronológica de cambios realizados
+       4. Bóveda de Credenciales y Documentos Legales
+    ═══════════════════════════════════════════════════════════════════ */
+    .profile-hero-card {
+        background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 55%, #3B1E6D 100%);
+        border-radius: 20px;
+        padding: 1.85rem 2.2rem;
+        color: #FFFFFF;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 32px -8px rgba(122, 62, 176, 0.3);
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .profile-hero-card::before {
+        content: '';
+        position: absolute;
+        top: -45%;
+        right: -5%;
+        width: 340px;
+        height: 340px;
+        background: radial-gradient(circle, rgba(138, 69, 209, 0.35) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .profile-avatar-xl {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #8A45D1 0%, #5C8AC8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.65rem;
+        font-weight: 800;
+        color: #FFFFFF;
+        flex-shrink: 0;
+        box-shadow: 0 10px 24px rgba(122, 62, 176, 0.45);
+        border: 2px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Mini KPIs del Cliente */
+    .profile-stat-box {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 1.15rem 1.35rem;
+        height: 100%;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    }
+    .profile-stat-lbl {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748B;
+        margin-bottom: 0.25rem;
+    }
+    .profile-stat-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #0F172A;
+    }
+
+    /* Pestañas del Perfil 360 */
+    .nav-tabs-zenic {
+        border-bottom: 2px solid #E2E8F0;
+        gap: 0.5rem;
+    }
+    .nav-tabs-zenic .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #64748B;
+        font-weight: 700;
+        font-size: 0.88rem;
+        padding: 0.85rem 1.25rem;
+        border-radius: 10px 10px 0 0;
+        transition: all 0.2s ease;
+        background: transparent;
+    }
+    .nav-tabs-zenic .nav-link:hover {
+        color: var(--zenic-purple-neural);
+        background: rgba(122, 62, 176, 0.04);
+    }
+    .nav-tabs-zenic .nav-link.active {
+        color: var(--zenic-purple-neural);
+        border-bottom-color: var(--zenic-purple-neural);
+        background: #FFFFFF;
+    }
+
+    /* Línea de tiempo (Timeline) de Cambios */
+    .timeline-zenic {
+        position: relative;
+        padding-left: 2rem;
+    }
+    .timeline-zenic::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        left: 11px;
+        width: 2px;
+        background: #E2E8F0;
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.25rem;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+    }
+    .timeline-dot {
+        position: absolute;
+        left: -1.88rem;
+        top: 1.1rem;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 3px solid #FFFFFF;
+        box-shadow: 0 0 0 2px #CBD5E1;
+    }
+    .tdot-Pago          { background: #10B981; box-shadow: 0 0 0 2px #10B981; }
+    .tdot-Ticket        { background: #F59E0B; box-shadow: 0 0 0 2px #F59E0B; }
+    .tdot-Cambio        { background: #7A3EB0; box-shadow: 0 0 0 2px #7A3EB0; }
+    .tdot-Configuración { background: #38BDF8; box-shadow: 0 0 0 2px #38BDF8; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="pt-2 mb-4 d-flex justify-content-between align-items-center">
-    <a href="{{ url_for('locales_bp.dashboard') }}"
-       style="font-size:0.8rem;color:var(--zenic-text-muted);text-decoration:none">
-        <i class="fa-solid fa-arrow-left me-1"></i> Dashboard
-    </a>
+<div class="pt-1 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('locales_bp.directorio_clientes') }}"
+           class="text-decoration-none fw-semibold"
+           style="font-size:0.84rem;color:var(--zenic-text-muted)">
+            <i class="fa-solid fa-arrow-left me-1"></i> Perfiles de Clientes
+        </a>
+        <span class="text-muted">·</span>
+        <a href="{{ url_for('locales_bp.dashboard') }}"
+           class="text-decoration-none"
+           style="font-size:0.84rem;color:var(--zenic-text-muted)">
+            Dashboard MRR
+        </a>
+    </div>
     <div class="d-flex gap-2 flex-wrap">
-
-        <a href="{{ url_for('locales_bp.editar_local', local_id=local.id) }}" class="btn-zenic text-decoration-none px-3 py-2 rounded-2 d-inline-flex align-items-center gap-2" style="font-size:0.85rem">
-            <i class="fa-solid fa-pen"></i> Editar
+        <button type="button" class="btn btn-sm btn-zenic-outline px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalRegistrarCambio">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i> Registrar Cambio / Nota
+        </button>
+        <button type="button" class="btn btn-sm btn-zenic-outline px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalNuevoTicketCliente">
+            <i class="fa-solid fa-ticket me-1"></i> Nuevo Ticket TI
+        </button>
+        <a href="{{ url_for('locales_bp.editar_local', local_id=local.id) }}" class="btn btn-sm btn-zenic px-3 py-2 text-decoration-none">
+            <i class="fa-solid fa-pen me-1"></i> Editar Cliente
         </a>
     </div>
 </div>
 
-<!-- Header del Local -->
-<div class="card-zenic p-4 mb-4" style="border-color: rgba(79,142,247,0.2)">
-    <div class="d-flex align-items-center gap-4 flex-wrap">
-        <div style="width:64px;height:64px;border-radius:16px;
-                    background:linear-gradient(135deg,var(--zenic-primary),var(--zenic-accent));
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:1.75rem;color:#fff;flex-shrink:0">
-            <i class="fa-solid fa-store"></i>
+<!-- ═══ CABECERA PERFIL 360° DEL CLIENTE ════════════════════════════════ -->
+<div class="profile-hero-card">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-4" style="position: relative; z-index: 2;">
+        <div class="d-flex align-items-center gap-3">
+            <div class="profile-avatar-xl">
+                {{ local.nombre_marca[:2] | upper }}
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <span class="badge" style="background: rgba(56, 189, 248, 0.18); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35); font-size: 0.7rem;">
+                        Plan {{ local.tipo_plan }}
+                    </span>
+                    <span class="badge" style="background: rgba(255,255,255,0.12); color: #E2E8F0; font-size: 0.7rem;">
+                        v{{ local.version_software }}
+                    </span>
+                    {% if local.is_online %}
+                    <span class="badge" style="background: rgba(16, 185, 129, 0.22); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 0.7rem;">
+                        <i class="fa-solid fa-circle fa-2xs me-1"></i>Online
+                    </span>
+                    {% else %}
+                    <span class="badge" style="background: rgba(239, 68, 68, 0.22); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 0.7rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Offline
+                    </span>
+                    {% endif %}
+                </div>
+                <h1 style="font-size: 1.65rem; font-weight: 800; margin: 0; color: #FFFFFF;">
+                    {{ local.nombre_marca }}
+                </h1>
+                <div class="d-flex align-items-center gap-3 flex-wrap mt-1" style="font-size: 0.84rem; color: rgba(255,255,255,0.78);">
+                    {% if local.url_instancia %}
+                    <a href="{{ local.url_instancia }}" target="_blank" style="color: #93C5FD; text-decoration: none;">
+                        <i class="fa-solid fa-globe me-1"></i>{{ local.url_instancia }}
+                    </a>
+                    {% endif %}
+                    {% if local.telefono_cobro %}
+                    <span><i class="fa-brands fa-whatsapp text-success me-1"></i>{{ local.telefono_cobro }}</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="flex-grow-1">
-            <h1 style="font-size:1.5rem;font-weight:800;margin:0">{{ local.nombre_marca }}</h1>
-            {% if local.url_instancia %}
-            <a href="{{ local.url_instancia }}" target="_blank"
-               style="font-size:0.85rem;color:var(--zenic-primary);text-decoration:none">
-                <i class="fa-solid fa-external-link fa-xs me-1"></i>{{ local.url_instancia }}
-            </a>
-            {% endif %}
-        </div>
-        <div class="text-end">
-            <span class="badge-semaforo {{ local.semaforo }} badge-semaforo">
+
+        <div class="text-md-end">
+            <span class="badge-semaforo {{ local.semaforo }}">
                 <span class="dot dot-{{ local.semaforo | replace('semaforo-','') }}"></span>
                 {{ local.semaforo_label }}
             </span>
-            <div style="font-size:0.72rem;color:var(--zenic-text-muted);margin-top:4px">
-                {% if local.dias_para_pago >= 0 %}
-                Corte en {{ local.dias_para_pago }} día(s)
+            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-top: 6px;">
+                {% if local.tipo_plan == 'Interna' %}
+                Instancia operativa interna (sin cobro)
+                {% elif local.dias_para_pago >= 0 %}
+                Próximo corte: <strong>{{ local.proxima_fecha_corte | fecha_corta }}</strong> (en {{ local.dias_para_pago }} días)
                 {% else %}
-                Vencido hace {{ (local.dias_para_pago * -1) }} día(s)
+                Corte vencido hace <strong>{{ (local.dias_para_pago * -1) }} día(s)</strong>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <!-- Columna Izquierda: Finanzas -->
-    <div class="col-md-6">
-        <div class="card-zenic p-4 h-100">
-            <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-                       color:var(--zenic-text-muted);margin-bottom:1.25rem">
-                <i class="fa-solid fa-coins me-2" style="color:var(--zenic-gold)"></i> Finanzas
-            </h2>
-            <div class="row g-3">
-                <div class="col-6">
-                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">MENSUALIDAD</div>
-                    <div style="font-size:1.5rem;font-weight:800;color:var(--zenic-success)">
-                        {{ local.mensualidad | cop }}
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">INVERSIÓN INICIAL</div>
-                    <div style="font-size:1.5rem;font-weight:800;color:var(--zenic-gold)">
-                        {{ local.inversion_inicial | cop }}
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">DÍA DE CORTE</div>
-                    <div style="font-size:1.25rem;font-weight:700">Día {{ local.dia_pago }}</div>
-                </div>
-                <div class="col-6">
-                    <div style="font-size:0.72rem;color:var(--zenic-text-muted)">ESTADO DE PAGO</div>
-                    <span class="badge-estado
-                        {% if local.estado_pago == 'Activo' %}badge-activo
-                        {% elif local.estado_pago == 'Pendiente' %}badge-pendiente
-                        {% else %}badge-suspendido{% endif %}">
-                        {{ local.estado_pago }}
-                    </span>
-                </div>
+<!-- ═══ RESUMEN FINANCIERO Y TÉCNICO DEL CLIENTE ════════════════════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="profile-stat-box">
+            <div class="profile-stat-lbl">Valor Suscripción</div>
+            <div class="profile-stat-val" style="color: var(--zenic-purple-neural);">
+                {% if local.tipo_plan == 'Anual' %}
+                {{ local.valor_anualidad | cop }}<span class="fs-6 text-muted">/año</span>
+                {% else %}
+                {{ local.mensualidad | cop }}<span class="fs-6 text-muted">/mes</span>
+                {% endif %}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem; margin-top: 3px;">
+                Corte día {{ local.dia_pago }} · Inversión inicial: {{ local.inversion_inicial | cop }}
             </div>
         </div>
     </div>
 
-    <!-- Columna Derecha: Info General -->
-    <div class="col-md-6">
-        <div class="card-zenic p-4 h-100">
-            <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-                       color:var(--zenic-text-muted);margin-bottom:1.25rem">
-                <i class="fa-solid fa-circle-info me-2" style="color:var(--zenic-primary)"></i> General
-            </h2>
-            <dl class="row g-2" style="font-size:0.875rem">
-                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Servidor CRM</dt>
-                <dd class="col-7 mb-2">
-                    {% if local.is_online %}
-                    <span class="badge" style="background:var(--zenic-success);color:#fff;padding:0.35rem 0.6rem">
-                        <i class="fa-solid fa-circle fa-2xs me-1"></i>En línea
-                    </span>
-                    {% else %}
-                    <span class="badge" style="background:var(--zenic-danger);color:#fff;padding:0.35rem 0.6rem">
-                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Caído
-                    </span>
-                    {% endif %}
-                </dd>
-                
-                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Últ. Revisión</dt>
-                <dd class="col-7 mb-2">{{ local.last_checked | fecha_corta if local.last_checked else 'Nunca' }}</dd>
-
-                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Lanzamiento</dt>
-                <dd class="col-7 mb-0">{{ local.fecha_lanzamiento | fecha_corta }}</dd>
-
-                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Registrado</dt>
-                <dd class="col-7 mb-0">{{ local.fecha_creacion | fecha_corta }}</dd>
-
-                <dt class="col-5" style="color:var(--zenic-text-muted);font-weight:500">Versión</dt>
-                <dd class="col-7 mb-0">
-                    <span style="background:var(--zenic-surface-2);padding:2px 8px;border-radius:4px;font-size:0.8rem">
-                        v{{ local.version_software }}
-                    </span>
-                </dd>
-            </dl>
+    <div class="col-6 col-lg-3">
+        <div class="profile-stat-box">
+            <div class="profile-stat-lbl">Total Meses / Facturas Pagadas</div>
+            <div class="profile-stat-val text-success">{{ total_pagado_cliente | cop }}</div>
+            <div class="text-muted" style="font-size: 0.74rem; margin-top: 3px;">
+                <strong>{{ facturas_pagadas | length }}</strong> período(s) pagados registrados
+            </div>
         </div>
     </div>
 
-    <!-- Bóveda de Credenciales -->
-    <div class="col-12">
-        <div class="card-zenic p-4" style="border-color:rgba(79,142,247,0.25)">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-                           color:var(--zenic-text-muted);margin:0">
-                    <i class="fa-solid fa-lock me-2" style="color:var(--zenic-primary)"></i> Bóveda de Credenciales
-                </h2>
-                <button class="btn btn-sm btn-zenic-outline" id="toggleBoveda">
-                    <i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar
+    <div class="col-6 col-lg-3">
+        <div class="profile-stat-box">
+            <div class="profile-stat-lbl">Saldo Pendiente / Por Cobrar</div>
+            <div class="profile-stat-val {% if total_pendiente_cliente > 0 %}text-warning-emphasis{% else %}text-muted{% endif %}">
+                {{ total_pendiente_cliente | cop }}
+            </div>
+            <div class="text-muted" style="font-size: 0.74rem; margin-top: 3px;">
+                <strong>{{ facturas_pendientes | length }}</strong> factura(s) pendientes o en mora
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg-3">
+        <div class="profile-stat-box">
+            <div class="profile-stat-lbl">Fechas Clave del Cliente</div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #0F172A; margin-top: 4px;">
+                <i class="fa-solid fa-rocket text-secondary me-1"></i>Inicio: {{ local.fecha_lanzamiento | fecha_corta }}
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--zenic-purple-neural); margin-top: 2px;">
+                <i class="fa-solid fa-play me-1"></i>Facturación: {{ (local.fecha_inicio_facturacion or local.proxima_fecha_corte) | fecha_corta }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ PESTAÑAS DEL EXPEDIENTE 360° ════════════════════════════════════ -->
+<ul class="nav nav-tabs nav-tabs-zenic mb-4" id="perfilTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-pagos-btn" data-bs-toggle="tab" data-bs-target="#tabPagos" type="button" role="tab">
+            <i class="fa-solid fa-file-invoice-dollar me-2"></i>Historial de Meses Pagados & Cobros
+            <span class="badge rounded-pill bg-light text-dark border ms-1">{{ facturas_cliente | length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-tickets-btn" data-bs-toggle="tab" data-bs-target="#tabTickets" type="button" role="tab">
+            <i class="fa-solid fa-ticket me-2"></i>Tickets de Soporte & Desarrollo
+            <span class="badge rounded-pill bg-light text-dark border ms-1">{{ tickets_cliente | length }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-cambios-btn" data-bs-toggle="tab" data-bs-target="#tabCambios" type="button" role="tab">
+            <i class="fa-solid fa-clock-rotate-left me-2"></i>Bitácora de Cambios Realizados
+            <span class="badge rounded-pill bg-light text-dark border ms-1">{{ (bitacora_db | length) + (facturas_pagadas | length) + (tickets_cliente | length) }}</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-boveda-btn" data-bs-toggle="tab" data-bs-target="#tabBoveda" type="button" role="tab">
+            <i class="fa-solid fa-shield-halved me-2"></i>Bóveda & Documentación Legal
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- ─── PESTAÑA 1: HISTORIAL DE MESES PAGADOS & COBROS ─────────────── -->
+    <div class="tab-pane fade show active" id="tabPagos" role="tabpanel">
+        <div class="card-zenic p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 style="font-size: 1.05rem; font-weight: 800; margin: 0;">
+                        Registro de Mensualidades, Instalaciones y Pagos
+                    </h2>
+                    <p class="text-muted small mb-0">
+                        Aquí queda registrado cada mes cobrado y pagado por {{ local.nombre_marca }}, con su fecha de validación y billetera destino.
+                    </p>
+                </div>
+                <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="btn btn-sm btn-zenic-outline">
+                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Ir al Módulo de Cobros
+                </a>
+            </div>
+
+            {% if facturas_cliente %}
+            <div class="table-responsive">
+                <table class="table table-zenic align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Factura</th>
+                            <th>Concepto / Período</th>
+                            <th>Vencimiento</th>
+                            <th>Monto</th>
+                            <th>Estado & Cuenta</th>
+                            <th>Recordatorios</th>
+                            <th class="text-end">Acción Rápida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in facturas_cliente %}
+                        <tr>
+                            <td>
+                                <span class="font-mono fw-bold">{{ f.numero_factura }}</span>
+                                <div class="text-muted" style="font-size: 0.73rem;">Emitida: {{ f.fecha_emision | fecha_corta }}</div>
+                            </td>
+                            <td>
+                                <span class="fw-bold">{{ f.tipo_cobro }}</span>
+                                {% if f.observaciones %}
+                                <div class="text-muted" style="font-size: 0.76rem;">{{ f.observaciones }}</div>
+                                {% endif %}
+                            </td>
+                            <td>{{ f.fecha_vencimiento | fecha_corta }}</td>
+                            <td class="font-mono fw-bold">{{ f.monto | cop }}</td>
+                            <td>
+                                {% if f.estado == 'Pagado' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                    <i class="fa-solid fa-check-circle me-1"></i>Pagado el {{ f.fecha_pago | fecha_corta }}
+                                </span>
+                                {% if f.cuenta_destino %}
+                                <span class="badge ms-1" style="background: {{ '#6D09A8' if f.cuenta_destino == 'Nu' else ('#1D4ED8' if f.cuenta_destino == 'Nequi' else '#334155') }}; color: #fff;">
+                                    {{ f.cuenta_destino }}
+                                </span>
+                                {% endif %}
+                                {% elif f.estado == 'Vencido' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                    <i class="fa-solid fa-clock me-1"></i>Vencido
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                    <i class="fa-solid fa-hourglass-half me-1"></i>Pendiente
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.78rem;">
+                                {% if f.ultimo_recordatorio %}
+                                <span class="text-success fw-semibold">
+                                    <i class="fa-brands fa-whatsapp me-1"></i>{{ f.total_recordatorios }} enviado(s)
+                                </span>
+                                <div class="text-muted" style="font-size: 0.7rem;">Últ: {{ f.ultimo_recordatorio.strftime('%d/%m/%Y') }}</div>
+                                {% else %}
+                                <span class="text-muted">Sin recordatorios</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if f.estado != 'Pagado' %}
+                                <div class="d-inline-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-2 py-1"
+                                            data-bs-toggle="modal" data-bs-target="#modalRecordatorioPerfilWA{{ f.id }}"
+                                            style="font-size: 0.74rem; font-weight: 700;">
+                                        <i class="fa-brands fa-whatsapp me-1"></i>Recordar
+                                    </button>
+                                    <a href="{{ url_for('ingresos_bp.dashboard_ingresos') }}" class="btn btn-sm btn-success text-white rounded-pill px-2 py-1" style="font-size: 0.74rem; font-weight: 700;">
+                                        <i class="fa-solid fa-check-double me-1"></i>Validar
+                                    </a>
+                                </div>
+
+                                <!-- Modal Editable de Recordatorio WhatsApp desde Perfil Cliente -->
+                                <div class="modal fade" id="modalRecordatorioPerfilWA{{ f.id }}" tabindex="-1" aria-hidden="true" style="text-align: left;">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <form action="{{ url_for('ingresos_bp.enviar_recordatorio', factura_id=f.id) }}" method="POST" target="_blank">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" style="font-size:1.05rem; font-weight:800;">
+                                                        <i class="fa-brands fa-whatsapp text-success me-2"></i>Enviar Recordatorio a {{ local.nombre_marca }}
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Número de WhatsApp Destino</label>
+                                                        <input type="text" name="telefono_wa" class="form-control"
+                                                               value="{{ local.telefono_cobro or '' }}" placeholder="Ej: 3001234567">
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label class="form-label fw-bold">Mensaje de Recordatorio (Editable)</label>
+                                                        <textarea name="mensaje_wa" rows="8" class="form-control"
+                                                                  style="font-size: 0.85rem; line-height: 1.5;">{{ f | mensaje_wa }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success btn-sm fw-bold px-3"
+                                                            onclick="setTimeout(function(){ location.reload(); }, 1200);">
+                                                        <i class="fa-brands fa-whatsapp me-1"></i>Enviar por WhatsApp
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-success small fw-bold"><i class="fa-solid fa-lock me-1"></i>Mes Saldado</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-file-invoice-dollar fs-2 opacity-25 d-block mb-2"></i>
+                Aún no hay facturas generadas para este cliente.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ─── PESTAÑA 2: TICKETS DE SOPORTE & CAMBIOS TÉCNICOS ───────────── -->
+    <div class="tab-pane fade" id="tabTickets" role="tabpanel">
+        <div class="card-zenic p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 style="font-size: 1.05rem; font-weight: 800; margin: 0;">
+                        Tickets Generados y Solicitudes a TI
+                    </h2>
+                    <p class="text-muted small mb-0">
+                        Historial de ajustes, nuevas funciones, despliegues y soporte técnico realizados para {{ local.nombre_marca }}.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm btn-zenic" data-bs-toggle="modal" data-bs-target="#modalNuevoTicketCliente">
+                    <i class="fa-solid fa-plus me-1"></i> Crear Ticket para {{ local.nombre_marca }}
                 </button>
             </div>
 
-            <div id="bovedaOculta" class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Email Admin</label>
-                    <div class="input-group">
-                        <span class="input-group-text"
-                              style="background:var(--zenic-input);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
-                            <i class="fa-solid fa-envelope fa-xs"></i>
-                        </span>
-                        <input type="text" class="form-control" readonly
-                               value="{{ '••••••••••••' }}" id="emailField"
-                               data-real="{{ email_dec }}">
+            {% if tickets_cliente %}
+            <div class="table-responsive">
+                <table class="table table-zenic align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título y Descripción del Cambio</th>
+                            <th>Categoría</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Fecha / Responsable</th>
+                            <th class="text-center">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in tickets_cliente %}
+                        <tr>
+                            <td class="font-mono fw-bold">#{{ t.id }}</td>
+                            <td>
+                                <div class="fw-bold">{{ t.titulo }}</div>
+                                <div class="text-muted text-truncate" style="font-size: 0.78rem; max-width: 340px;">{{ t.descripcion }}</div>
+                                {% if t.adjuntos %}
+                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle mt-1" style="font-size: 0.68rem;">
+                                    <i class="fa-solid fa-paperclip me-1"></i>{{ t.adjuntos|length }} adjunto(s)
+                                </span>
+                                {% endif %}
+                                {% if t.notas_resolucion %}
+                                <div class="mt-1 p-2 rounded-2" style="background: #ECFDF5; border: 1px solid rgba(16,185,129,0.25); font-size: 0.75rem; color: #065F46;">
+                                    <strong><i class="fa-solid fa-wrench me-1"></i>Solución TI:</strong> {{ t.notas_resolucion | truncate(90) }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark border">{{ t.categoria }}</span></td>
+                            <td>
+                                <span class="badge {% if t.prioridad == 'Urgente' %}bg-danger{% elif t.prioridad == 'Alta' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ t.prioridad }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if t.estado == 'Resuelto' %}bg-success{% elif t.estado == 'En Desarrollo' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                    {{ t.estado }}
+                                </span>
+                            </td>
+                            <td style="font-size: 0.78rem;" class="text-muted">
+                                <div>Creado: {{ t.fecha_creacion.strftime('%d/%m/%Y') }}</div>
+                                {% if t.asignado %}
+                                <div>Asignado: <strong>{{ t.asignado.nombre.split()[0] }}</strong></div>
+                                {% else %}
+                                <div><span class="text-muted">Sin asignar</span></div>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button type="button"
+                                        class="btn btn-sm btn-zenic-outline rounded-3 px-2 py-1"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalVerTicket{{ t.id }}"
+                                        title="Ver detalle completo del cambio solicitado">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="fa-solid fa-ticket fs-2 opacity-25 d-block mb-2"></i>
+                No hay tickets de soporte ni solicitudes registradas para este cliente.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ─── PESTAÑA 3: BITÁCORA CRONOLÓGICA DE CAMBIOS ─────────────────── -->
+    <div class="tab-pane fade" id="tabCambios" role="tabpanel">
+        <div class="card-zenic p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+                <div>
+                    <h2 style="font-size: 1.05rem; font-weight: 800; margin: 0;">
+                        Bitácora de Cambios & Línea de Tiempo del Cliente
+                    </h2>
+                    <p class="text-muted small mb-0">
+                        Trazabilidad completa de actualizaciones, acuerdos comerciales, pagos validados y mejoras hechas al cliente.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-sm btn-zenic" data-bs-toggle="modal" data-bs-target="#modalRegistrarCambio">
+                    <i class="fa-solid fa-plus me-1"></i> Registrar Nuevo Cambio / Nota
+                </button>
+            </div>
+
+            <div class="timeline-zenic">
+                {% for b in bitacora_db %}
+                <div class="timeline-item">
+                    <span class="timeline-dot tdot-{{ b.tipo }}"></span>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-white text-dark border" style="font-size: 0.7rem;">{{ b.tipo }}</span>
+                            <strong style="font-size: 0.92rem; color: #0F172A;">{{ b.titulo }}</strong>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">
+                            {{ b.fecha.strftime('%d/%m/%Y %H:%M') }}
+                            {% if b.usuario %}· por <strong>{{ b.usuario.nombre.split()[0] }}</strong>{% endif %}
+                        </small>
+                    </div>
+                    {% if b.detalle %}
+                    <p class="text-muted mb-0" style="font-size: 0.82rem;">{{ b.detalle }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% for t in tickets_cliente %}
+                <div class="timeline-item">
+                    <span class="timeline-dot tdot-Ticket"></span>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" style="font-size: 0.7rem;">Ticket #{{ t.id }} ({{ t.estado }})</span>
+                            <strong style="font-size: 0.92rem; color: #0F172A;">{{ t.titulo }}</strong>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">
+                            {{ t.fecha_creacion.strftime('%d/%m/%Y') }}
+                        </small>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size: 0.82rem;">{{ t.descripcion }}</p>
+                </div>
+                {% endfor %}
+
+                {% for fp in facturas_pagadas %}
+                <div class="timeline-item">
+                    <span class="timeline-dot tdot-Pago"></span>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.7rem;">Mes Pagado</span>
+                            <strong style="font-size: 0.92rem; color: #0F172A;">
+                                {{ fp.tipo_cobro }} — Factura {{ fp.numero_factura }} ({{ fp.monto | cop }})
+                            </strong>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.75rem;">
+                            Pagado el {{ fp.fecha_pago | fecha_corta }}
+                            {% if fp.cuenta_destino %}en <strong>{{ fp.cuenta_destino }}</strong>{% endif %}
+                        </small>
+                    </div>
+                    {% if fp.observaciones %}
+                    <p class="text-muted mb-0" style="font-size: 0.82rem;">{{ fp.observaciones }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if not bitacora_db and not tickets_cliente and not facturas_pagadas %}
+                <div class="text-muted py-4">
+                    Aún no hay eventos en la bitácora de este cliente. Usa el botón <strong>"Registrar Nuevo Cambio / Nota"</strong> para agregar el primero.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── PESTAÑA 4: BÓVEDA & DOCUMENTACIÓN LEGAL ────────────────────── -->
+    <div class="tab-pane fade" id="tabBoveda" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card-zenic p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h2 style="font-size:0.95rem;font-weight:800;margin:0">
+                            <i class="fa-solid fa-lock me-2" style="color:var(--zenic-purple-neural)"></i> Bóveda Criptográfica de Credenciales
+                        </h2>
+                        <button class="btn btn-sm btn-zenic-outline" id="toggleBoveda" type="button">
+                            <i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar Credenciales
+                        </button>
+                    </div>
+
+                    <div id="bovedaOculta" class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Email Admin CRM</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-envelope fa-xs"></i></span>
+                                <input type="text" class="form-control font-mono" readonly
+                                       value="••••••••••••" id="emailField"
+                                       data-real="{{ email_dec }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contraseña Admin</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-key fa-xs"></i></span>
+                                <input type="text" class="form-control font-mono" readonly
+                                       value="••••••••••••" id="passField"
+                                       data-real="{{ pass_dec }}">
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label">Contraseña</label>
-                    <div class="input-group">
-                        <span class="input-group-text"
-                              style="background:var(--zenic-input);border-color:var(--zenic-border);color:var(--zenic-text-muted)">
-                            <i class="fa-solid fa-key fa-xs"></i>
-                        </span>
-                        <input type="text" class="form-control" readonly
-                               value="{{ '••••••••••••' }}" id="passField"
-                               data-real="{{ pass_dec }}">
+            </div>
+
+            <div class="col-12">
+                <div class="card-zenic p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 style="font-size:0.95rem;font-weight:800;margin:0">
+                            <i class="fa-solid fa-folder-closed me-2" style="color:var(--zenic-success)"></i> Expediente Documental & Legal del Cliente
+                        </h2>
+                        <a href="{{ url_for('documentos_bp.index', tipo='cliente', local_id=local.id) }}" class="btn-zenic btn-sm text-decoration-none px-3 py-1 rounded-2" style="font-size:0.78rem">
+                            <i class="fa-solid fa-folder-open me-1"></i> Gestionar Documentos
+                        </a>
                     </div>
+
+                    {% if local.documentos %}
+                    <div class="table-responsive">
+                        <table class="table table-zenic align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Documento</th>
+                                    <th>Categoría</th>
+                                    <th>Versión</th>
+                                    <th>Tamaño</th>
+                                    <th>Fecha</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in local.documentos %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fa-solid {{ doc.icono_fa }} fs-5"></i>
+                                            <div>
+                                                <span class="fw-semibold text-dark">{{ doc.titulo }}</span>
+                                                {% if doc.descripcion %}
+                                                <div class="text-muted" style="font-size: 0.72rem;">{{ doc.descripcion }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-muted border">{{ doc.categoria }}</span></td>
+                                    <td><span class="badge bg-light text-dark border">v{{ doc.version }}</span></td>
+                                    <td class="small text-muted">{{ doc.tamano_legible }}</td>
+                                    <td class="small text-muted">{{ doc.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                                    <td class="text-end">
+                                        {% if doc.archivo_ruta %}
+                                        <a href="{{ url_for('documentos_bp.ver_archivo', doc_id=doc.id) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Ver">
+                                            <i class="fa-solid fa-eye fa-xs"></i>
+                                        </a>
+                                        <a href="{{ url_for('documentos_bp.descargar_documento', doc_id=doc.id) }}" class="btn btn-sm btn-primary py-0 px-2" title="Descargar">
+                                            <i class="fa-solid fa-download fa-xs"></i>
+                                        </a>
+                                        {% elif doc.enlace_externo %}
+                                        <a href="{{ doc.enlace_externo }}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="Abrir enlace">
+                                            <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted small">
+                        <i class="fa-solid fa-folder-open fs-3 opacity-25 d-block mb-2"></i>
+                        No hay documentos legales o contratos asociados a este cliente aún.
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Expediente Documental & Legal del Cliente -->
-<div class="card-zenic p-4 mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 style="font-size:0.75rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-                   color:var(--zenic-text-muted);margin:0">
-            <i class="fa-solid fa-folder-closed me-2" style="color:var(--zenic-success)"></i> Expediente Documental & Legal del Cliente
-        </h2>
-        <a href="{{ url_for('documentos_bp.index', tipo='cliente', local_id=local.id) }}" class="btn-zenic btn-sm text-decoration-none px-3 py-1 rounded-2" style="font-size:0.78rem">
-            <i class="fa-solid fa-folder-open me-1"></i> Ver en Centro de Documentación
-        </a>
+{% block modals %}
+<!-- Modal Registrar Cambio / Nota en Bitácora del Cliente -->
+<div class="modal fade" id="modalRegistrarCambio" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('locales_bp.agregar_bitacora_cliente', local_id=local.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-clock-rotate-left me-2" style="color: var(--zenic-purple-neural);"></i>Registrar Cambio en {{ local.nombre_marca }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tipo de Registro</label>
+                        <select name="tipo" class="form-select" required>
+                            <option value="Cambio" selected>🛠️ Cambio o Mejora Realizada</option>
+                            <option value="Configuración">⚙️ Ajuste Comercial / Acuerdo de Facturación</option>
+                            <option value="Pago">💳 Nota de Pago / Acuerdo de Cobro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título del Cambio *</label>
+                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Se actualizó módulo de inventario y reporte POS" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Detalle / Descripción</label>
+                        <textarea name="detalle" rows="3" class="form-control" placeholder="Describe qué se realizó o acordó con el cliente..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">Guardar en Historial</button>
+                </div>
+            </form>
+        </div>
     </div>
+</div>
 
-    {% if local.documentos %}
-    <div class="table-responsive">
-        <table class="table table-zenic align-middle mb-0">
-            <thead>
-                <tr class="small text-muted text-uppercase">
-                    <th>Documento</th>
-                    <th>Categoría</th>
-                    <th>Versión</th>
-                    <th>Tamaño</th>
-                    <th>Fecha</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for doc in local.documentos %}
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="fa-solid {{ doc.icono_fa }} fs-5"></i>
-                            <div>
-                                <span class="fw-semibold text-dark">{{ doc.titulo }}</span>
-                                {% if doc.descripcion %}
-                                <div class="text-muted" style="font-size: 0.72rem;">{{ doc.descripcion }}</div>
+<!-- Modal Nuevo Ticket TI directo desde el Perfil del Cliente -->
+<div class="modal fade" id="modalNuevoTicketCliente" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('ti_bp.nuevo_ticket') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="local_id" value="{{ local.id }}">
+                <input type="hidden" name="next_url" value="{{ url_for('locales_bp.ver_local', local_id=local.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-ticket me-2 text-warning"></i>Nuevo Ticket TI — {{ local.nombre_marca }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título del Requerimiento / Cambio *</label>
+                        <input type="text" name="titulo" class="form-control" placeholder="Ej: Ajuste en impresión de comanda" required>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Categoría</label>
+                            <select name="categoria" class="form-select">
+                                <option value="Nueva Función">Nueva Función / Cambio</option>
+                                <option value="Soporte" selected>Soporte Técnico</option>
+                                <option value="Error de Sistema">Error de Sistema</option>
+                                <option value="Despliegue">Despliegue / Actualización</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Prioridad</label>
+                            <select name="prioridad" class="form-select">
+                                <option value="Baja">Baja</option>
+                                <option value="Media" selected>Media</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Urgente">Urgente</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción Detallada *</label>
+                        <textarea name="descripcion" rows="3" class="form-control" placeholder="Explica el cambio solicitado por el cliente..." required></textarea>
+                    </div>
+                    <div class="p-3 rounded-3" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
+                        <label class="form-label fw-bold mb-1">
+                            <i class="fa-solid fa-photo-film me-1 text-primary"></i>Adjuntar Evidencia (Fotos o Videos - Opcional)
+                        </label>
+                        <input type="file" name="adjunto" class="form-control form-control-sm" accept="image/*,video/mp4,video/quicktime,video/webm" multiple>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">Crear Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modales Detalle Completo de cada Ticket (Botón Ojito) -->
+{% for t in tickets_cliente %}
+<div class="modal fade" id="modalVerTicket{{ t.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge rounded-pill px-3 py-1" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); font-family: 'JetBrains Mono', monospace;">
+                        Ticket #{{ t.id }}
+                    </span>
+                    <h5 class="modal-title mb-0">{{ t.titulo }}</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Resumen metadatos del ticket -->
+                <div class="row g-2 p-3 rounded-3 mb-3" style="background: #F8FAFC; border: 1px solid #E2E8F0; font-size: 0.82rem;">
+                    <div class="col-6 col-md-3">
+                        <span class="text-muted d-block">Cliente</span>
+                        <strong>{{ local.nombre_marca }}</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <span class="text-muted d-block">Categoría</span>
+                        <strong>{{ t.categoria }}</strong>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <span class="text-muted d-block">Prioridad</span>
+                        <span class="badge {% if t.prioridad == 'Urgente' %}bg-danger{% elif t.prioridad == 'Alta' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ t.prioridad }}
+                        </span>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <span class="text-muted d-block">Estado Actual</span>
+                        <span class="badge {% if t.estado == 'Resuelto' %}bg-success{% elif t.estado == 'En Desarrollo' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                            {{ t.estado }}
+                        </span>
+                    </div>
+                    <div class="col-6 col-md-4 mt-2 pt-2 border-top">
+                        <span class="text-muted d-block">Solicitado por</span>
+                        <strong>{{ t.solicitante.nombre if t.solicitante else 'Operaciones' }}</strong>
+                    </div>
+                    <div class="col-6 col-md-4 mt-2 pt-2 border-top">
+                        <span class="text-muted d-block">Responsable TI</span>
+                        <strong style="color: var(--zenic-purple-neural);">{{ t.asignado.nombre if t.asignado else 'Sin asignar' }}</strong>
+                    </div>
+                    <div class="col-12 col-md-4 mt-2 pt-2 border-top">
+                        <span class="text-muted d-block">Fecha de Solicitud</span>
+                        <strong>{{ t.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</strong>
+                    </div>
+                </div>
+
+                <!-- Descripción Completa del Cambio Pedido -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fa-solid fa-file-lines me-1" style="color: var(--zenic-purple-neural);"></i>
+                        Detalle del Cambio o Solicitud Pedida
+                    </label>
+                    <div class="p-3 rounded-3"
+                         style="background: #FFFFFF; border: 1.5px solid #E2E8F0; white-space: pre-wrap; word-break: break-word; line-height: 1.6; font-size: 0.9rem; color: #0F172A;">{{ t.descripcion }}</div>
+                </div>
+
+                <!-- Evidencias Multimedia Adjuntas (si tiene fotos o videos) -->
+                {% if t.adjuntos %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="fa-solid fa-photo-film me-1 text-primary"></i>
+                        Evidencias Adjuntas ({{ t.adjuntos|length }})
+                    </label>
+                    <div class="row g-3">
+                        {% for adj in t.adjuntos %}
+                        <div class="{% if t.adjuntos|length == 1 %}col-12{% else %}col-12 col-md-6{% endif %}">
+                            <div class="p-2 border rounded-3 text-center bg-light">
+                                {% if adj.tipo == 'imagen' %}
+                                <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank">
+                                    <img src="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}"
+                                         alt="Evidencia Ticket #{{ t.id }}"
+                                         class="img-fluid rounded-3"
+                                         style="max-height: 240px; object-fit: contain;">
+                                </a>
+                                <div class="mt-2">
+                                    <a href="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" target="_blank" class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="fa-solid fa-up-right-from-square me-1"></i>Abrir imagen completa
+                                    </a>
+                                </div>
+                                {% elif adj.tipo == 'video' %}
+                                <video controls playsinline class="w-100 rounded-3 shadow-sm" style="max-height: 240px;">
+                                    <source src="{{ url_for('static', filename='uploads/tickets/' + adj.ruta) }}" type="video/mp4">
+                                </video>
                                 {% endif %}
                             </div>
                         </div>
-                    </td>
-                    <td><span class="badge bg-light text-muted border">{{ doc.categoria }}</span></td>
-                    <td><span class="badge bg-light text-dark border">v{{ doc.version }}</span></td>
-                    <td class="small text-muted">{{ doc.tamano_legible }}</td>
-                    <td class="small text-muted">{{ doc.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-                    <td class="text-end">
-                        {% if doc.archivo_ruta %}
-                        <a href="{{ url_for('documentos_bp.ver_archivo', doc_id=doc.id) }}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" title="Ver">
-                            <i class="fa-solid fa-eye fa-xs"></i>
-                        </a>
-                        <a href="{{ url_for('documentos_bp.descargar_documento', doc_id=doc.id) }}" class="btn btn-sm btn-primary py-0 px-2" title="Descargar">
-                            <i class="fa-solid fa-download fa-xs"></i>
-                        </a>
-                        {% elif doc.enlace_externo %}
-                        <a href="{{ doc.enlace_externo }}" target="_blank" class="btn btn-sm btn-primary py-0 px-2" title="Abrir enlace">
-                            <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i>
-                        </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="text-center py-4 text-muted small">
-        <i class="fa-solid fa-folder-open fs-3 opacity-25 d-block mb-2"></i>
-        No hay documentos legales o contratos asociados a este cliente aún.
-    </div>
-    {% endif %}
-</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
 
+                <!-- Notas de Resolución o Respuesta de TI -->
+                {% if t.notas_resolucion %}
+                <div class="p-3 rounded-3 mb-2" style="background: #ECFDF5; border: 1px solid rgba(16, 185, 129, 0.35); color: #065F46;">
+                    <div class="fw-bold mb-1" style="font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <i class="fa-solid fa-circle-check me-1"></i> Respuesta / Cambios Aplicados por TI
+                    </div>
+                    <div style="font-size: 0.88rem; white-space: pre-wrap;">{{ t.notas_resolucion }}</div>
+                    {% if t.fecha_cierre %}
+                    <div class="small mt-1 opacity-75">Cerrado el {{ t.fecha_cierre.strftime('%d/%m/%Y %H:%M') }}</div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="p-3 rounded-3 text-muted small" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
+                    <i class="fa-solid fa-hourglass-half me-1 text-warning"></i>
+                    Aún no se han registrado notas de resolución técnica para este ticket.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <a href="{{ url_for('ti_bp.tickets', local_id=local.id) }}" class="btn btn-sm btn-zenic-outline">
+                    <i class="fa-solid fa-up-right-from-square me-1"></i> Ir al Tablero de Tickets TI
+                </a>
+                <button type="button" class="btn btn-sm btn-zenic px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}
 <script>
     let revealed = false;
-    document.getElementById('toggleBoveda').addEventListener('click', function() {
-        revealed = !revealed;
-        const emailF = document.getElementById('emailField');
-        const passF  = document.getElementById('passField');
-        if (revealed) {
-            emailF.value = emailF.dataset.real;
-            passF.value  = passF.dataset.real;
-            this.innerHTML = '<i class="fa-solid fa-eye-slash me-1 fa-xs"></i> Ocultar';
-        } else {
-            emailF.value = '••••••••••••';
-            passF.value  = '••••••••••••';
-            this.innerHTML = '<i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar';
-        }
-    });
+    const btnBoveda = document.getElementById('toggleBoveda');
+    if (btnBoveda) {
+        btnBoveda.addEventListener('click', function() {
+            revealed = !revealed;
+            const emailF = document.getElementById('emailField');
+            const passF  = document.getElementById('passField');
+            if (revealed) {
+                emailF.value = emailF.dataset.real;
+                passF.value  = passF.dataset.real;
+                this.innerHTML = '<i class="fa-solid fa-eye-slash me-1 fa-xs"></i> Ocultar';
+            } else {
+                emailF.value = '••••••••••••';
+                passF.value  = '••••••••••••';
+                this.innerHTML = '<i class="fa-solid fa-eye me-1 fa-xs"></i> Revelar Credenciales';
+            }
+        });
+    }
 </script>
 {% endblock %}

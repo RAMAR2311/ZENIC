@@ -15,12 +15,12 @@
     <meta name="application-name" content="Zenic">
     <meta name="format-detection" content="telephone=no">
     <link rel="manifest" href="/manifest.json" crossorigin="use-credentials">
-    <link rel="shortcut icon" href="/favicon.ico">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/icons/icon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/icons/icon-16x16.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='img/icons/icon-192x192.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/icons/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="/favicon.ico?v=4">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=4">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='img/icons/icon-32x32.png') }}?v=4">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='img/icons/icon-16x16.png') }}?v=4">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='img/icons/icon-192x192.png') }}?v=4">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/icons/apple-touch-icon.png') }}?v=4">
 
     <!-- Tipografía Oficial Zenic: Kaushan Script (Logotipo), Plus Jakarta Sans, Inter y JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -234,11 +234,17 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
             padding: 1.25rem 1.5rem;
         }
-        .btn-close {
+        /* Solo invertir la X en el sidebar oscuro; en modales claros mantenerla visible y nítida */
+        .offcanvas-header .btn-close {
             filter: invert(1) grayscale(100%) brightness(200%);
-            opacity: 0.6;
+            opacity: 0.7;
         }
-        .btn-close:hover { opacity: 1; }
+        .offcanvas-header .btn-close:hover { opacity: 1; }
+        .modal-header .btn-close {
+            filter: none !important;
+            opacity: 0.65;
+        }
+        .modal-header .btn-close:hover { opacity: 1; }
 
         .sidebar-section-label {
             font-size: 0.68rem;
@@ -765,13 +771,95 @@
         <div style="width:40px"></div>
         {% endif %}
 
-        <!-- Marca Central con Nombre Oficial ZENIC -->
-        <a class="navbar-brand-zenic position-absolute start-50 translate-middle-x" href="/">
+        <!-- Marca Central con Logo + Nombre Oficial ZENIC -->
+        <a class="navbar-brand-zenic position-absolute start-50 translate-middle-x d-flex align-items-center gap-2" href="/">
+            <img src="{{ url_for('static', filename='img/logo_zenic.png') }}?v=4" alt="Zenic Logo" style="height: 34px; width: 34px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(138, 69, 209, 0.55));">
             <span class="zenic-brand-word">Zenic</span>
         </a>
 
         {% if current_user.is_authenticated %}
         <div class="d-flex align-items-center gap-3">
+                    <!-- Campana de Notificaciones de Tickets Asignados y Por Validar -->
+            <div class="dropdown">
+                <button class="btn position-relative p-2 rounded-3" type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                        id="btnNotifTicketsBell"
+                        style="background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.14); color: #FFFFFF;"
+                        title="Notificaciones de Tickets">
+                    <i class="fa-solid fa-bell"></i>
+                    <span id="badgeNotifTicketsCount"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {% if not notif_tickets_total or notif_tickets_total == 0 %}d-none{% endif %}"
+                          style="font-size: 0.65rem; padding: 0.25em 0.5em;">
+                        {{ notif_tickets_total or 0 }}
+                    </span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-0 overflow-hidden" style="width: 340px; z-index: 2080;">
+                    <div class="p-3 border-bottom" style="background: #0F172A; color: #FFFFFF;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong style="font-size: 0.88rem;"><i class="fa-solid fa-bell text-warning me-2"></i>Centro de Tickets</strong>
+                            <span id="badgeNotifTicketsDropdownText" class="badge rounded-pill" style="background: rgba(138,69,209,0.35); color: #E9D5FF; font-size: 0.7rem;">
+                                {{ notif_tickets_total }} pendiente(s)
+                            </span>
+                        </div>
+                        <button type="button" id="btnEnableDeviceNotif" onclick="requestZenicDeviceNotifications()"
+                                class="btn btn-sm w-100 mt-2 py-1 rounded-pill d-none"
+                                style="background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.45); color: #38BDF8; font-size: 0.72rem; font-weight: 700;">
+                            <i class="fa-solid fa-mobile-screen-button me-1"></i>Activar Alertas en este Dispositivo (PC / Móvil)
+                        </button>
+                    </div>
+                    <div style="max-height: 320px; overflow-y: auto;">
+                        {% if notif_tickets_asignados %}
+                        <div class="px-3 py-2 bg-light border-bottom text-uppercase fw-bold text-muted" style="font-size: 0.66rem; letter-spacing: 0.08em;">
+                            🛠️ Asignados a ti ({{ notif_tickets_asignados|length }})
+                        </div>
+                        {% for t in notif_tickets_asignados %}
+                        <a href="{{ url_for('ti_bp.tickets', vista='mis_asignados') }}" class="dropdown-item p-3 border-bottom text-wrap">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-primary-subtle text-primary" style="font-size: 0.68rem;">Ticket #{{ t.id }} · {{ t.estado }}</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ t.prioridad }}</small>
+                            </div>
+                            <div class="fw-bold text-dark" style="font-size: 0.83rem;">{{ t.titulo }}</div>
+                            {% if t.notas_validacion and t.estado == 'Requiere Ajustes' %}
+                            <div class="text-danger mt-1" style="font-size: 0.74rem;">
+                                <i class="fa-solid fa-rotate-left me-1"></i>Revisión pedida: {{ t.notas_validacion | truncate(65) }}
+                            </div>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if notif_tickets_por_validar %}
+                        <div class="px-3 py-2 bg-light border-bottom text-uppercase fw-bold text-muted" style="font-size: 0.66rem; letter-spacing: 0.08em;">
+                            ✅ Listos para tu validación ({{ notif_tickets_por_validar|length }})
+                        </div>
+                        {% for tv in notif_tickets_por_validar %}
+                        <a href="{{ url_for('ti_bp.tickets', vista='por_validar') }}" class="dropdown-item p-3 border-bottom text-wrap">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-warning-subtle text-warning-emphasis" style="font-size: 0.68rem;">Ticket #{{ tv.id }} · Por Validar</span>
+                                <small class="text-muted" style="font-size: 0.7rem;">{{ tv.asignado.nombre.split()[0] if tv.asignado else 'Responsable' }}</small>
+                            </div>
+                            <div class="fw-bold text-dark" style="font-size: 0.83rem;">{{ tv.titulo }}</div>
+                            {% if tv.notas_resolucion %}
+                            <div class="text-success mt-1" style="font-size: 0.74rem;">
+                                <i class="fa-solid fa-comment-dots me-1"></i>Solución: {{ tv.notas_resolucion | truncate(65) }}
+                            </div>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                        {% endif %}
+
+                        {% if not notif_tickets_asignados and not notif_tickets_por_validar %}
+                        <div class="p-4 text-center text-muted small">
+                            <i class="fa-regular fa-bell-slash fs-4 d-block mb-2 opacity-50"></i>
+                            No tienes tickets pendientes ni por validar en este momento.
+                        </div>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('ti_bp.tickets') }}" class="d-block text-center py-2 bg-light text-decoration-none fw-bold border-top" style="font-size: 0.78rem; color: var(--zenic-purple-neural);">
+                        Ir al Módulo de Tickets →
+                    </a>
+                </div>
+            </div>
+
             <button id="btnInstallPwa" class="btn-zenic-outline py-1 px-3 d-none align-items-center gap-2" style="font-size: 0.76rem; border-color: var(--zenic-cyan-neon); color: var(--zenic-cyan-neon) !important;">
                 <i class="fa-solid fa-download"></i>
                 <span class="d-none d-sm-inline">Instalar App</span>
@@ -794,7 +882,8 @@
 
     <div class="offcanvas-header">
         <div>
-            <a href="{{ url_for('dashboard_bp.master') }}" class="d-flex align-items-center text-decoration-none">
+            <a href="{{ url_for('dashboard_bp.master') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+                <img src="{{ url_for('static', filename='img/logo_zenic.png') }}?v=4" alt="Zenic Logo" style="height: 36px; width: 36px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(138, 69, 209, 0.5));">
                 <span class="zenic-brand-word-sidebar">Zenic</span>
             </a>
         </div>
@@ -853,9 +942,13 @@
             {# ── MÓDULO OPERACIONES & FINANZAS (operaciones_finanzas o Admin) ── #}
             {% if current_user.rol in ['operaciones_finanzas', 'admin'] %}
             <div class="sidebar-section-label">Instancias CRM</div>
-            <a href="{{ url_for('locales_bp.dashboard') }}#locales" class="sidebar-link">
-                <i class="fa-solid fa-server" style="color:var(--zenic-cyan-neon)"></i>
-                Clientes / Locales
+            <a href="{{ url_for('locales_bp.dashboard') }}" class="sidebar-link">
+                <i class="fa-solid fa-chart-pie" style="color:var(--zenic-purple-light)"></i>
+                Dashboard MRR
+            </a>
+            <a href="{{ url_for('locales_bp.directorio_clientes') }}" class="sidebar-link">
+                <i class="fa-solid fa-address-card" style="color:var(--zenic-cyan-neon)"></i>
+                Perfiles de Clientes
             </a>
             <a href="{{ url_for('locales_bp.nuevo_local') }}" class="sidebar-link">
                 <i class="fa-solid fa-plus-circle" style="color:var(--zenic-success)"></i>
@@ -871,6 +964,10 @@
                 <i class="fa-solid fa-vault" style="color:var(--zenic-success)"></i>
                 Tesorería
             </a>
+            <a href="{{ url_for('finanzas_bp.prestamos') }}" class="sidebar-link">
+                <i class="fa-solid fa-hand-holding-dollar" style="color:var(--zenic-cyan-neon)"></i>
+                Préstamos & Cartera
+            </a>
             <a href="{{ url_for('finanzas_bp.gastos') }}" class="sidebar-link">
                 <i class="fa-solid fa-wallet" style="color:var(--zenic-danger)"></i>
                 Costos y Gastos
@@ -878,12 +975,6 @@
             <a href="{{ url_for('finanzas_bp.presupuestos') }}" class="sidebar-link">
                 <i class="fa-solid fa-scale-balanced" style="color:var(--zenic-blue-steel)"></i>
                 Presupuestos
-            </a>
-
-            <div class="sidebar-section-label">Soporte TI</div>
-            <a href="{{ url_for('ti_bp.tickets') }}" class="sidebar-link">
-                <i class="fa-solid fa-ticket" style="color:var(--zenic-warning)"></i>
-                Solicitar Cambio a TI
             </a>
             
             <div class="sidebar-section-label">Operaciones & Activos</div>
@@ -902,6 +993,17 @@
                 Notificaciones
             </a>
             {% endif %}
+
+            <div class="sidebar-section-label">Tickets & Solicitudes</div>
+            <a href="{{ url_for('ti_bp.tickets') }}" class="sidebar-link d-flex justify-content-between align-items-center">
+                <span class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-ticket" style="color:var(--zenic-warning)"></i>
+                    Tickets & Asignaciones
+                </span>
+                {% if notif_tickets_total and notif_tickets_total > 0 %}
+                <span class="badge rounded-pill bg-danger" style="font-size: 0.68rem;">{{ notif_tickets_total }}</span>
+                {% endif %}
+            </a>
 
             <div class="sidebar-section-label">Conocimiento & Legal</div>
             <a href="{{ url_for('documentos_bp.index') }}" class="sidebar-link">
@@ -1065,7 +1167,133 @@
             installBtn.classList.remove('d-inline-flex');
         }
     });
+
+    // ═══ SISTEMA DE NOTIFICACIONES EN VIVO (PC, ANDROID & iPHONE PWA) ═══
+    window.showZenicLiveToast = function(titulo, mensaje, urlDestino) {
+        let container = document.getElementById('zenicLiveToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'zenicLiveToastContainer';
+            container.style.cssText = 'position:fixed;bottom:22px;right:22px;z-index:3050;display:flex;flex-direction:column;gap:10px;max-width:340px;width:calc(100% - 44px);pointer-events:none;';
+            document.body.appendChild(container);
+        }
+        const card = document.createElement('div');
+        card.style.cssText = 'pointer-events:auto;background:#0F172A;color:#FFFFFF;border:1px solid rgba(138,69,209,0.55);border-left:4px solid #8A45D1;border-radius:14px;padding:12px 15px;box-shadow:0 15px 35px rgba(0,0,0,0.45);cursor:pointer;transition:all 0.25s ease;';
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <strong style="font-size:0.82rem;color:#E9D5FF;">${titulo}</strong>
+                <span style="font-size:0.68rem;color:#94A3B8;">Ahora</span>
+            </div>
+            <div style="font-size:0.78rem;color:#CBD5E1;line-height:1.4;">${mensaje}</div>
+        `;
+        card.onclick = () => {
+            if (urlDestino) window.location.href = urlDestino;
+            else card.remove();
+        };
+        container.appendChild(card);
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(10px)';
+            setTimeout(() => card.remove(), 300);
+        }, 6500);
+    };
+
+    window.requestZenicDeviceNotifications = async function() {
+        if (!('Notification' in window)) {
+            window.showZenicLiveToast('ℹ️ Notificaciones en Pantalla', 'En iPhone instala primero la app en "Agregar a Inicio" para notificaciones del sistema. Las alertas internas ya están activas.');
+            return;
+        }
+        const perm = await Notification.requestPermission();
+        const btn = document.getElementById('btnEnableDeviceNotif');
+        if (perm === 'granted') {
+            if (btn) btn.classList.add('d-none');
+            window.showZenicLiveToast('🔔 Alertas Activadas', 'Recibirás notificaciones de tickets en este dispositivo.');
+        }
+    };
 </script>
+{% if current_user.is_authenticated %}
+<script>
+    (function initTicketNotificationPolling() {
+        const btnPerm = document.getElementById('btnEnableDeviceNotif');
+        if (btnPerm && ('Notification' in window) && Notification.permission === 'default') {
+            btnPerm.classList.remove('d-none');
+        }
+
+        const STORAGE_KEY = "zenic_seen_ticket_keys_u{{ current_user.id }}";
+        let seenKeys = [];
+        try {
+            seenKeys = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        } catch (e) { seenKeys = []; }
+        let isFirstPoll = (seenKeys.length === 0);
+
+        async function fireNativeDeviceNotification(item) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            try {
+                if ('serviceWorker' in navigator) {
+                    const reg = await navigator.serviceWorker.ready;
+                    if (reg && reg.showNotification) {
+                        await reg.showNotification(item.encabezado, {
+                            body: item.mensaje,
+                            icon: '/static/img/icons/icon-192x192.png',
+                            badge: '/static/img/icons/icon-96x96.png',
+                            tag: item.key,
+                            vibrate: [180, 80, 180],
+                            data: { url: item.url }
+                        });
+                        return;
+                    }
+                }
+                const n = new Notification(item.encabezado, {
+                    body: item.mensaje,
+                    icon: '/static/img/icons/icon-192x192.png',
+                    tag: item.key
+                });
+                n.onclick = () => { window.location.href = item.url; };
+            } catch (e) {
+                console.warn('[Notif]', e);
+            }
+        }
+
+        async function pollTicketNotifications() {
+            try {
+                const res = await fetch('/ti/api/notificaciones', { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data || !data.ok) return;
+
+                const badge = document.getElementById('badgeNotifTicketsCount');
+                const dropTxt = document.getElementById('badgeNotifTicketsDropdownText');
+                if (badge) {
+                    badge.textContent = data.total;
+                    badge.classList.toggle('d-none', data.total === 0);
+                }
+                if (dropTxt) {
+                    dropTxt.textContent = `${data.total} pendiente(s)`;
+                }
+
+                const currentKeys = [];
+                (data.items || []).forEach(item => {
+                    currentKeys.push(item.key);
+                    if (!seenKeys.includes(item.key)) {
+                        seenKeys.push(item.key);
+                        if (!isFirstPoll) {
+                            window.showZenicLiveToast(item.encabezado, item.mensaje, item.url);
+                            fireNativeDeviceNotification(item);
+                        }
+                    }
+                });
+                isFirstPoll = false;
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(seenKeys.slice(-60)));
+                } catch (e) {}
+            } catch (err) {}
+        }
+
+        setTimeout(pollTicketNotifications, 1500);
+        setInterval(pollTicketNotifications, 18000);
+    })();
+</script>
+{% endif %}
 
 {% block scripts %}{% endblock %}
 </body>

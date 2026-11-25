@@ -40,6 +40,10 @@ def create_app():
     os.makedirs(TICKETS_UPLOAD_FOLDER, exist_ok=True)
     app.config['TICKETS_UPLOAD_FOLDER'] = TICKETS_UPLOAD_FOLDER
 
+    COMPROBANTES_UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads', 'comprobantes')
+    os.makedirs(COMPROBANTES_UPLOAD_FOLDER, exist_ok=True)
+    app.config['COMPROBANTES_UPLOAD_FOLDER'] = COMPROBANTES_UPLOAD_FOLDER
+
     # -- Extensiones ----------------------------------------------------------
     db.init_app(app)
     Migrate(app, db)
@@ -112,6 +116,15 @@ def create_app():
         except (ValueError, TypeError):
             return value
 
+    @app.template_filter("miles")
+    def miles_filter(value):
+        if value is None:
+            return "0"
+        try:
+            return "{:,.0f}".format(float(value)).replace(",", ".")
+        except (ValueError, TypeError):
+            return "0"
+
     @app.template_filter("fecha_corta")
     def fecha_corta_filter(value):
         if value is None:
@@ -122,6 +135,14 @@ def create_app():
             return str(value)
         except Exception:
             return str(value)
+
+    @app.template_filter("mensaje_wa")
+    def mensaje_wa_filter(factura):
+        from routes.ingresos import generar_mensaje_recordatorio_wa
+        try:
+            return generar_mensaje_recordatorio_wa(factura)
+        except Exception:
+            return ""
 
     # -- Rutas PWA (Root Scope) -----------------------------------------------
     from flask import send_from_directory
@@ -153,6 +174,70 @@ def create_app():
         if not current_user.is_authenticated:
             return redirect(url_for("auth_bp.login"))
         return redirect(url_for("dashboard_bp.master"))
+
+    # Auto-migración segura de columnas y tablas nuevas si la BD ya existía (SQLite / PostgreSQL en Hostinger)
+    with app.app_context():
+        try:
+            from sqlalchemy import text, inspect
+            db.create_all()
+            inspector = inspect(db.engine)
+            table_names = inspector.get_table_names()
+
+            def _safe_add_column(table_name, col_name, col_def):
+                if table_name in table_names:
+                    cols = [c["name"] for c in inspector.get_columns(table_name)]
+                    if col_name not in cols:
+                        try:
+                            db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"))
+                            db.session.commit()
+                        except Exception:
+                            db.session.rollback()
+
+            _safe_add_column("locales", "fecha_inicio_facturacion", "DATE")
+            _safe_add_column("gastos", "comprobante_ruta", "VARCHAR(255)")
+            _safe_add_column("tickets_cambio", "notas_validacion", "TEXT")
+            _safe_add_column("tickets_cambio", "validado_por_solicitante", "BOOLEAN DEFAULT 0 NOT NULL")
+        except Exception:
+            db.session.rollback()
+
+    @app.context_processor
+    def inject_ticket_notifications():
+        """
+        Inyecta en todas las plantillas las notificaciones en vivo de tickets para el usuario conectado:
+        - mis_tickets_pendientes: Tickets asignados a current_user que requieren atención
+          ('Pendiente', 'En Desarrollo', 'Requiere Ajustes').
+        - tickets_por_validar_mios: Tickets que current_user creó/asignó y que el responsable
+          ya marcó como solucionados ('Por Validar') esperando el visto bueno del solicitante.
+        """
+        if not current_user.is_authenticated:
+            return {
+                "notif_tickets_asignados": [],
+                "notif_tickets_por_validar": [],
+                "notif_tickets_total": 0
+            }
+        try:
+            from models import TicketCambio
+            asignados = TicketCambio.query.filter(
+                TicketCambio.asignado_id == current_user.id,
+                TicketCambio.estado.in_(["Pendiente", "En Desarrollo", "Requiere Ajustes"])
+            ).order_by(TicketCambio.fecha_actualizacion.desc()).all()
+
+            por_validar = TicketCambio.query.filter(
+                TicketCambio.solicitante_id == current_user.id,
+                TicketCambio.estado == "Por Validar"
+            ).order_by(TicketCambio.fecha_actualizacion.desc()).all()
+
+            return {
+                "notif_tickets_asignados": asignados,
+                "notif_tickets_por_validar": por_validar,
+                "notif_tickets_total": len(asignados) + len(por_validar)
+            }
+        except Exception:
+            return {
+                "notif_tickets_asignados": [],
+                "notif_tickets_por_validar": [],
+                "notif_tickets_total": 0
+            }
 
     return app
 

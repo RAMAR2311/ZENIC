@@ -3,7 +3,7 @@
    Estrategia: Network First con fallback a Cache y soporte Offline dedicado
    ========================================================================== */
 
-const CACHE_NAME = 'zenic-crm-v3';
+const CACHE_NAME = 'zenic-crm-v4';
 const OFFLINE_URL = '/offline';
 
 // Recursos críticos para cachear inicialmente
@@ -11,6 +11,7 @@ const STATIC_ASSETS = [
   '/',
   '/offline',
   '/favicon.ico',
+  '/static/img/logo_zenic.png',
   '/static/img/icons/icon-192x192.png',
   '/static/img/icons/icon-512x512.png',
   '/static/img/icons/icon-maskable-512x512.png',
@@ -132,5 +133,24 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => caches.match(event.request))
+  );
+});
+
+// Clic en notificación nativa (PC, Android o iPhone PWA) -> abre el módulo de tickets
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/ti/tickets';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
   );
 });

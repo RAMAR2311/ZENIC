@@ -7,5 +7,6 @@ static/uploads/
 scratch/
 venv/
 .venv/
+.vscode/
 scripts/legacy_or_tools/
 temp_db*.py

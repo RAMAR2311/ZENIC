@@ -1,182 +1,993 @@
 {% extends "base.html" %}
 {% block title %}Costos y Gastos{% endblock %}
 
+{% block head %}
+<style>
+    /* ═══════════════════════════════════════════════════════════════════
+       COSTOS Y GASTOS — Diseño Minimalista & Estético Zenic
+       Limpio, espacioso, sin barras oscuras repetidas.
+    ═══════════════════════════════════════════════════════════════════ */
+
+    /* ── 4 Tarjetas KPI Superiores con Color, Profundidad y Presencia ── */
+    .clean-kpi-card {
+        border-radius: 16px;
+        padding: 1.3rem 1.45rem;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .clean-kpi-card:hover {
+        transform: translateY(-3px);
+    }
+    .clean-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+    }
+
+    /* 1. Costos Directos (Azul Eléctrico) */
+    .ckpi-blue {
+        background: linear-gradient(155deg, #FFFFFF 0%, #EFF6FF 100%);
+        border: 1px solid rgba(37, 99, 235, 0.28);
+        box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.14);
+    }
+    .ckpi-blue::before { background: linear-gradient(90deg, #1D4ED8 0%, #38BDF8 100%); }
+    .ckpi-blue .clean-kpi-val { color: #1E3A8A; }
+    .ckpi-blue .clean-kpi-icon {
+        background: linear-gradient(135deg, #2563EB 0%, #38BDF8 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    /* 2. Costos Indirectos (Ámbar / Dorado) */
+    .ckpi-amber {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FFFBEB 100%);
+        border: 1px solid rgba(245, 158, 11, 0.32);
+        box-shadow: 0 8px 20px -6px rgba(245, 158, 11, 0.14);
+    }
+    .ckpi-amber::before { background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+    .ckpi-amber .clean-kpi-val { color: #B45309; }
+    .ckpi-amber .clean-kpi-icon {
+        background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
+    }
+
+    /* 3. Gastos Administrativos (Rojo Coral) */
+    .ckpi-rose {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FEF2F2 100%);
+        border: 1px solid rgba(239, 68, 68, 0.28);
+        box-shadow: 0 8px 20px -6px rgba(239, 68, 68, 0.14);
+    }
+    .ckpi-rose::before { background: linear-gradient(90deg, #DC2626 0%, #F43F5E 100%); }
+    .ckpi-rose .clean-kpi-val { color: #B91C1C; }
+    .ckpi-rose .clean-kpi-icon {
+        background: linear-gradient(135deg, #DC2626 0%, #F43F5E 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
+    }
+
+    /* 4. Préstamos Pagados (Púrpura Neural) */
+    .ckpi-purple {
+        background: linear-gradient(155deg, #FFFFFF 0%, #FAF5FF 100%);
+        border: 1px solid rgba(122, 62, 176, 0.32);
+        box-shadow: 0 8px 20px -6px rgba(122, 62, 176, 0.16);
+    }
+    .ckpi-purple::before { background: linear-gradient(90deg, #7A3EB0 0%, #9333EA 100%); }
+    .ckpi-purple .clean-kpi-val { color: #581C87; }
+    .ckpi-purple .clean-kpi-icon {
+        background: linear-gradient(135deg, #7A3EB0 0%, #5C8AC8 100%);
+        color: #FFFFFF;
+        box-shadow: 0 6px 14px rgba(122, 62, 176, 0.32);
+    }
+
+    /* 0. Total de Salidas Consolidado (Tarjeta Maestra Oscura/Neural) */
+    .ckpi-total-dark {
+        background: linear-gradient(135deg, #1E1B4B 0%, #3B1E6D 55%, #5B21B6 100%);
+        border: 1px solid rgba(216, 180, 254, 0.25);
+        box-shadow: 0 12px 26px -6px rgba(91, 33, 182, 0.38);
+        color: #FFFFFF;
+    }
+    .ckpi-total-dark::before { background: linear-gradient(90deg, #38BDF8 0%, #D946EF 100%); }
+    .ckpi-total-dark .clean-kpi-lbl { color: rgba(255, 255, 255, 0.8); }
+    .ckpi-total-dark .clean-kpi-val { color: #FFFFFF; }
+    .ckpi-total-dark .clean-kpi-sub { color: rgba(255, 255, 255, 0.78); border-top-color: rgba(255, 255, 255, 0.18); }
+    .ckpi-total-dark .clean-kpi-icon {
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        color: #FFFFFF;
+    }
+
+    .clean-kpi-lbl {
+        font-size: 0.71rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        margin-bottom: 0.3rem;
+    }
+    .clean-kpi-val {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.7rem;
+        font-weight: 800;
+        letter-spacing: -0.7px;
+        line-height: 1.15;
+    }
+    .clean-kpi-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .clean-kpi-sub {
+        margin-top: 0.75rem;
+        padding-top: 0.55rem;
+        border-top: 1px dashed rgba(148, 163, 184, 0.35);
+        font-size: 0.74rem;
+        color: #64748B;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Contenedor Principal Único con Pestañas Integradas */
+    .main-expenses-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 18px;
+        box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.05);
+        overflow: hidden;
+    }
+    .main-expenses-toolbar {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    /* Pestañas tipo Píldora Suave */
+    .zenic-segmented-tabs {
+        display: inline-flex;
+        background: #F1F5F9;
+        padding: 0.3rem;
+        border-radius: 12px;
+        gap: 0.25rem;
+    }
+    .zenic-seg-btn {
+        border: none;
+        background: transparent;
+        color: #64748B;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 0.48rem 1.1rem;
+        border-radius: 9px;
+        transition: all 0.18s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+    .zenic-seg-btn:hover {
+        color: #0F172A;
+    }
+    .zenic-seg-btn.active {
+        background: #FFFFFF;
+        color: var(--zenic-purple-neural);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Tabla Minimalista Limpia */
+    .table-clean-zenic {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 0;
+    }
+    .table-clean-zenic thead th {
+        background: #F8FAFC !important;
+        color: #64748B !important;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.85rem 1.4rem;
+        border-bottom: 1px solid #E2E8F0 !important;
+    }
+    .table-clean-zenic tbody td {
+        padding: 1rem 1.4rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #F1F5F9 !important;
+        font-size: 0.88rem;
+        color: #0F172A;
+    }
+    .table-clean-zenic tbody tr:last-child td {
+        border-bottom: none !important;
+    }
+    .table-clean-zenic tbody tr:hover td {
+        background-color: #FAF8FF !important;
+    }
+
+    /* Tarjetas seleccionables de Cuenta de Origen en el Modal */
+    .account-balance-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.65rem;
+    }
+    .account-radio-card {
+        border: 1.5px solid #E2E8F0;
+        border-radius: 13px;
+        padding: 0.75rem 0.95rem;
+        cursor: pointer;
+        background: #FFFFFF;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+    .account-radio-card:hover {
+        border-color: #CBD5E1;
+        transform: translateY(-1px);
+    }
+    .account-radio-card .acc-check-icon {
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.18s ease;
+    }
+    .account-radio-card.active .acc-check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .account-radio-card[data-acc="Nu"].active {
+        border-color: #7A3EB0;
+        background: linear-gradient(145deg, #FAF5FF 0%, #F3E8FF 100%);
+        box-shadow: 0 4px 14px rgba(122, 62, 176, 0.16);
+    }
+    .account-radio-card[data-acc="Nequi"].active {
+        border-color: #2563EB;
+        background: linear-gradient(145deg, #EFF6FF 0%, #DBEAFE 100%);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16);
+    }
+    .account-radio-card[data-acc="Banco"].active {
+        border-color: #334155;
+        background: linear-gradient(145deg, #F8FAFC 0%, #E2E8F0 100%);
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+    .account-radio-card[data-acc="Caja Menor"].active {
+        border-color: #059669;
+        background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%);
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.16);
+    }
+
+    /* Cabecera visual premium para los Modales */
+    .modal-zenic-header {
+        background: linear-gradient(135deg, #FAF8FF 0%, #F1F5F9 100%) !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding: 1.25rem 1.5rem !important;
+        position: relative;
+    }
+    .modal-zenic-header::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        background: var(--zenic-gradient-neural);
+    }
+    .modal-zenic-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 11px;
+        background: var(--zenic-gradient-neural);
+        color: #FFFFFF;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        box-shadow: 0 4px 12px rgba(122, 62, 176, 0.3);
+        flex-shrink: 0;
+    }
+    .upload-dropzone-zenic {
+        background: linear-gradient(180deg, #FAF8FF 0%, #F8FAFC 100%);
+        border: 1.5px dashed rgba(122, 62, 176, 0.35);
+        border-radius: 13px;
+        padding: 0.9rem 1rem;
+        transition: all 0.2s ease;
+    }
+    .upload-dropzone-zenic:hover {
+        border-color: var(--zenic-purple-neural);
+        background: #FAF5FF;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 mb-4">
+<!-- ═══ CABECERA LIMPIA ═════════════════════════════════════════════════ -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 pt-2 mb-4">
     <div>
-        <h1 class="page-title">
-            <i class="fa-solid fa-wallet me-2" style="color: var(--zenic-danger)"></i>
+        <h1 class="page-title" style="font-size: 1.5rem;">
+            <span style="width: 38px; height: 38px; border-radius: 10px; background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; margin-right: 0.65rem;">
+                <i class="fa-solid fa-wallet"></i>
+            </span>
             Costos y Gastos
         </h1>
-        <p class="page-subtitle">Registro y clasificación de salidas de capital</p>
+        <p class="page-subtitle">Control de obligaciones fijas mensuales, préstamos y salidas de dinero</p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-danger btn-sm px-3 rounded-2" data-bs-toggle="modal" data-bs-target="#modalGasto">
+
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <a href="{{ url_for('finanzas_bp.reporte_trazabilidad') }}"
+           class="btn btn-sm btn-light border text-dark fw-bold px-3 py-2 rounded-3 text-decoration-none shadow-sm">
+            <i class="fa-solid fa-file-arrow-down me-1" style="color: var(--zenic-purple-neural);"></i>
+            Descargar Trazabilidad (Entradas & Salidas)
+        </a>
+        <button type="button" class="btn-zenic-outline px-3 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalNuevoCostoFijo">
+            <i class="fa-solid fa-calendar-plus"></i> Nuevo Costo Fijo / Préstamo
+        </button>
+        <button type="button" class="btn-zenic px-4 py-2 rounded-3" data-bs-toggle="modal" data-bs-target="#modalGasto">
             <i class="fa-solid fa-plus"></i> Registrar Gasto
         </button>
     </div>
 </div>
 
-<div class="row g-3 mb-5">
-    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.1s;">
-        <div class="kpi-card" style="border-left: 3px solid var(--zenic-accent)">
-            <i class="fa-solid fa-industry kpi-icon text-accent"></i>
-            <div class="kpi-label">Costos Directos</div>
-            <div class="kpi-value text-accent">{{ total_directo | cop }}</div>
-            <div class="kpi-sub">Vinculados directamente a la operación</div>
+<!-- ═══ 5 TARJETAS KPI ESTILIZADAS (CON TOTAL DE SALIDAS) ═══════════════ -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-xl-5 g-3 mb-4">
+    <!-- 1. Total de Salidas (Tarjeta Principal Destacada) -->
+    <div class="col">
+        <div class="clean-kpi-card ckpi-total-dark">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="clean-kpi-lbl">Total de Salidas</div>
+                    <div class="clean-kpi-val">-{{ total_salidas_mes | cop }}</div>
+                </div>
+                <div class="clean-kpi-icon">
+                    <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+            </div>
+            <div class="clean-kpi-sub">
+                <span>Egresos del mes actual</span>
+                <span class="badge" style="background: rgba(255,255,255,0.2); color: #FFF;">{{ gastos|length }} mov.</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.2s;">
-        <div class="kpi-card" style="border-left: 3px solid #f39c12">
-            <i class="fa-solid fa-lightbulb kpi-icon text-warning"></i>
-            <div class="kpi-label">Costos Indirectos</div>
-            <div class="kpi-value text-warning">{{ total_indirecto | cop }}</div>
-            <div class="kpi-sub">Servicios, alquileres, etc.</div>
+
+    <!-- 2. Costos Directos -->
+    <div class="col">
+        <div class="clean-kpi-card ckpi-blue">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="clean-kpi-lbl">Costos Directos</div>
+                    <div class="clean-kpi-val">{{ total_directo | cop }}</div>
+                </div>
+                <div class="clean-kpi-icon">
+                    <i class="fa-solid fa-server"></i>
+                </div>
+            </div>
+            <div class="clean-kpi-sub">
+                <span>Servidores & cloud</span>
+                <span class="badge bg-primary-subtle text-primary">Directo</span>
+            </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 fade-up" style="animation-delay: 0.3s;">
-        <div class="kpi-card kpi-danger">
-            <i class="fa-solid fa-briefcase kpi-icon"></i>
-            <div class="kpi-label">Gastos Administrativos</div>
-            <div class="kpi-value text-danger">{{ total_admin | cop }}</div>
-            <div class="kpi-sub">Nómina administrativa, legales, etc.</div>
+
+    <!-- 3. Costos Indirectos -->
+    <div class="col">
+        <div class="clean-kpi-card ckpi-amber">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="clean-kpi-lbl">Costos Indirectos</div>
+                    <div class="clean-kpi-val">{{ total_indirecto | cop }}</div>
+                </div>
+                <div class="clean-kpi-icon">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+            </div>
+            <div class="clean-kpi-sub">
+                <span>Publicidad y servicios</span>
+                <span class="badge bg-warning-subtle text-warning-emphasis">Indirecto</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Gastos Administrativos -->
+    <div class="col">
+        <div class="clean-kpi-card ckpi-rose">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="clean-kpi-lbl">Gastos Admin</div>
+                    <div class="clean-kpi-val">{{ total_admin | cop }}</div>
+                </div>
+                <div class="clean-kpi-icon">
+                    <i class="fa-solid fa-briefcase"></i>
+                </div>
+            </div>
+            <div class="clean-kpi-sub">
+                <span>Oficina y gestión</span>
+                <span class="badge bg-danger-subtle text-danger">Admin</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Préstamos Pagados -->
+    <div class="col">
+        <div class="clean-kpi-card ckpi-purple">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                    <div class="clean-kpi-lbl">Préstamos Pagados</div>
+                    <div class="clean-kpi-val">{{ total_prestamos_pagados | cop }}</div>
+                </div>
+                <div class="clean-kpi-icon">
+                    <i class="fa-solid fa-landmark"></i>
+                </div>
+            </div>
+            <div class="clean-kpi-sub">
+                <span>Cuotas validadas</span>
+                <span class="badge" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural);">Obligación</span>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="card-zenic fade-up" style="animation-delay: 0.4s;">
-    <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-        <h2 style="font-size:1.1rem;font-weight:700;margin:0">Historial de Salidas</h2>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-zenic mb-0">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Concepto</th>
-                    <th>Cuenta Origen</th>
-                    <th>Clasificación</th>
-                    <th>Área / Presupuesto</th>
-                    <th class="text-end">Monto</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for g in gastos %}
-                <tr>
-                    <td>{{ g.fecha | fecha_corta }}</td>
-                    <td style="font-weight:600">
-                        {{ g.descripcion }}
-                        {% if g.categoria %}
-                        <span class="badge bg-secondary ms-1">{{ g.categoria }}</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if g.cuenta_origen == 'Nu' %}
-                        <span class="badge" style="background: #820ad1; color:#fff;">Cuenta Nu</span>
-                        {% elif g.cuenta_origen == 'Nequi' %}
-                        <span class="badge" style="background: #ff0055; color:#fff;">Cuenta Nequi</span>
-                        {% elif g.cuenta_origen %}
-                        <span class="badge bg-dark border text-muted">{{ g.cuenta_origen }}</span>
-                        {% else %}
-                        <span class="badge bg-dark border text-muted">Nu</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if g.tipo_costo == 'Costo Directo' %}
-                        <span class="badge" style="background-color: var(--zenic-accent)">Costo Directo</span>
-                        {% elif g.tipo_costo == 'Costo Indirecto' %}
-                        <span class="badge bg-warning text-dark">Costo Indirecto</span>
-                        {% else %}
-                        <span class="badge bg-danger">Gasto Administrativo</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if g.presupuesto %}
-                        <i class="fa-solid fa-scale-balanced text-muted me-1"></i> {{ g.presupuesto.nombre_area }}
-                        {% else %}
-                        <span class="text-muted fst-italic">Sin asignar</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end text-danger fw-bold">-{{ g.monto | cop }}</td>
-                </tr>
+<!-- ═══ PANEL PRINCIPAL UNIFICADO CON PESTAÑAS (1° COSTOS FIJOS, 2° HISTORIAL) ═══ -->
+<div class="main-expenses-card">
+    <div class="main-expenses-toolbar">
+        <!-- Selector de vista: Primero Costos Fijos & Préstamos, segundo Historial de Salidas -->
+        <div class="zenic-segmented-tabs" role="tablist">
+            <button type="button" class="zenic-seg-btn active" id="btnTabFijos" onclick="switchExpenseTab('fijos')">
+                <i class="fa-solid fa-calendar-check"></i>
+                1. Costos Fijos & Préstamos
+                {% if fijos_pendientes_mes > 0 %}
+                <span class="badge rounded-pill" style="background: rgba(245, 158, 11, 0.18); color: #B45309;">
+                    {{ fijos_pendientes_mes }} por validar
+                </span>
                 {% else %}
-                <tr><td colspan="5" class="text-center py-4 text-muted">No hay gastos registrados.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <span class="badge rounded-pill bg-success-subtle text-success">Al día</span>
+                {% endif %}
+            </button>
+            <button type="button" class="zenic-seg-btn" id="btnTabHistorial" onclick="switchExpenseTab('historial')">
+                <i class="fa-solid fa-list-ul"></i>
+                2. Historial de Salidas
+                <span class="badge rounded-pill bg-light text-secondary border">{{ gastos|length }}</span>
+            </button>
+        </div>
+
+        <!-- Buscador limpio (visible en Historial) -->
+        <div class="position-relative" id="searchBoxContainer" style="min-width: 240px; display: none;">
+            <i class="fa-solid fa-magnifying-glass position-absolute"
+               style="left: 13px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 0.82rem;"></i>
+            <input type="text" id="searchGastos" class="form-control form-control-sm ps-5"
+                   placeholder="Buscar concepto o cuenta..."
+                   style="border-radius: 999px !important;">
+        </div>
+    </div>
+
+    <!-- ─── VISTA 1 (POR DEFECTO): COSTOS FIJOS & PRÉSTAMOS ───────────── -->
+    <div id="paneFijos">
+        <div class="table-responsive">
+            <table class="table-clean-zenic">
+                <thead>
+                    <tr>
+                        <th>Obligación / Costo Fijo</th>
+                        <th>Categoría</th>
+                        <th>Día de Pago</th>
+                        <th>Valor Mensual</th>
+                        <th>Estado del Mes</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cf in costos_fijos %}
+                    {% set ya_pagado = cf.pagado_en_periodo(hoy.month, hoy.year) %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold" style="color: #0F172A;">{{ cf.nombre }}</div>
+                            {% if cf.observaciones %}
+                            <div class="text-muted" style="font-size: 0.76rem;">{{ cf.observaciones }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if cf.categoria == 'Préstamos' %}
+                            <span class="badge" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); font-weight: 700;">
+                                <i class="fa-solid fa-landmark me-1"></i>Préstamos
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border">{{ cf.categoria }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-muted fw-semibold" style="font-size: 0.82rem;">Día {{ cf.dia_pago }}</span>
+                        </td>
+                        <td class="font-mono fw-bold" style="font-size: 0.95rem;">
+                            {{ cf.monto_mensual | cop }}
+                        </td>
+                        <td>
+                            {% if ya_pagado %}
+                            <span class="badge rounded-pill" style="background: #ECFDF5; color: #047857; border: 1px solid rgba(16,185,129,0.3);">
+                                <i class="fa-solid fa-check me-1"></i>Pagado ({{ cf.ultima_fecha_pago | fecha_corta }})
+                            </span>
+                            {% if cf.ultimo_comprobante %}
+                            <a href="{{ url_for('static', filename='uploads/comprobantes/' + cf.ultimo_comprobante) }}"
+                               target="_blank" class="ms-2 small text-success fw-semibold text-decoration-none">
+                                <i class="fa-solid fa-paperclip"></i> Soporte
+                            </a>
+                            {% endif %}
+                            {% else %}
+                            <span class="badge rounded-pill" style="background: #FFFBEB; color: #B45309; border: 1px solid rgba(245,158,11,0.35);">
+                                <i class="fa-solid fa-clock me-1"></i>Pendiente por validar
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center gap-2">
+                                {% if not ya_pagado %}
+                                <button type="button" class="btn btn-sm btn-success text-white rounded-pill px-3 fw-bold"
+                                        data-bs-toggle="modal" data-bs-target="#modalValidarCF{{ cf.id }}"
+                                        style="font-size: 0.76rem;">
+                                    <i class="fa-solid fa-check-double me-1"></i>Validar Pago
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-light border text-secondary rounded-pill px-3"
+                                        data-bs-toggle="modal" data-bs-target="#modalValidarCF{{ cf.id }}"
+                                        style="font-size: 0.74rem;">
+                                    Volver a registrar
+                                </button>
+                                {% endif %}
+
+                                <form action="{{ url_for('finanzas_bp.eliminar_costo_fijo', cf_id=cf.id) }}" method="POST"
+                                      class="d-inline" onsubmit="return confirm('¿Eliminar este costo fijo?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm text-muted" title="Eliminar">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            No hay costos fijos configurados. Usa el botón <strong>"Nuevo Costo Fijo / Préstamo"</strong> arriba a la derecha.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ─── VISTA 2: HISTORIAL DE SALIDAS ─────────────────────────────── -->
+    <div id="paneHistorial" style="display: none;">
+        <div class="table-responsive">
+            <table class="table-clean-zenic" id="tablaGastos">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Concepto</th>
+                        <th>Cuenta Origen</th>
+                        <th>Clasificación</th>
+                        <th>Comprobante</th>
+                        <th class="text-end">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in gastos %}
+                    <tr>
+                        <td class="text-muted" style="font-size: 0.82rem; white-space: nowrap;">
+                            {{ g.fecha | fecha_corta }}
+                        </td>
+                        <td>
+                            <div class="fw-semibold" style="color: #0F172A;">{{ g.descripcion }}</div>
+                            {% if g.categoria %}
+                            <span class="text-muted" style="font-size: 0.75rem;">{{ g.categoria }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if g.cuenta_origen == 'Nu' %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(109, 9, 168, 0.1); color:#6D09A8; font-weight: 700;">
+                                ● Cuenta Nu
+                            </span>
+                            {% elif g.cuenta_origen == 'Nequi' %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(29, 78, 216, 0.1); color:#1D4ED8; font-weight: 700;">
+                                ● Cuenta Nequi
+                            </span>
+                            {% elif g.cuenta_origen in ['Banco', 'Bancolombia'] %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: #F1F5F9; color:#0F172A; font-weight: 700;">
+                                ● Cuenta Banco
+                            </span>
+                            {% elif g.cuenta_origen == 'Caja Menor' %}
+                            <span class="badge rounded-pill px-3 py-1" style="background: rgba(5, 150, 105, 0.1); color:#059669; font-weight: 700;">
+                                ● Caja Menor
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border">{{ g.cuenta_origen or 'Nu' }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if g.tipo_costo == 'Costo Directo' %}
+                            <span class="badge bg-light text-primary border" style="font-weight: 600;">Costo Directo</span>
+                            {% elif g.tipo_costo == 'Costo Indirecto' %}
+                            <span class="badge bg-light text-warning-emphasis border" style="font-weight: 600;">Costo Indirecto</span>
+                            {% elif g.tipo_costo == 'Pago de Préstamo' or g.categoria == 'Préstamos' %}
+                            <span class="badge" style="background: var(--zenic-purple-soft); color: var(--zenic-purple-neural); font-weight: 700;">
+                                Préstamo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border" style="font-weight: 600;">Gasto Admin</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if g.comprobante_ruta %}
+                            <a href="{{ url_for('static', filename='uploads/comprobantes/' + g.comprobante_ruta) }}"
+                               target="_blank"
+                               class="text-decoration-none fw-semibold"
+                               style="font-size: 0.78rem; color: var(--zenic-purple-neural);">
+                                <i class="fa-solid fa-paperclip me-1"></i>Ver soporte
+                            </a>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end font-mono fw-bold text-danger" style="font-size: 0.94rem; white-space: nowrap;">
+                            -{{ g.monto | cop }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted">No hay gastos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block modals %}
-<!-- Modal Registrar Gasto -->
-<div class="modal fade" id="modalGasto" tabindex="-1">
-    <div class="modal-dialog">
+<!-- Modales para Validar Pago de cada Costo Fijo -->
+{% for cf in costos_fijos %}
+<div class="modal fade" id="modalValidarCF{{ cf.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form action="{{ url_for('finanzas_bp.gastos') }}" method="POST">
+            <form action="{{ url_for('finanzas_bp.validar_costo_fijo', cf_id=cf.id) }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fa-solid fa-plus text-danger me-2"></i>Registrar Salida de Dinero</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header modal-zenic-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-zenic-icon" style="background: linear-gradient(135deg, #059669 0%, #10B981 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                            <i class="fa-solid fa-check-double"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" style="color: #0F172A; font-size: 1.05rem;">
+                                Validar Pago — {{ cf.nombre }}
+                            </h5>
+                            <div class="text-muted" style="font-size: 0.75rem;">Confirma la salida y adjunta el comprobante</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Concepto (Descripción)</label>
-                        <input type="text" class="form-control" name="descripcion" placeholder="Ej: Pago de Servidores AWS" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Monto</label>
-                            <input type="number" step="0.01" class="form-control" name="monto" required>
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">Monto Pagado (COP) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">$</span>
+                                <input type="text" name="monto" class="form-control font-mono fw-bold mask-miles"
+                                       inputmode="numeric" value="{{ cf.monto_mensual | miles }}" required>
+                            </div>
                         </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Fecha</label>
-                            <input type="date" class="form-control" name="fecha" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">Fecha de Pago *</label>
+                            <input type="date" name="fecha_pago" class="form-control" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Cuenta de Origen (Descontar de)</label>
-                        <select class="form-select" name="cuenta_origen" required>
-                            <option value="Nu" selected>Cuenta Nu (Jhon)</option>
-                            <option value="Nequi">Cuenta Nequi (Jhon)</option>
-                            <option value="Bancolombia">Bancolombia Empresarial</option>
-                            <option value="Caja Menor">Caja Menor</option>
-                        </select>
-                        <div class="form-text">Si seleccionas Nu o Nequi, se descuenta en tiempo real de la billetera de control.</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Tipo de Costo</label>
-                        <select class="form-select" name="tipo_costo" required>
-                            <option value="Costo Directo">Costo Directo</option>
-                            <option value="Costo Indirecto">Costo Indirecto</option>
-                            <option value="Gasto Administrativo" selected>Gasto Administrativo</option>
+                        <label class="form-label fw-bold">Descontar de la cuenta con saldo *</label>
+                        <select name="cuenta_origen" class="form-select fw-semibold" required>
+                            <option value="Nu" selected>🟣 Cuenta Nu (Disponible: {{ saldos['Nu'] | cop }})</option>
+                            <option value="Nequi">🔵 Cuenta Nequi (Disponible: {{ saldos['Nequi'] | cop }})</option>
+                            <option value="Banco">🏦 Cuenta de Banco (Disponible: {{ saldos['Banco'] | cop }})</option>
+                            <option value="Caja Menor">💵 Caja Menor (Disponible: {{ saldos['Caja Menor'] | cop }})</option>
                         </select>
                     </div>
 
+                    {% if presupuestos %}
                     <div class="mb-3">
-                        <label class="form-label">Descontar de Presupuesto (Área)</label>
-                        <select class="form-select" name="presupuesto_id">
-                            <option value="">-- No vincular a ningún presupuesto --</option>
+                        <label class="form-label fw-bold">Relacionar con Presupuesto Asignado (Opcional)</label>
+                        <select name="presupuesto_id" class="form-select">
+                            <option value="">— No relacionar con área (Solo descontar de la cuenta) —</option>
                             {% for p in presupuestos %}
-                            <option value="{{ p.id }}">{{ p.nombre_area }} (Límite: {{ p.limite_gastos | cop }})</option>
+                            <option value="{{ p.id }}">{{ p.nombre_area }} ({{ p.limite_gastos | cop }})</option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Vincula este gasto a una de tus áreas para medir su progreso.</div>
                     </div>
+                    {% endif %}
 
-                    <div class="mb-3">
-                        <label class="form-label">Categoría (Opcional)</label>
-                        <input type="text" class="form-control" name="categoria" placeholder="Ej: Tecnología, Nómina, Marketing">
+                    <div class="upload-dropzone-zenic">
+                        <label class="form-label fw-bold mb-1" style="color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i>Comprobante de Pago (Foto o PDF - Opcional)
+                        </label>
+                        <input type="file" name="comprobante" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.pdf">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger btn-sm">Guardar Gasto</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success btn-sm fw-bold px-4">
+                        <i class="fa-solid fa-check me-1"></i>Confirmar Pago
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endfor %}
+
+<!-- Modal Registrar Gasto -->
+<div class="modal fade" id="modalGasto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.gastos') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header modal-zenic-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-zenic-icon">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" style="color: #0F172A; font-size: 1.08rem;">
+                                Registrar Salida de Dinero
+                            </h5>
+                            <div class="text-muted" style="font-size: 0.75rem;">Se descontará directamente de la cuenta que elijas</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Concepto / Descripción de la Salida *</label>
+                        <input type="text" class="form-control" name="descripcion" placeholder="Ej: Pago de Servidores AWS / Cuota Préstamo" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">Monto a Descontar (COP) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">$</span>
+                                <input type="text" class="form-control font-mono fw-bold mask-miles"
+                                       name="monto" inputmode="numeric" autocomplete="off" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">Fecha *</label>
+                            <input type="date" name="fecha" class="form-control" value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Cuenta con Saldo -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold mb-2">¿De qué cuenta con dinero se descuenta? *</label>
+                        <input type="hidden" name="cuenta_origen" id="inputCuentaOrigenGasto" value="Nu">
+                        <div class="account-balance-grid">
+                            <div class="account-radio-card active" data-acc="Nu" onclick="selectAccountOrigin('Nu', this)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong style="font-size: 0.82rem; color: #6D09A8;">🟣 Cuenta Nu</strong>
+                                    <i class="fa-solid fa-circle-check acc-check-icon" style="color: #6D09A8;"></i>
+                                </div>
+                                <div class="font-mono fw-bolder text-dark mt-1" style="font-size: 0.92rem;">{{ saldos['Nu'] | cop }}</div>
+                                <div class="text-muted" style="font-size: 0.68rem;">Disponible</div>
+                            </div>
+                            <div class="account-radio-card" data-acc="Nequi" onclick="selectAccountOrigin('Nequi', this)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong style="font-size: 0.82rem; color: #1D4ED8;">🔵 Cuenta Nequi</strong>
+                                    <i class="fa-solid fa-circle-check acc-check-icon" style="color: #1D4ED8;"></i>
+                                </div>
+                                <div class="font-mono fw-bolder text-dark mt-1" style="font-size: 0.92rem;">{{ saldos['Nequi'] | cop }}</div>
+                                <div class="text-muted" style="font-size: 0.68rem;">Disponible</div>
+                            </div>
+                            <div class="account-radio-card" data-acc="Banco" onclick="selectAccountOrigin('Banco', this)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong style="font-size: 0.82rem; color: #0F172A;">🏦 Cuenta Banco</strong>
+                                    <i class="fa-solid fa-circle-check acc-check-icon" style="color: #0F172A;"></i>
+                                </div>
+                                <div class="font-mono fw-bolder text-dark mt-1" style="font-size: 0.92rem;">{{ saldos['Banco'] | cop }}</div>
+                                <div class="text-muted" style="font-size: 0.68rem;">En Tesorería</div>
+                            </div>
+                            <div class="account-radio-card" data-acc="Caja Menor" onclick="selectAccountOrigin('Caja Menor', this)">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong style="font-size: 0.82rem; color: #059669;">💵 Caja Menor</strong>
+                                    <i class="fa-solid fa-circle-check acc-check-icon" style="color: #059669;"></i>
+                                </div>
+                                <div class="font-mono fw-bolder text-dark mt-1" style="font-size: 0.92rem;">{{ saldos['Caja Menor'] | cop }}</div>
+                                <div class="text-muted" style="font-size: 0.68rem;">Efectivo</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Clasificación *</label>
+                            <select class="form-select" name="tipo_costo" required>
+                                <option value="Costo Directo">Costo Directo</option>
+                                <option value="Costo Indirecto">Costo Indirecto</option>
+                                <option value="Gasto Administrativo" selected>Gasto Administrativo</option>
+                                <option value="Pago de Préstamo">Pago de Préstamo</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Categoría</label>
+                            <select class="form-select" name="categoria">
+                                <option value="Préstamos">🏦 Préstamos</option>
+                                <option value="Servidores" selected>☁️ Servidores & Cloud</option>
+                                <option value="Software">💻 Software & Licencias</option>
+                                <option value="Publicidad">📣 Publicidad & Ads</option>
+                                <option value="Oficina">🏢 Oficina & Operativo</option>
+                                <option value="General">📌 General</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {% if presupuestos %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Relacionar con Presupuesto Asignado (Opcional)</label>
+                        <select class="form-select" name="presupuesto_id">
+                            <option value="">— No relacionar con ningún área —</option>
+                            {% for p in presupuestos %}
+                            <option value="{{ p.id }}">{{ p.nombre_area }} ({{ p.limite_gastos | cop }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+
+                    <div class="upload-dropzone-zenic">
+                        <label class="form-label fw-bold mb-1" style="color: var(--zenic-purple-neural);">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i>Comprobante de Pago (Foto o PDF - Opcional)
+                        </label>
+                        <input type="file" name="comprobante" class="form-control form-control-sm" accept=".jpg,.jpeg,.png,.webp,.pdf">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">
+                        <i class="fa-solid fa-check me-1"></i>Guardar Gasto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Costo Fijo / Préstamo -->
+<div class="modal fade" id="modalNuevoCostoFijo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('finanzas_bp.nuevo_costo_fijo') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header modal-zenic-header">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-zenic-icon">
+                            <i class="fa-solid fa-calendar-plus"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0" style="color: #0F172A; font-size: 1.08rem;">
+                                Nuevo Costo Fijo / Préstamo Mensual
+                            </h5>
+                            <div class="text-muted" style="font-size: 0.75rem;">Quedará listo para validar su pago cada mes</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nombre de la Obligación o Costo Fijo *</label>
+                        <input type="text" name="nombre" class="form-control"
+                               placeholder="Ej: Cuota Préstamo Empresarial / Servidores AWS" required>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Categoría *</label>
+                            <select name="categoria" class="form-select" required>
+                                <option value="Préstamos" selected>🏦 Préstamos (Cuota / Deuda)</option>
+                                <option value="Servidores / Cloud">☁️ Servidores / Cloud</option>
+                                <option value="Software / Licencias">💻 Software / Licencias</option>
+                                <option value="Servicios / Oficina">🏢 Servicios / Oficina</option>
+                                <option value="Nómina / Honorarios">👥 Nómina / Honorarios</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Clasificación</label>
+                            <select name="tipo_costo" class="form-select">
+                                <option value="Pago de Préstamo" selected>Pago de Préstamo</option>
+                                <option value="Costo Directo">Costo Directo</option>
+                                <option value="Costo Indirecto">Costo Indirecto</option>
+                                <option value="Gasto Administrativo">Gasto Administrativo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-7">
+                            <label class="form-label fw-bold">Valor Mensual (COP) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">$</span>
+                                <input type="text" name="monto_mensual" class="form-control font-mono fw-bold mask-miles"
+                                       inputmode="numeric" autocomplete="off" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label fw-bold">Día de Pago (1–31)</label>
+                            <input type="number" name="dia_pago" class="form-control fw-bold" min="1" max="31" value="15">
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Nota / Observación (Opcional)</label>
+                        <input type="text" name="observaciones" class="form-control" placeholder="Ej: Cuota fija mensual">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-zenic-outline btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-zenic btn-sm px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Guardar Costo Fijo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function switchExpenseTab(tab) {
+        const paneHist = document.getElementById('paneHistorial');
+        const paneFijos = document.getElementById('paneFijos');
+        const btnHist = document.getElementById('btnTabHistorial');
+        const btnFijos = document.getElementById('btnTabFijos');
+        const searchBox = document.getElementById('searchBoxContainer');
+
+        if (tab === 'fijos') {
+            paneHist.style.display = 'none';
+            paneFijos.style.display = 'block';
+            btnHist.classList.remove('active');
+            btnFijos.classList.add('active');
+            searchBox.style.display = 'none';
+        } else {
+            paneHist.style.display = 'block';
+            paneFijos.style.display = 'none';
+            btnHist.classList.add('active');
+            btnFijos.classList.remove('active');
+            searchBox.style.display = 'block';
+        }
+    }
+
+    function selectAccountOrigin(cuenta, cardEl) {
+        document.getElementById('inputCuentaOrigenGasto').value = cuenta;
+        document.querySelectorAll('.account-radio-card').forEach(c => {
+            c.classList.remove('active');
+        });
+        if (cardEl) cardEl.classList.add('active');
+    }
+
+    document.querySelectorAll('.mask-miles').forEach(inp => {
+        inp.addEventListener('input', function () {
+            const digits = this.value.replace(/\D/g, '');
+            this.value = digits ? parseInt(digits, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+        });
+    });
+
+    const searchG = document.getElementById('searchGastos');
+    if (searchG) {
+        searchG.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#tablaGastos tbody tr').forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    }
+</script>
 {% endblock %}
