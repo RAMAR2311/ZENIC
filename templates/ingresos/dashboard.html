@@ -1046,8 +1046,11 @@
                 matchEst = true;
             } else if (currentInvFilter === 'por_cobrar') {
                 const diasVenc = parseInt(tr.getAttribute('data-dias-venc') || '999', 10);
-                // Próximas a vencer (faltan 3 días o menos) o vencidas (en mora)
-                matchEst = (est === 'Vencido') || (est === 'Pendiente' && diasVenc <= 3);
+                // Próximas a vencer (faltan 5 días o menos) o vencidas (en mora)
+                matchEst = (est === 'Vencido') || (est === 'Pendiente' && diasVenc <= 5);
+            } else if (currentInvFilter === 'Pendiente') {
+                const diasVenc = parseInt(tr.getAttribute('data-dias-venc') || '999', 10);
+                matchEst = (est === 'Pendiente' && diasVenc <= 5);
             } else {
                 matchEst = (est === currentInvFilter);
             }

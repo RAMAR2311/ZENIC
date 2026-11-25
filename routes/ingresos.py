@@ -1,3 +1,4 @@
+import re
 import urllib.parse
 from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, flash, redirect, url_for
@@ -16,12 +17,78 @@ MESES_ES = {
 }
 
 
+def generar_sigla_local(nombre_marca):
+    """
+    Genera una sigla corta a partir del nombre de la marca/local.
+    Ejemplos:
+      - 'My Cases'      -> 'MC'
+      - 'ELGOLDY'       -> 'ELG'
+      - 'Koba'          -> 'KOB'
+      - 'Lifestote'     -> 'LIF'
+      - 'Sarotex'       -> 'SAR'
+      - 'JRaccesorios'  -> 'JR' o 'JRA'
+    """
+    if not nombre_marca:
+        return "ZEN"
+    palabras = re.findall(r'[A-Za-z0-9]+', nombre_marca)
+    if not palabras:
+        return "ZEN"
+    if len(palabras) >= 2:
+        sigla = "".join(p[0].upper() for p in palabras[:3])
+        if len(sigla) == 1:
+            sigla = palabras[0][:2].upper()
+        return sigla
+    else:
+        return palabras[0][:3].upper()
+
+
+def generar_numero_factura_corto(local, fecha_venc, tipo_cobro="Mensualidad"):
+    """
+    Genera un número de factura corto e intuitivo:
+    Ejemplo: ELG-2611 (Sigla + Año + Mes de corte)
+    """
+    sigla = generar_sigla_local(local.nombre_marca if local else "")
+    periodo = fecha_venc.strftime('%y%m')
+    base = f"{sigla}-{periodo}"
+    candidato = base
+    sufijo = 2
+    while Factura.query.filter_by(numero_factura=candidato).first():
+        candidato = f"{base}-{sufijo}"
+        sufijo += 1
+    return candidato
+
+
 def _sincronizar_facturas_ciclo(locales, hoy):
     """
-    Revisa cada local activo/pendiente con fecha_inicio_facturacion y dia_pago.
-    Si su próxima fecha de corte está dentro de los próximos 3 días (o ya venció)
-    y aún no existe factura emitida para ese mes/año y local, la genera automáticamente.
+    1. Limpia facturas pendientes generadas prematuramente (a más de 5 días de su vencimiento)
+       para que solo aparezcan en la lista cuando falten 5 días o menos.
+    2. Actualiza facturas largas previas (CICLO-, INV-) a nombres cortos (ej. ELG-2611).
+    3. Revisa cada local activo/pendiente con fecha_inicio_facturacion y dia_pago.
+       Si su fecha de corte está dentro de los próximos 5 días (o ya venció),
+       genera su factura corta automáticamente.
     """
+    # A. Limpiar facturas pendientes que estén a más de 5 días a futuro
+    facturas_lejanas = Factura.query.filter(
+        Factura.estado == "Pendiente",
+        Factura.fecha_vencimiento > (hoy + timedelta(days=5))
+    ).all()
+    for fl in facturas_lejanas:
+        db.session.delete(fl)
+
+    # B. Renombrar facturas largas anteriores a formato corto
+    facturas_largas = Factura.query.filter(
+        (Factura.numero_factura.like("CICLO-%")) |
+        (Factura.numero_factura.like("INV-%"))
+    ).all()
+    for fl in facturas_largas:
+        if fl.local and fl.fecha_vencimiento:
+            sigla = generar_sigla_local(fl.local.nombre_marca)
+            nuevo_num = f"{sigla}-{fl.fecha_vencimiento.strftime('%y%m')}"
+            colision = Factura.query.filter(Factura.numero_factura == nuevo_num, Factura.id != fl.id).first()
+            if not colision:
+                fl.numero_factura = nuevo_num
+
+    # C. Generar facturas dentro del rango de cobro (5 días o ya vencidas)
     creadas = 0
     for loc in locales:
         if getattr(loc, "tipo_plan", "Mensual") == "Interna" or loc.estado_pago == "Suspendido":
@@ -34,8 +101,8 @@ def _sincronizar_facturas_ciclo(locales, hoy):
             continue
 
         dias_restantes = (prox_corte - hoy).days
-        # Solo sincronizar si faltan 3 días o menos para el corte o ya se pasó
-        if dias_restantes <= 3:
+        # Solo sincronizar si faltan 5 días o menos para el corte o ya se pasó
+        if dias_restantes <= 5:
             tipo_cobro = "Anualidad" if loc.tipo_plan == "Anual" else "Mensualidad"
             monto = float(loc.valor_anualidad) if (loc.tipo_plan == "Anual" and float(loc.valor_anualidad) > 0) else float(loc.mensualidad)
             if monto <= 0:
@@ -50,12 +117,8 @@ def _sincronizar_facturas_ciclo(locales, hoy):
             ).first()
 
             if not existente:
-                prefijo = "ANUAL" if tipo_cobro == "Anualidad" else "CICLO"
+                num_base = generar_numero_factura_corto(loc, prox_corte, tipo_cobro)
                 mes_nombre = MESES_ES.get(prox_corte.month, str(prox_corte.month))
-                num_base = f"{prefijo}-{prox_corte.strftime('%y%m')}-{loc.id:03d}"
-                # Evitar colisión de numero_factura
-                if Factura.query.filter_by(numero_factura=num_base).first():
-                    continue
                 nueva_fac = Factura(
                     numero_factura=num_base,
                     local_id=loc.id,
@@ -68,8 +131,8 @@ def _sincronizar_facturas_ciclo(locales, hoy):
                 )
                 db.session.add(nueva_fac)
                 creadas += 1
-    if creadas > 0:
-        db.session.commit()
+
+    db.session.commit()
 
 
 @ingresos_bp.route("/ingresos")
@@ -107,8 +170,13 @@ def dashboard_ingresos():
             return (0, f.fecha_vencimiento.toordinal())
         return (1, -f.fecha_vencimiento.toordinal())
 
-    facturas = sorted(facturas_all, key=_orden_cobro)
-    por_cobrar_count = sum(1 for f in facturas if f.estado in ("Pendiente", "Vencido"))
+    # Solo mostrar en la vista de facturas las pertinentes (vencidas, pagadas o pendientes a <= 5 días)
+    facturas_visibles = [
+        f for f in facturas_all
+        if f.estado in ("Pagado", "Vencido") or (f.estado == "Pendiente" and f.fecha_vencimiento and (f.fecha_vencimiento - hoy).days <= 5)
+    ]
+    facturas = sorted(facturas_visibles, key=_orden_cobro)
+    por_cobrar_count = sum(1 for f in facturas if f.estado == "Vencido" or (f.estado == "Pendiente" and (f.fecha_vencimiento - hoy).days <= 5))
     pagadas_count = sum(1 for f in facturas if f.estado == "Pagado")
 
     # 1. Facturas Pagadas (Punto de partida financiero: >= 15/11/2026)
@@ -118,18 +186,18 @@ def dashboard_ingresos():
         if f.estado == "Pagado" and f.fecha_pago and f.fecha_pago >= FECHA_CORTE_CAJA
     )
 
-    # Facturas Vencidas
+    # Facturas Vencidas (En Mora)
     facturas_vencidas = sum(
         float(f.monto)
         for f in facturas
         if f.estado == "Vencido"
     )
 
-    # Facturas Pendientes / Futuras
+    # Facturas Pendientes / Próximas (Dentro del umbral de 5 días)
     facturas_futuras = sum(
         float(f.monto)
         for f in facturas
-        if f.estado == "Pendiente"
+        if f.estado == "Pendiente" and (f.fecha_vencimiento - hoy).days <= 5
     )
 
     # 2. Billeteras de Control (Nu y Nequi) — Vista Privada para Jhon / Admin
@@ -226,10 +294,11 @@ def nueva_factura():
             flash("Local no encontrado.", "danger")
             return redirect(url_for("ingresos_bp.dashboard_ingresos"))
 
-        count = Factura.query.count() + 1
         hoy_dt = obtener_hora_bogota()
-        prefijo = "INST" if tipo_cobro == "Instalación" else ("ANUAL" if tipo_cobro == "Anualidad" else "INV")
-        numero_factura = f"{prefijo}-{hoy_dt.strftime('%y%m')}-{count:04d}"
+        if fecha_venc_custom:
+            f_venc = datetime.strptime(fecha_venc_custom, "%Y-%m-%d").date()
+        else:
+            f_venc = (hoy_dt + timedelta(days=10)).date()
 
         # Monto (soporta puntos de miles, ej: '450.000')
         monto_limpio = _limpiar_moneda(monto_custom) if monto_custom else 0.0
@@ -242,11 +311,7 @@ def nueva_factura():
         else:
             monto = float(local.mensualidad)
 
-        # Vencimiento
-        if fecha_venc_custom:
-            f_venc = datetime.strptime(fecha_venc_custom, "%Y-%m-%d").date()
-        else:
-            f_venc = (hoy_dt + timedelta(days=10)).date()
+        numero_factura = generar_numero_factura_corto(local, f_venc, tipo_cobro)
 
         nueva = Factura(
             numero_factura=numero_factura,

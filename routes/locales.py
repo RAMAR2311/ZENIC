@@ -206,9 +206,12 @@ def nuevo_local():
 
             if generar_cobro_instalacion:
                 from datetime import timedelta
-                count_fac = Factura.query.count() + 1
+                from routes.ingresos import generar_sigla_local
                 hoy_dt = obtener_hora_bogota()
-                num_fac = f"INST-{hoy_dt.strftime('%y%m')}-{count_fac:04d}"
+                sigla = generar_sigla_local(local.nombre_marca)
+                num_fac = f"{sigla}-INST"
+                if Factura.query.filter_by(numero_factura=num_fac).first():
+                    num_fac = f"{sigla}-INST-{hoy_dt.strftime('%y%m')}"
                 factura_instalacion = Factura(
                     numero_factura=num_fac,
                     local_id=local.id,

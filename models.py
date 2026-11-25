@@ -185,15 +185,13 @@ class Local(db.Model):
             f for f in getattr(self, "facturas_list", [])
             if f.estado in ("Vencido", "Pendiente") and f.fecha_vencimiento and f.fecha_vencimiento < hoy
         ]
-        if facturas_vencidas or self.estado_pago == "Pendiente":
-            # Si tiene facturas que ya pasaron de fecha o está marcado en mora
-            if facturas_vencidas:
-                return "semaforo-rojo"
+        if facturas_vencidas:
+            return "semaforo-rojo"
 
         # 2. Si su fecha de inicio de facturación está a futuro
         if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
             dias_inicio = (self.fecha_inicio_facturacion - hoy).days
-            if dias_inicio <= 3:
+            if dias_inicio <= 5:
                 return "semaforo-amarillo"
             return "semaforo-verde"
 
@@ -201,7 +199,7 @@ class Local(db.Model):
         dias = self.dias_para_pago
         if dias < 0:
             return "semaforo-rojo"
-        if dias <= 3:
+        if dias <= 5:
             return "semaforo-amarillo"
         return "semaforo-verde"
 
@@ -222,14 +220,14 @@ class Local(db.Model):
 
         if self.fecha_inicio_facturacion and self.fecha_inicio_facturacion > hoy:
             dias_inicio = (self.fecha_inicio_facturacion - hoy).days
-            if dias_inicio <= 3:
+            if dias_inicio <= 5:
                 return "Pendiente"
             return "Inicia pronto"
 
         dias = self.dias_para_pago
-        if dias < 0 or self.estado_pago == "Pendiente":
+        if dias < 0:
             return "En Mora"
-        if dias <= 3:
+        if dias <= 5:
             return "Pendiente"
         return "Al día"
 
